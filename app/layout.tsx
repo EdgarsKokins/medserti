@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             ) : (
               <>
                 <LangSwitch locale={locale} label={d.lang.label} />
-                <Link href="/login">{d.nav.login}</Link>
+                <Link href="/login" className="btn">{d.nav.login}</Link>
                 <Link href="/register" className="btn btn-primary">{d.nav.signup}</Link>
               </>
             )}
