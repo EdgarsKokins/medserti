@@ -4,6 +4,8 @@ import type { CourseFormat, CourseKind } from "@/lib/courses/types";
 const lv = {
   title: "Kursi un pasākumi",
   loading: "Ielādē kursu sarakstu...",
+  recordingShort: "IERAKSTS",
+  ongoingShort: "PĒC PIEPR.",
   lead: "Gaidāmie TIP pasākumi no Latvijas Ārstu biedrības un tās mācību vietnēm. Pirms pieteikšanās pārbaudiet detaļas avotā.",
   needLine: (n: string) => `Jums vēl jāsavāc ${n} TIP.`,
   tabs: { event: "Gaidāmie pasākumi", recorded: "Tālmācība un ieraksti", ongoing: "Pastāvīgās programmas" } as Record<CourseKind, string>,
@@ -65,6 +67,8 @@ const lv = {
 const en: typeof lv = {
   title: "Courses and events",
   loading: "Loading the course list...",
+  recordingShort: "ON DEMAND",
+  ongoingShort: "ON REQUEST",
   lead: "Upcoming TIP-approved events from the Latvian Medical Association and its learning sites. Check the details at the source before you register.",
   needLine: (n: string) => `You still need ${n} TIP.`,
   tabs: { event: "Upcoming events", recorded: "E-learning and recordings", ongoing: "Ongoing programmes" },

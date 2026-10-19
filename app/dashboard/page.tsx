@@ -2,36 +2,43 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
 import { computeProgress, REGISTER_URL, RULES } from "@/lib/rules";
+import { matchesSpecialty } from "@/lib/parse";
+import { readCourseIndex } from "@/lib/courses/store";
+import type { Course } from "@/lib/courses/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import styles from "@/components/dashboard/dashboard.module.css";
 import ProgressChart from "@/components/dashboard/ProgressChart";
-import { CategoryBars, ChecksGrid, HeadlineCard, RecentActivity } from "@/components/dashboard/Sections";
-import { categoryBreakdown, cumulativeSeries, headline, isoDay, onTrackToday } from "@/components/dashboard/model";
+import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
+import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
+import { categoryBreakdown, cumulativeSeries, headline, isoDay } from "@/components/dashboard/model";
+
+/** Next events for this specialty (or all specialties), then free recordings, at most `n` */
+function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
+  const fits = (c: Course) => c.allSpecialties || (!!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty));
+  const mine = (c: Course) => !!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty);
+  const events = courses
+    .filter((c) => c.kind === "event" && c.startDate && c.startDate >= todayIso && fits(c))
+    .sort((a, b) => Number(mine(b)) - Number(mine(a)) || a.startDate!.localeCompare(b.startDate!))
+    .slice(0, n)
+    .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
+  if (events.length >= n) return events;
+  const recorded = courses.filter((c) => c.kind === "recorded" && c.free && fits(c)).slice(0, n - events.length);
+  return [...events, ...recorded];
+}
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const certs = await listCertificates(user.id);
-  const locale = await getLocale();
+  const [certs, courseIdx, locale] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null), getLocale()]);
   const dict = t(locale);
   const d = dict.dashboard;
   const today = new Date();
   const p = computeProgress(user.profile, certs, today);
   const profileIncomplete = !user.profile.certificateIssued;
-  const firstName = user.profile.fullName?.trim().split(/\s+/)[0];
+  const picks = pickCourses(courseIdx?.courses ?? [], user.profile.specialty.trim(), isoDay(today));
 
   return (
-    <main className="container stack">
-      <div className="page-head">
-        <div>
-          <h1>{d.title}</h1>
-          <p className="muted">{d.lead(firstName, user.profile.specialty || undefined)}</p>
-        </div>
-        <Link href="/certificates" className="btn btn-primary">
-          {d.addCert}
-        </Link>
-      </div>
-
+    <main className="container stack" style={{ gap: 40 }}>
       {profileIncomplete && (
         <div className="alert">
           <strong>{d.profileMissing}</strong> {d.profileMissingBody(RULES.validityYears)}{" "}
@@ -39,31 +46,41 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <HeadlineCard p={p} h={headline(p, locale)} onTrack={onTrackToday(p, today)} locale={locale} />
+      <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
+
+      <div className={styles.twoCol}>
+        <Requirements p={p} locale={locale} />
+        <CoursePicks courses={picks} locale={locale} />
+      </div>
 
       {certs.length === 0 ? (
         <section className="card">
           <h2>{d.noCertsTitle}</h2>
-          <p>{d.noCertsBody}</p>
+          <p className="muted">{d.noCertsBody}</p>
           <Link href="/certificates" className="btn btn-primary">
             {d.uploadCerts}
           </Link>
         </section>
       ) : (
         <>
-          <ChecksGrid p={p} locale={locale} />
-
-          <section className="card">
-            <h2>{d.chartTitle}</h2>
-            <ProgressChart
-              series={cumulativeSeries(p)}
-              required={p.required}
-              windowStart={p.windowStart}
-              windowEnd={p.windowEnd}
-              today={isoDay(today)}
-              labels={dict.chart}
-              locale={locale}
-            />
+          <section>
+            <div className={styles.sectionHead}>
+              <h2>{d.chartTitle}</h2>
+              <Link href="/certificates" className="btn">
+                {d.addCert}
+              </Link>
+            </div>
+            <div className="card">
+              <ProgressChart
+                series={cumulativeSeries(p)}
+                required={p.required}
+                windowStart={p.windowStart}
+                windowEnd={p.windowEnd}
+                today={isoDay(today)}
+                labels={dict.chart}
+                locale={locale}
+              />
+            </div>
           </section>
 
           <div className={styles.twoCol}>
@@ -73,7 +90,7 @@ export default async function DashboardPage() {
         </>
       )}
 
-      <p className="small muted">
+      <p className={`small muted ${styles.footnote}`}>
         {dict.rules.label}: {dict.rules.source} (
         <a href={RULES.sourceUrl} target="_blank" rel="noreferrer">
           likumi.lv

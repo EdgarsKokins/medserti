@@ -46,14 +46,16 @@
 .cats { display: flex; flex-direction: column; gap: 10px; }
 .catRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; }
 .catRow :global(.bar) { grid-column: 1 / -1; height: 8px; }
-.catPts { font-variant-numeric: tabular-nums; font-weight: 600; }
+.catPts { font-variant-numeric: tabular-nums; font-weight: 500; }
 :global(.bar).barCapped { position: relative; overflow: visible; }
 .capMark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); }
 
 /* Recent activity */
 .titleCell { overflow-wrap: anywhere; }
 .dateCell { white-space: nowrap; }
-.twoCol { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.twoCol { display: grid; gap: 40px 56px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
+.sectionHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.footnote { max-width: 72ch; border-top: 1px solid var(--border); padding-top: 16px; }
 
 @media (max-width: 480px) {
   .chartWide { display: none; }

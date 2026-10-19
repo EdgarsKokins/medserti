@@ -35,6 +35,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   return (
     <div className="auth-wrap">
       <div className="auth-brand">
+        <span className="brand-seal" aria-hidden>M</span>
         <strong>{d.brand.name}</strong>
         <span className="small muted">{d.brand.tagline}</span>
       </div>
