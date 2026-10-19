@@ -1,6 +1,6 @@
 /** Shared helpers for course scrapers. No dependencies so the same code runs in Node scripts and on Vercel. */
 
-export const USER_AGENT = "MedsertiBot/0.1 (+https://cme-tracker-sepia.vercel.app; course listings with links back to the source)";
+export const USER_AGENT = "MedsertiBot/0.1 (+https://medserti.lv; course listings with links back to the source)";
 
 export async function fetchText(url: string, timeoutMs = 20_000): Promise<string> {
   const res = await fetch(url, {

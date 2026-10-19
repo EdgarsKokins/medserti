@@ -2,7 +2,7 @@
 
 Web app for Latvian medical practitioners to track continuing education points (TIP) toward recertification.
 
-Live: https://medserti.vercel.app
+Live: https://medserti.lv (also https://medserti.vercel.app)
 
 ## What it does
 
