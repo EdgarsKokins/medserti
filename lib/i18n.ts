@@ -70,6 +70,27 @@ const en = {
       "Find LĀB-approved courses for your specialty",
     ],
   },
+  about: {
+    title: "Who we are",
+    storyTitle: "How it started",
+    story: [
+      "Medserti was started by two brothers, Matīss and Edgars Kokins. Our mother is a doctor, and there are many doctors in our family, so we have seen up close how much of a medical professional's time goes to paperwork instead of patients.",
+      "Collecting certificates, counting CME points, checking the rules, searching for approved courses: all of it is necessary, but none of it heals anyone. We built Medserti to take that administration off your hands, so you can spend your time where it matters most: with your patients.",
+    ],
+    photoPending: "Photo coming soon",
+    people: [
+      {
+        name: "Matīss Kokins",
+        role: "Co-founder · Medical services consulting",
+        bio: "Matīss has worked as a professional consultant in Latvia's medical services industry, advising clinics and healthcare professionals on how they organise their work, meet regulatory requirements and grow. He knows the rules medical practitioners work under, and where they cost the most time, and makes sure Medserti follows them closely.",
+      },
+      {
+        name: "Edgars Kokins",
+        role: "Co-founder · Healthtech",
+        bio: "Edgars is a healthtech professional with years of experience delivering top-level business solutions to professionals. He leads the product and technology behind Medserti, turning complex requirements into tools that are simple to use every day.",
+      },
+    ],
+  },
   professions: {
     doctor: "Doctor",
     dentist: "Dentist",
@@ -358,6 +379,27 @@ const lv: Dict = {
       "Augšupielādējiet sertifikātus, punkti tiek nolasīti automātiski",
       "Redziet, cik TIP vēl jāsavāc un līdz kuram datumam",
       "Atrodiet LĀB apstiprinātus kursus savai specialitātei",
+    ],
+  },
+  about: {
+    title: "Kas mēs esam",
+    storyTitle: "Kā tas sākās",
+    story: [
+      "Medserti izveidoja divi brāļi, Matīss un Edgars Kokini. Mūsu mamma ir ārste, un ģimenē ir daudz mediķu, tāpēc esam tuvumā redzējuši, cik daudz ārstniecības personu laika aiziet papīros, nevis pie pacientiem.",
+      "Sertifikātu krāšana, TIP punktu skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nevienu neizārstē. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no jūsu pleciem un jūs varētu veltīt laiku tam, kas ir patiešām svarīgs: saviem pacientiem.",
+    ],
+    photoPending: "Foto drīzumā",
+    people: [
+      {
+        name: "Matīss Kokins",
+        role: "Līdzdibinātājs · Konsultācijas medicīnas pakalpojumu nozarē",
+        bio: "Matīss ir strādājis kā profesionāls konsultants Latvijas medicīnas pakalpojumu nozarē, konsultējot klīnikas un ārstniecības personas par darba organizāciju, normatīvo prasību izpildi un izaugsmi. Viņš pārzina noteikumus, pēc kuriem strādā mediķi, un zina, kur tie prasa visvairāk laika, tāpēc rūpējas, lai Medserti tiem precīzi atbilstu.",
+      },
+      {
+        name: "Edgars Kokins",
+        role: "Līdzdibinātājs · Veselības tehnoloģijas",
+        bio: "Edgars ir veselības tehnoloģiju profesionālis ar ilggadēju pieredzi augstākā līmeņa biznesa risinājumu izstrādē profesionāļiem. Viņš vada Medserti produktu un tehnoloģijas, pārvēršot sarežģītas prasības rīkos, kurus ir viegli lietot ikdienā.",
+      },
     ],
   },
   professions: {
