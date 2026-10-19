@@ -3,30 +3,36 @@ import { titleKey } from "./util";
 import { fetchLabTip } from "./sources/labTip";
 import { fetchLabCourses } from "./sources/labCourses";
 import { fetchRss } from "./sources/rss";
+import { fetchLumpii } from "./sources/lumpii";
 
 const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   lab_tip: fetchLabTip,
   lab_courses: fetchLabCourses,
   kursiarstiem: () => fetchRss("kursiarstiem"),
   medicinaskursi: () => fetchRss("medicinaskursi"),
+  lumpii: fetchLumpii,
 };
 
 /**
  * LĀB's approved TIP list is the backbone (it has TIP, dates, place, audience). LĀB's own course list adds
  * price and a registration link for the same events, so those are merged in by title (+ date) instead of
- * listed twice. A failing source never blocks the others.
+ * listed twice; LUMPII's dated sessions are folded in the same way. A failing source never blocks the others.
  */
 export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>): Course[] {
-  const tip = bySource.lab_tip ?? [];
+  let tip = bySource.lab_tip ?? [];
   const index = new Map<string, Course>();
   for (const c of tip) index.set(titleKey(c.title), c);
+  const tipMatch = (c: Course) => {
+    const key = titleKey(c.title);
+    return (
+      index.get(key) ??
+      tip.find((t) => t.startDate === c.startDate && (titleKey(t.title).startsWith(key.slice(0, 30)) || key.startsWith(titleKey(t.title).slice(0, 30))))
+    );
+  };
 
   const extra: Course[] = [];
   for (const c of bySource.lab_courses ?? []) {
-    const key = titleKey(c.title);
-    const match =
-      index.get(key) ??
-      tip.find((t) => t.startDate === c.startDate && (titleKey(t.title).startsWith(key.slice(0, 30)) || key.startsWith(titleKey(t.title).slice(0, 30))));
+    const match = tipMatch(c);
     if (match) {
       match.price = c.price;
       match.url = c.url;
@@ -34,7 +40,39 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
     } else extra.push(c);
   }
 
-  const seen = new Set(tip.map((c) => titleKey(c.title)));
+  // LUMPII lists dated sessions of courses that LĀB often approves as one long-running ("ongoing") row.
+  // Same date: enrich the TIP row. Ongoing approval: the dated sessions replace it and inherit its TIP data.
+  const replaced = new Set<Course>();
+  for (const c of bySource.lumpii ?? []) {
+    const match = tipMatch(c);
+    if (match && match.kind === "event") {
+      if (match.startDate !== c.startDate) {
+        extra.push(c);
+        continue;
+      }
+      match.price = c.price;
+      match.url = c.url;
+      match.free = c.free;
+      continue;
+    }
+    if (match) {
+      replaced.add(match);
+      c.title = match.title;
+      c.tip ??= match.tip;
+      c.minutes ??= match.minutes;
+      c.approvalId = match.approvalId;
+      c.annexItem = match.annexItem;
+      c.detailRef = match.detailRef;
+      if (!c.audience) {
+        c.audience = match.audience;
+        c.allSpecialties = match.allSpecialties;
+      }
+    }
+    extra.push(c);
+  }
+  tip = tip.filter((c) => !replaced.has(c));
+
+  const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
   for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? [])]) {
     const key = titleKey(c.title);
     if (seen.has(key)) continue;
