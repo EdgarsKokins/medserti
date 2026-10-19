@@ -140,7 +140,7 @@ export default function UploadZone({
   }
 
   return (
-    <div className="card stack">
+    <div className={styles.upload}>
       <div
         className={`${styles.drop} ${over ? styles.dropActive : ""}`}
         role="button"
@@ -163,8 +163,12 @@ export default function UploadZone({
           handle(e.dataTransfer.files);
         }}
       >
-        <strong>{d.drop}</strong>
-        <div className="small muted">{d.hint}</div>
+        <svg className={styles.dropIcon} viewBox="0 0 24 24" width="26" height="26" aria-hidden>
+          <path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4 14v4.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <span className={styles.dropMain}>{d.drop}</span>
+        <span className={styles.dropHint}>{d.hint}</span>
         <input
           ref={input}
           type="file"
@@ -179,7 +183,7 @@ export default function UploadZone({
           {items.map((it) => (
             <li key={it.key}>
               <span className={styles.uploadName}>{it.name}</span>
-              <span className="row">
+              <span className={styles.uploadState}>
                 {it.message && <span className="small muted">{it.message}</span>}
                 <span className={STATE_CLASS[it.state]}>
                   {d.states[it.state]}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
+import s from "./auth.module.css";
 
 export default function AuthForm({ mode, locale }: { mode: "login" | "register"; locale: Locale }) {
   const router = useRouter();
@@ -33,17 +34,28 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   }
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-brand">
-        <strong>{d.brand.name}</strong>
-        <span className="small muted">{d.brand.tagline}</span>
+    <main className={s.page}>
+      <div className={s.brand}>
+        <span className={`brand-seal ${s.seal}`} aria-hidden>M</span>
+        <strong className={s.wordmark}>{d.brand.name}</strong>
+        <span className={s.tagline}>{d.brand.tagline}</span>
       </div>
-      <div className="card stack">
-        <div>
-          <h1>{mode === "login" ? a.loginTitle : a.registerTitle}</h1>
-          <p className="muted">{mode === "login" ? a.loginLead : a.registerLead}</p>
-        </div>
-        <form className="stack" onSubmit={onSubmit}>
+
+      <section className={s.value} aria-label={a.valueTitle}>
+        <ol className={s.points}>
+          {a.valuePoints.map((point, i) => (
+            <li key={i}>
+              <span className={s.num} aria-hidden>{String(i + 1).padStart(2, "0")}</span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div className={s.card}>
+        <h1 className={s.title}>{mode === "login" ? a.loginTitle : a.registerTitle}</h1>
+        <p className={s.lead}>{mode === "login" ? a.loginLead : a.registerLead}</p>
+        <form className={s.form} onSubmit={onSubmit}>
           {mode === "register" && (
             <div className="field">
               <label htmlFor="fullName">{a.fullName}</label>
@@ -65,12 +77,12 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
           </div>
-          {error && <div className="alert alert-bad">{error}</div>}
-          <button className="btn btn-primary" disabled={busy}>
+          {error && <div className="alert alert-bad" role="alert">{error}</div>}
+          <button className={`btn btn-primary ${s.submit}`} disabled={busy}>
             {busy ? a.wait : mode === "login" ? a.loginTitle : a.registerTitle}
           </button>
         </form>
-        <p className="small muted">
+        <p className={s.switch}>
           {mode === "login" ? (
             <>{a.noAccount} <Link href="/register">{a.signup}</Link></>
           ) : (
@@ -78,6 +90,6 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
           )}
         </p>
       </div>
-    </div>
+    </main>
   );
 }

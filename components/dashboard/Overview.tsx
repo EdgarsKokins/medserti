@@ -1,0 +1,157 @@
+import Link from "next/link";
+import type { Progress } from "@/lib/rules";
+import { t, type Locale } from "@/lib/i18n";
+import type { Course } from "@/lib/courses/types";
+import { dayMs, fmtDate, fmtNum, type Headline } from "./model";
+import styles from "./overview.module.css";
+
+const toneClass = { ok: styles.toneOk, warn: styles.toneWarn, bad: styles.toneBad, neutral: "" };
+
+/** Big number, time left and a single band comparing points collected with time elapsed */
+export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headline; specialty: string; locale: Locale; today: Date }) {
+  const d = t(locale).dashboard;
+  const n = (v: number) => fmtNum(v, locale);
+  const pointsPct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
+  let timePct: number | null = null;
+  if (p.windowStart && p.windowEnd) {
+    const a = dayMs(p.windowStart);
+    const b = dayMs(p.windowEnd);
+    timePct = Math.max(0, Math.min(100, ((today.getTime() - a) / (b - a)) * 100));
+  }
+  const behind = timePct != null && pointsPct + 5 < timePct;
+  const eyebrow = [specialty, p.windowEnd ? d.validUntilShort(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
+
+  return (
+    <section className={styles.hero} aria-labelledby="hero-title">
+      {eyebrow && <div className="eyebrow">{eyebrow}</div>}
+      <div className={styles.heroRow}>
+        <h1 id="hero-title" className={styles.bigLine}>
+          <span className={styles.big}>{n(p.total)}</span>
+          <span className={styles.of}>{d.ofRequired(p.required)}</span>
+        </h1>
+        {p.daysLeft != null && (
+          <div className={styles.heroSide}>
+            {p.daysLeft >= 0 ? (
+              <>
+                <div className={styles.daysLeft}>{d.daysLeftShort(p.daysLeft)}</div>
+                {p.perMonthNeeded != null && p.remaining > 0 && (
+                  <div className={behind ? styles.pace : "muted"}>{d.paceShort(n(p.perMonthNeeded))}</div>
+                )}
+              </>
+            ) : (
+              <div className={styles.toneBad}>
+                {d.expiredOn} {fmtDate(p.windowEnd, locale)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {timePct != null && p.windowStart && p.windowEnd ? (
+        <div className={styles.band} role="img" aria-label={`${d.collected(Math.round(pointsPct))}, ${d.timeElapsed(Math.round(timePct))}`}>
+          <div className={styles.track}>
+            <div className={`${styles.fill} ${behind ? styles.fillBehind : ""}`} style={{ width: `${pointsPct}%` }} />
+            <div className={styles.todayMark} style={{ left: `${timePct}%` }}>
+              <span className={styles.todayLabel}>{d.today}</span>
+            </div>
+          </div>
+          <div className={styles.bandLabels}>
+            <span>{p.windowStart.slice(0, 4)}</span>
+            <span className={styles.bandLegend}>
+              <i className={styles.keyFill} /> {d.collected(Math.round(pointsPct))}
+              <i className={styles.keyTime} /> {d.timeElapsed(Math.round(timePct))}
+            </span>
+            <span>{p.windowEnd.slice(0, 4)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className={`bar ${styles.plainBar}`}>
+          <span style={{ width: `${pointsPct}%` }} />
+        </div>
+      )}
+
+      {h.message && <p className={`${styles.message} ${toneClass[h.tone]}`}>{h.message}</p>}
+    </section>
+  );
+}
+
+/** Requirement checks as a ruled checklist */
+export function Requirements({ p, locale }: { p: Progress; locale: Locale }) {
+  const dict = t(locale);
+  return (
+    <section aria-labelledby="req-title">
+      <h2 id="req-title">{dict.dashboard.requirements}</h2>
+      <ul className={styles.checklist}>
+        {p.checks.map((c) => (
+          <li key={c.id} className={c.met ? styles.met : ""}>
+            <span className={styles.mark} aria-hidden>{c.met ? "✓" : ""}</span>
+            <span className={styles.checkLabel}>
+              {dict.checks[c.id]}
+              <span className="sr-only">: {c.met ? dict.dashboard.met : dict.dashboard.notMet}</span>
+            </span>
+            <span className={styles.checkVal}>
+              {fmtNum(c.have, locale)}
+              <span className="muted"> / {fmtNum(c.need, locale)}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const MONTHS: Record<Locale, string[]> = {
+  lv: ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"],
+  en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+};
+
+/** Calendar-style date block used by course rows */
+export function DateBlock({ iso, locale, fallback }: { iso: string | null; locale: Locale; fallback: string }) {
+  if (!iso) {
+    return (
+      <span className={styles.dateBlock}>
+        <span className={styles.dateDay}>∞</span>
+        <span className={styles.dateMon}>{fallback}</span>
+      </span>
+    );
+  }
+  return (
+    <span className={styles.dateBlock}>
+      <span className={styles.dateDay}>{iso.slice(8, 10)}</span>
+      <span className={styles.dateMon}>{MONTHS[locale][Number(iso.slice(5, 7)) - 1]}</span>
+    </span>
+  );
+}
+
+/** Next upcoming events that match the specialty (or are for all specialties) */
+export function CoursePicks({ courses, locale }: { courses: Course[]; locale: Locale }) {
+  const d = t(locale).dashboard;
+  return (
+    <section aria-labelledby="picks-title">
+      <div className={styles.sectionHead}>
+        <h2 id="picks-title">{d.coursesForYou}</h2>
+        <Link href="/courses" className="small">{d.allCourses} →</Link>
+      </div>
+      {courses.length === 0 ? (
+        <p className="muted small">{d.noCourses}</p>
+      ) : (
+        <ul className={styles.picks}>
+          {courses.map((c) => (
+            <li key={c.id}>
+              <DateBlock iso={c.startDate} locale={locale} fallback={d.recording} />
+              <span className={styles.pickMain}>
+                <a href={c.url} target="_blank" rel="noreferrer" className={styles.pickTitle}>{c.title}</a>
+                <span className="small muted">
+                  {[c.city === "Online" ? (locale === "lv" ? "Tiešsaistē" : "Online") : c.city, c.minutes ? `${fmtNum(c.minutes / 60, locale)} ${locale === "lv" ? "st." : "h"}` : null]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </span>
+              {c.tip != null && <span className={styles.pickTip}>+{fmtNum(c.tip, locale)} TIP</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

@@ -5,6 +5,7 @@ import { formatDate, formatNumber, type Locale } from "@/lib/i18n";
 import { SOURCE_LABELS, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { courseStrings } from "./strings";
 import styles from "./courses.module.css";
+import { DateBlock } from "@/components/dashboard/Overview";
 
 export type CourseRow = Omit<Course, never> & { forMe: boolean };
 
@@ -103,7 +104,7 @@ export default function CoursesView({
       </div>
       <p className="small muted" style={{ marginTop: -6 }}>{s.tabHint[kind]}</p>
 
-      <div className={`card ${styles.filters}`}>
+      <div className={styles.filters}>
         <input
           className={styles.search}
           type="search"
@@ -152,7 +153,7 @@ export default function CoursesView({
       <div className="row small muted">{s.results(filtered.length)}</div>
 
       {filtered.length === 0 ? (
-        <div className="card muted">{s.none}</div>
+        <p className="muted">{s.none}</p>
       ) : (
         <ul className={styles.list}>
           {filtered.slice(0, shown).map((r) => (
@@ -203,7 +204,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
   return (
-    <li className={`card ${styles.item} ${open ? styles.itemOpen : ""}`}>
+    <li className={`${styles.item} ${open ? styles.itemOpen : ""}`}>
       <button
         type="button"
         className={styles.summary}
@@ -212,29 +213,28 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
         title={open ? s.details.collapse : s.details.expand}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className={styles.tip} aria-label={r.tip != null ? `${r.tip} TIP` : "TIP ?"}>
-          <span className={styles.tipValue}>{r.tip != null ? formatNumber(r.tip, locale, 1) : "?"}</span>
-          <span className={styles.tipUnit}>TIP</span>
-        </span>
+        <DateBlock iso={r.startDate} locale={locale} fallback={r.kind === "recorded" ? s.recordingShort : s.ongoingShort} />
         <span className={styles.main}>
           <span className={styles.title}>{r.title}</span>
           <span className={`small muted ${styles.org}`}>
-            {[r.organizer, !r.allSpecialties && r.audience ? r.audience : null].filter(Boolean).join(" · ")}
+            {[
+              date && r.kind !== "event" ? date : null,
+              s.formats[r.format] + (place && r.format !== "recorded" ? ` · ${place}` : ""),
+              hours ? s.hours(hours) : null,
+              r.organizer,
+            ]
+              .filter(Boolean)
+              .join("  ·  ")}
           </span>
           <span className={styles.badges}>
-            {r.forMe && <span className="badge badge-ok">{s.matches}</span>}
-            {!r.forMe && r.allSpecialties && <span className="badge">{s.forAll}</span>}
-            {r.free && <span className="badge badge-ok">{s.free}</span>}
-            {r.price && !r.free && <span className="badge">{r.price}</span>}
+            {r.forMe && <span className="tag tag-accent">{s.matches}</span>}
+            {!r.forMe && r.allSpecialties && <span className="tag">{s.forAll}</span>}
+            {r.free && <span className="tag">{s.free}</span>}
+            {r.price && !r.free && <span className="tag">{r.price}</span>}
           </span>
         </span>
-        <span className={styles.meta}>
-          {date && <span className={styles.metaDate}>{date}</span>}
-          <span>
-            {s.formats[r.format]}
-            {place && r.format !== "recorded" ? ` · ${place}` : ""}
-          </span>
-          {hours && <span>{s.hours(hours)}</span>}
+        <span className={styles.tip} aria-label={r.tip != null ? `${r.tip} TIP` : "TIP ?"}>
+          {r.tip != null ? `+${formatNumber(r.tip, locale, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
         </span>
         <span className={styles.chevron} aria-hidden>{open ? "−" : "+"}</span>
       </button>

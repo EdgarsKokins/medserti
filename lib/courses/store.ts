@@ -20,3 +20,8 @@ export async function refreshCourseIndex(): Promise<CourseIndex> {
 export async function getCourseIndex(): Promise<CourseIndex> {
   return (await getJson<CourseIndex>(PATH)) ?? refreshCourseIndex();
 }
+
+/** Stored index without triggering a build (for pages where a missing list is fine) */
+export async function readCourseIndex(): Promise<CourseIndex | null> {
+  return getJson<CourseIndex>(PATH);
+}

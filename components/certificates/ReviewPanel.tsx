@@ -93,11 +93,11 @@ export default function ReviewPanel({
 
   return (
     <div className={styles.overlay} onMouseDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
-      <div className={`card stack ${styles.panel}`} role="dialog" aria-modal="true" aria-labelledby="review-title">
+      <div className={styles.panel} role="dialog" aria-modal="true" aria-labelledby="review-title">
         <div className={styles.panelHead}>
           <div>
-            <h2 id="review-title">{d.title}</h2>
-            <div className="row small muted">
+            <h2 id="review-title" className={styles.panelTitle}>{d.title}</h2>
+            <div className={styles.panelMeta}>
               <span className={STATUS_CLASS[cert.status]}>{dict.status[cert.status]}</span>
               <span>{cert.fileName}</span>
               <span>{d.uploaded(formatDate(cert.uploadedAt.slice(0, 10), locale))}</span>
@@ -110,13 +110,13 @@ export default function ReviewPanel({
         </div>
 
         {cert.parseNotes && (
-          <div className="alert small" lang="en">
+          <div className={`alert small ${styles.notes}`} lang="en">
             {locale !== "en" && <strong>{d.notesNote} </strong>}
             {cert.parseNotes}
           </div>
         )}
 
-        <div className="form-grid">
+        <div className={`form-grid ${styles.panelBody}`}>
           <div className={`field ${styles.wide}`}>
             <label htmlFor="c-title">{d.fTitle}</label>
             <input id="c-title" value={f.title} onChange={(e) => set("title", e.target.value)} />
@@ -173,15 +173,15 @@ export default function ReviewPanel({
           )}
         </div>
 
-        {error && <div className="alert alert-bad">{error}</div>}
+        {error && <div className={`alert alert-bad ${styles.notes}`}>{error}</div>}
 
-        <div className="row">
+        <div className={styles.panelFoot}>
           <button className="btn btn-primary" disabled={busy} onClick={() => save("confirmed")}>
             {busy ? d.saving : d.confirm}
           </button>
           <button className="btn" disabled={busy} onClick={() => save("needs_review")}>{d.saveDraft}</button>
           <button className="btn" disabled={busy} onClick={onClose}>{d.cancel}</button>
-          <button className="btn btn-danger" disabled={busy} onClick={remove} style={{ marginLeft: "auto" }}>
+          <button className={`btn btn-danger ${styles.deleteBtn}`} disabled={busy} onClick={remove}>
             {d.delete}
           </button>
         </div>

@@ -120,7 +120,7 @@ export function CategoryBars({ p, rows, locale }: { p: Progress; rows: CategoryR
   const cap = p.required * RULES.practicalCapShare;
   const capped = p.practicalRaw > p.practicalCounted;
   return (
-    <section className="card">
+    <section>
       <h2>{d.byCategory}</h2>
       {rows.length === 0 ? (
         <p className="muted">{d.noCountedPoints}</p>
@@ -170,8 +170,8 @@ export function RecentActivity({ p, locale }: { p: Progress; locale: Locale }) {
     ex.processing && d.processing(ex.processing),
   ].filter(Boolean);
   return (
-    <section className="card">
-      <div className="page-head" style={{ marginBottom: 8 }}>
+    <section>
+      <div className="page-head" style={{ marginBottom: 4 }}>
         <h2 style={{ margin: 0 }}>{d.recent}</h2>
         <Link href="/certificates" className="small">
           {d.allCerts}

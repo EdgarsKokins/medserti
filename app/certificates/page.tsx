@@ -16,7 +16,7 @@ export default async function CertificatesPage() {
       <div className="page-head">
         <div>
           <h1>{d.title}</h1>
-          <p className="muted">{d.lead}</p>
+          <p className="muted">{d.leadShort}</p>
         </div>
       </div>
       <CertificatesView initial={certificates} specialty={user.profile.specialty} locale={locale} />
