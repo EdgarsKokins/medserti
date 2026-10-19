@@ -104,7 +104,7 @@ export default function CoursesView({
       </div>
       <p className="small muted" style={{ marginTop: -6 }}>{s.tabHint[kind]}</p>
 
-      <div className={`card ${styles.filters}`}>
+      <div className={styles.filters}>
         <input
           className={styles.search}
           type="search"
@@ -153,7 +153,7 @@ export default function CoursesView({
       <div className="row small muted">{s.results(filtered.length)}</div>
 
       {filtered.length === 0 ? (
-        <div className="card muted">{s.none}</div>
+        <p className="muted">{s.none}</p>
       ) : (
         <ul className={styles.list}>
           {filtered.slice(0, shown).map((r) => (
@@ -204,7 +204,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
   return (
-    <li className={`card ${styles.item} ${open ? styles.itemOpen : ""}`}>
+    <li className={`${styles.item} ${open ? styles.itemOpen : ""}`}>
       <button
         type="button"
         className={styles.summary}
