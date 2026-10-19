@@ -40,3 +40,7 @@ npm run dev
 Without `BLOB_READ_WRITE_TOKEN` the app stores everything in `./.data`, so you can run it with no accounts or keys. To use the real store, link the Vercel project and pull env vars (`vercel env pull .env.local`).
 
 Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`.
+
+## Deploying
+
+The Vercel project is connected to this repo: every push to `main` deploys to production (https://medserti.vercel.app). Pushes to other branches get a preview URL.
