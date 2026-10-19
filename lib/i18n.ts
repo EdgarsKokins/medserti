@@ -63,6 +63,12 @@ const en = {
     already: "Already registered?",
     login: "Log in",
     genericError: "Something went wrong",
+    valueTitle: "What Medserti does",
+    valuePoints: [
+      "Upload your certificates, the points are read automatically",
+      "See how many CME points you still need, and by when",
+      "Find LĀB-approved courses for your specialty",
+    ],
   },
   professions: {
     doctor: "Doctor",
@@ -127,6 +133,13 @@ const en = {
     saveError: "Could not save",
     saving: "Saving...",
     save: "Save profile",
+    sectionYou: "You",
+    sectionYouNote: "Your profession sets how many points you need.",
+    sectionCert: "Certificate",
+    sectionCertNote: "The dates set the window your points count toward.",
+    summary: (n: number, date: string | null) =>
+      date ? `Collect ${n} CME points by ${date}.` : `Collect ${n} CME points.`,
+    summaryNoDate: "Add the issue date to see your deadline.",
   },
   certs: {
     title: "Certificates",
@@ -146,6 +159,10 @@ const en = {
     file: "File",
     edit: "Edit",
     review: "Review",
+    leadShort: "We read each file automatically. You check and confirm.",
+    waitingShort: (n: number) => `${n} waiting for review`,
+    showWaiting: "Show only these",
+    showAll: "Show all",
   },
   upload: {
     drop: "Drop certificates here or click to choose files",
@@ -336,6 +353,12 @@ const lv: Dict = {
     already: "Jau esat reģistrējies?",
     login: "Pieslēgties",
     genericError: "Kaut kas nogāja greizi",
+    valueTitle: "Ko dara Medserti",
+    valuePoints: [
+      "Augšupielādējiet sertifikātus, punkti tiek nolasīti automātiski",
+      "Redziet, cik TIP vēl jāsavāc un līdz kuram datumam",
+      "Atrodiet LĀB apstiprinātus kursus savai specialitātei",
+    ],
   },
   professions: {
     doctor: "Ārsts",
@@ -401,6 +424,13 @@ const lv: Dict = {
     saveError: "Neizdevās saglabāt",
     saving: "Saglabā...",
     save: "Saglabāt profilu",
+    sectionYou: "Jūs",
+    sectionYouNote: "Profesija nosaka, cik TIP jāsavāc.",
+    sectionCert: "Sertifikāts",
+    sectionCertNote: "Datumi nosaka periodu, kurā tiek skaitīti punkti.",
+    // LV dates already end with a dot ("14.03.2028.")
+    summary: (n: number, date: string | null) => (date ? `Jāsavāc ${n} TIP līdz ${date}` : `Jāsavāc ${n} TIP.`),
+    summaryNoDate: "Norādiet izsniegšanas datumu, lai redzētu termiņu.",
   },
   certs: {
     title: "Sertifikāti",
@@ -420,6 +450,10 @@ const lv: Dict = {
     file: "Fails",
     edit: "Labot",
     review: "Pārbaudīt",
+    leadShort: "Datus nolasām automātiski, jūs tos pārbaudāt un apstiprināt.",
+    waitingShort: (n: number) => `${n} gaida pārbaudi`,
+    showWaiting: "Rādīt tikai tos",
+    showAll: "Rādīt visus",
   },
   upload: {
     drop: "Ievelciet sertifikātus šeit vai noklikšķiniet, lai izvēlētos failus",
