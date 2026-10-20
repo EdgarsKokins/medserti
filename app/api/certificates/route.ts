@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { currentUser, requireWritableUser } from "@/lib/auth";
 import { listCertificates, saveCertificate } from "@/lib/db";
 import { putBytes } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
+import { autoConfirmBlocks } from "@/lib/parse/confidence";
+import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -96,7 +98,27 @@ export async function POST(req: Request) {
     }
 
     const result = await parseCertificate(bytes, type, user.profile, ocrFor(i));
-    const done: CmeCertificate = { ...cert, ...result.fields, status: result.status, parseNotes: result.notes };
+    const fileHash = createHash("sha256").update(bytes).digest("hex");
+    // confirm without the user only when nothing is a guess (rules in lib/parse/confidence.ts)
+    const existing = (await listCertificates(user.id)).filter((c) => c.id !== id);
+    const blocks = autoConfirmBlocks({
+      source: result.source,
+      pointsKind: result.pointsKind,
+      fields: result.fields,
+      window: certificateWindow(user.profile),
+      existing,
+      fileHash,
+      today: new Date().toISOString().slice(0, 10),
+    });
+    const auto = blocks.length === 0;
+    const done: CmeCertificate = {
+      ...cert,
+      ...result.fields,
+      status: auto ? "confirmed" : result.status,
+      autoConfirmed: auto,
+      fileHash,
+      parseNotes: result.notes,
+    };
     await saveCertificate(done);
     certificates.push(done);
   }

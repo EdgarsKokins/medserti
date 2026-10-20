@@ -2,7 +2,7 @@ import type { CmeCertificate, FieldConfidence, ParseNote, Profile } from "../typ
 import { LOW_CONFIDENCE } from "./confidence";
 import { eventDays, findDates } from "./dates";
 import { findCategory, findCountry, isEmergencyCare, isLecturer } from "./place";
-import { derivePoints, findHours, findPoints, findPracticalHours } from "./points";
+import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
@@ -43,6 +43,10 @@ export type ParsedFields = Pick<
 export interface ParseResult {
   status: "needs_review";
   fields: ParsedFields;
+  /** where the text came from: a real PDF text layer, OCR (photos, scanned PDFs), or nothing readable */
+  source: "text" | "ocr" | "none";
+  /** how the points were found; null when there are none */
+  pointsKind: PointsKind | null;
   /** JSON array of ParseNote (codes plus values), rendered in the UI language; null when there is nothing to say */
   notes: string | null;
 }
@@ -118,7 +122,7 @@ function withNote(r: ParseResult, note: ParseNote): ParseResult {
 }
 
 function manual(code: "pdfUnreadable" | "pdfScan" | "imageUnreadable"): ParseResult {
-  return { status: "needs_review", fields: { ...EMPTY_FIELDS }, notes: encodeNotes([{ code }]) };
+  return { status: "needs_review", fields: { ...EMPTY_FIELDS }, source: "none", pointsKind: null, notes: encodeNotes([{ code }]) };
 }
 
 const r2 = (n: number) => Math.round(Math.max(0, Math.min(1, n)) * 100) / 100;
@@ -131,7 +135,8 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
 
   const titleHit = findTitle(t);
   const title = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
-  const organizer = findOrganizer(t);
+  const organizerHit = findOrganizer(t);
+  const organizer = organizerHit.value;
   const dates = findDates(t);
   const { date, endDate } = dates;
   const pts = findPoints(t);
@@ -145,6 +150,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
 
   let points = pts.value;
   let pointsConfidence = pts.confidence;
+  let pointsKind = pts.kind;
   const days = eventDays(date, endDate);
   if (points != null && /(?<![\p{L}])(?:ECTS|ECMEC)/iu.test(t.raw)) notes.push({ code: "ects" });
   if (points != null && category === "training_abroad" && academicHours && academicHours.value !== points)
@@ -156,6 +162,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
     if (d) {
       points = d.points;
       pointsConfidence = 0.6;
+      pointsKind = "derived";
       notes.push(...d.notes);
     } else {
       notes.push({ code: "noPoints" });
@@ -171,13 +178,14 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
 
   const fieldConfidence: FieldConfidence = {
     title: r2(titleHit.confidence * ocrFactor),
+    organizer: r2(organizerHit.confidence * ocrFactor),
     date: r2(dates.confidence * ocrFactor),
     points: r2(points == null ? 0 : pointsConfidence * ocrFactor),
     country: r2(countryHit.confidence * ocrFactor),
   };
   // fields we filled in but are not sure of; missing ones already have their own note
-  const unsure = (["date", "points", "title", "country"] as const).filter((k) => {
-    const v = k === "date" ? date : k === "points" ? points : k === "title" ? title : country;
+  const unsure = (["date", "points", "title", "organizer", "country"] as const).filter((k) => {
+    const v = { date, points, title, organizer, country }[k];
     return v != null && v !== "" && fieldConfidence[k]! < LOW_CONFIDENCE;
   });
   if (unsure.length) notes.push({ code: "lowConfidence", p: { fields: unsure.join(",") } });
@@ -185,6 +193,8 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const found = [title, date, pts.value ?? (points != null ? "derived" : null)].filter(Boolean).length;
   return {
     status: "needs_review",
+    source: opts.ocr ? "ocr" : "text",
+    pointsKind: points == null ? null : pointsKind,
     fields: {
       title: title.slice(0, 300),
       organizer: organizer.slice(0, 200),

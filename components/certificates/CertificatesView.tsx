@@ -119,7 +119,9 @@ export default function CertificatesView({
                     {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>TIP</span></>}
                   </span>
                   <span className={styles.status}>
-                    <span className={STATUS_CLASS[c.status]}>{dict.status[c.status]}</span>
+                    <span className={STATUS_CLASS[c.status]}>
+                      {c.status === "confirmed" && c.autoConfirmed ? dict.review.autoConfirmed : dict.status[c.status]}
+                    </span>
                   </span>
                   <span className={styles.actions}>
                     <a className={styles.linkBtn} href={`/api/certificates/${c.id}/file`} target="_blank" rel="noreferrer">

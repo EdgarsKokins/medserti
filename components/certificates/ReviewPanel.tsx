@@ -154,7 +154,9 @@ export default function ReviewPanel({
           <div>
             <h2 id="review-title" className={styles.panelTitle}>{d.title}</h2>
             <div className={styles.panelMeta}>
-              <span className={STATUS_CLASS[cert.status]}>{dict.status[cert.status]}</span>
+              <span className={STATUS_CLASS[cert.status]}>
+                {cert.status === "confirmed" && cert.autoConfirmed ? d.autoConfirmed : dict.status[cert.status]}
+              </span>
               <span>{cert.fileName}</span>
               <span>{d.uploaded(formatDate(cert.uploadedAt.slice(0, 10), locale))}</span>
               {fieldsFound != null && <span>{d.fieldsFound(fieldsFound)}</span>}
@@ -190,7 +192,7 @@ export default function ReviewPanel({
             <input id="c-title" value={f.title} onChange={(e) => set("title", e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="c-org">{d.fOrganizer}</label>
+            <label htmlFor="c-org">{d.fOrganizer}{check("organizer")}</label>
             <input id="c-org" value={f.organizer} onChange={(e) => set("organizer", e.target.value)} />
           </div>
           <div className="field">

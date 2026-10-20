@@ -38,15 +38,24 @@ interface Hit {
   value: number;
   index: number;
   length: number;
+  /** the label was ECTS */
+  ects: boolean;
   total: boolean;
   courseTotal: boolean;
   approval: string | null;
 }
 
+/**
+ * How the points were found. Only "printed" (one TIP / CME / credit value written on the certificate)
+ * can be auto-confirmed; ECTS is a 1:1 assumption, sums and course totals are our inference.
+ */
+export type PointsKind = "printed" | "ects" | "summed" | "courseTotal" | "multiple" | "derived";
+
 export interface PointsResult {
   value: number | null;
   /** 0-1 */
   confidence: number;
+  kind: PointsKind | null;
   notes: ParseNote[];
 }
 
@@ -73,10 +82,10 @@ export function findPoints(t: Text): PointsResult {
   const perDay = [...days.values()];
   if (perDay.length >= 2) {
     const sum = perDay.reduce((a, b) => a + b, 0);
-    return { value: round(sum), confidence: 0.8, notes: [{ code: "pointsSummed", p: { list: perDay.map(fmt).join(" + "), total: fmt(sum) } }] };
+    return { value: round(sum), confidence: 0.8, kind: "summed", notes: [{ code: "pointsSummed", p: { list: perDay.map(fmt).join(" + "), total: fmt(sum) } }] };
   }
 
-  const raw: { value: number; index: number; length: number }[] = [];
+  const raw: { value: number; index: number; length: number; ects: boolean }[] = [];
   const taken: [number, number][] = [];
   for (const re of [POINTS_AFTER, POINTS_BEFORE, POINTS_LOOSE]) {
     for (const m of t.flat.matchAll(re)) {
@@ -86,10 +95,10 @@ export function findPoints(t: Text): PointsResult {
       const value = toNum(m[1]);
       if (!(value > 0 && value <= 300)) continue;
       taken.push([from, to]);
-      raw.push({ value, index: from, length: to - from });
+      raw.push({ value, index: from, length: to - from, ects: /ects/.test(m[0]) });
     }
   }
-  if (!raw.length) return { value: null, confidence: 0, notes: [] };
+  if (!raw.length) return { value: null, confidence: 0, kind: null, notes: [] };
   raw.sort((a, b) => a.index - b.index);
 
   const hits: Hit[] = raw.map((h, i) => {
@@ -107,7 +116,7 @@ export function findPoints(t: Text): PointsResult {
   const own = hits.filter((h) => !h.courseTotal);
   if (!own.length) {
     const h = hits[0];
-    return { value: h.value, confidence: 0.6, notes: [{ code: "courseTotal", p: { points: fmt(h.value) } }] };
+    return { value: h.value, confidence: 0.6, kind: "courseTotal", notes: [{ code: "courseTotal", p: { points: fmt(h.value) } }] };
   }
 
   // several lectures, each with its own value and approval number: the certificate covers all of them
@@ -126,17 +135,19 @@ export function findPoints(t: Text): PointsResult {
     return {
       value: round(sum),
       confidence: 0.8,
+      kind: "summed",
       notes: [{ code: "pointsSummed", p: { list: items.map((h) => fmt(h.value)).join(" + "), total: fmt(sum) } }],
     };
   }
 
   const distinct = [...new Set(own.map((h) => h.value))];
-  if (distinct.length === 1) return { value: distinct[0], confidence: own.length > 1 || own[0].total ? 0.95 : 0.9, notes: [] };
+  if (distinct.length === 1)
+    return { value: distinct[0], confidence: own.length > 1 || own[0].total ? 0.95 : 0.9, kind: own.every((h) => h.ects) ? "ects" : "printed", notes: [] };
   if (totals.length) {
     const tv = [...new Set(totals.map((h) => h.value))];
-    if (tv.length === 1) return { value: tv[0], confidence: 0.8, notes: [] };
+    if (tv.length === 1) return { value: tv[0], confidence: 0.8, kind: "multiple", notes: [] };
   }
-  return { value: own[0].value, confidence: 0.4, notes: [{ code: "multiplePoints", p: { list: distinct.map(fmt).join("; ") } }] };
+  return { value: own[0].value, confidence: 0.4, kind: "multiple", notes: [{ code: "multiplePoints", p: { list: distinct.map(fmt).join("; ") } }] };
 }
 
 const round = (n: number) => Math.round(n * 100) / 100;
