@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { getUserByEmail } from "@/lib/db";
 import { isDemoUserId } from "@/lib/demo/id";
-import { createResetToken, rateLimit } from "@/lib/password-reset";
+import { clientIp, createResetToken, rateLimit } from "@/lib/password-reset";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -15,9 +15,6 @@ function siteUrl(req: Request) {
   if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
   return process.env.NODE_ENV === "production" ? "https://medserti.lv" : new URL(req.url).origin;
 }
-
-const clientIp = (req: Request) =>
-  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
 
 /** Same answer whether or not the account exists; the lookup and email run after the response is sent */
 export async function POST(req: Request) {
