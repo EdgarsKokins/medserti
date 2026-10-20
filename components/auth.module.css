@@ -43,6 +43,7 @@
   .card { padding: 22px 18px; }
   .title { font-size: 1.75rem; }
 }
+.demo { margin-top: 14px; }
 
 /* Terms and privacy consent at registration */
 .consent { display: flex; flex-direction: column; gap: 6px; }

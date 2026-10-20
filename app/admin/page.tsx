@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Tekstu redaktors", robots: { index: false, follow: false } };
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ demoReset?: string }> }) {
   if (!(await isAdmin())) {
     return (
       <main className="container">
@@ -40,6 +40,17 @@ export default async function AdminPage() {
         hasPrevious={!!prev}
         stale={stale}
       />
+      {/* admin tools stay in Latvian like the editor above; the demo account is lib/demo */}
+      <section className="card" style={{ marginTop: 40 }} aria-labelledby="demo-reset">
+        <h2 id="demo-reset">Demo konts</h2>
+        <p className="small muted">
+          Publiskais demo konts (Jānis Paraugs) ir tikai lasāms. Poga to izdzēš un izveido no jauna ar sākotnējiem datiem.
+        </p>
+        <form action="/api/admin/demo-reset" method="post" className="row">
+          <button className="btn" type="submit">Atjaunot demo kontu</button>
+          {(await searchParams).demoReset && <span className="badge badge-ok">Demo konts atjaunots</span>}
+        </form>
+      </section>
     </main>
   );
 }

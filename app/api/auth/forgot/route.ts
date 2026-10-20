@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { getUserByEmail } from "@/lib/db";
+import { isDemoUserId } from "@/lib/demo/id";
 import { createResetToken, rateLimit } from "@/lib/password-reset";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
@@ -34,7 +35,8 @@ export async function POST(req: Request) {
   after(async () => {
     try {
       const user = await getUserByEmail(email);
-      if (!user) return;
+      // the demo account has no email index entry; checked here too so it can never get a reset link
+      if (!user || isDemoUserId(user.id)) return;
       const token = await createResetToken(user.id, user.sessionVersion ?? 0);
       const link = `${base}/atjaunot-paroli?token=${token}`;
       await sendEmail({ to: user.email, subject: d.reset.emailSubject, text: d.reset.emailBody(link) });

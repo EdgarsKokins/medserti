@@ -63,6 +63,15 @@ const en = {
     login: "Log in",
     signup: "Sign up",
   },
+  demo: {
+    try: "Try the demo",
+    banner: "This is a demo account. Sign up to start your own.",
+    bannerCta: "Sign up",
+    readOnly: "Demo account: look around freely, changes are not saved.",
+    uploadOff: "Adding certificates is off in the demo account.",
+    view: "View",
+    close: "Close",
+  },
   auth: {
     loginTitle: "Log in",
     registerTitle: "Create account",
@@ -608,6 +617,7 @@ const en = {
     pointsRequired: "Points are required to confirm",
     endBeforeStart: "End date is before the start date",
     requiredPointsInvalid: "Points required must be a whole number between 1 and 5000",
+    demoReadOnly: "The demo account is read-only. Sign up to save your own certificates.",
   },
   legal: {
     privacyLink: "Privacy policy",
@@ -761,6 +771,15 @@ const lv: Dict = {
     logout: "Iziet",
     login: "Pieslēgties",
     signup: "Reģistrēties",
+  },
+  demo: {
+    try: "Apskatīt demo",
+    banner: "Šis ir demo konts. Reģistrējies, lai sāktu savu.",
+    bannerCta: "Reģistrēties",
+    readOnly: "Demo konts: apskatiet visu, izmaiņas netiek saglabātas.",
+    uploadOff: "Demo kontā sertifikātus pievienot nevar.",
+    view: "Skatīt",
+    close: "Aizvērt",
   },
   auth: {
     loginTitle: "Pieslēgties",
@@ -1316,6 +1335,7 @@ const lv: Dict = {
     pointsRequired: "Lai apstiprinātu, jānorāda punkti",
     endBeforeStart: "Beigu datums ir pirms sākuma datuma",
     requiredPointsInvalid: "Nepieciešamo TIP skaitam jābūt veselam skaitlim no 1 līdz 5000",
+    demoReadOnly: "Demo kontā izmaiņas nav iespējamas. Reģistrējieties, lai saglabātu savus sertifikātus.",
   },
   legal: {
     privacyLink: "Privātuma politika",

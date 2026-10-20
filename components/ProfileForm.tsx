@@ -13,7 +13,8 @@ type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "override", str
 
 const MAX_REQUIRED = 5000;
 
-export default function ProfileForm({ initial, locale }: { initial: Profile; locale: Locale }) {
+/** readOnly: the demo account, fields shown but disabled and no save button */
+export default function ProfileForm({ initial, locale, readOnly = false }: { initial: Profile; locale: Locale; readOnly?: boolean }) {
   const dict = t(locale);
   const d = dict.profile;
   const professions = dict.professions;
@@ -92,6 +93,7 @@ export default function ProfileForm({ initial, locale }: { initial: Profile; loc
 
   return (
     <form className={s.form} onSubmit={save} noValidate>
+      <fieldset className="ro-fieldset" disabled={readOnly}>
       <section className={s.section} aria-labelledby="sec-you">
         <div className={s.aside}>
           <h2 id="sec-you">{d.sectionYou}</h2>
@@ -247,8 +249,13 @@ export default function ProfileForm({ initial, locale }: { initial: Profile; loc
         </div>
       </section>
 
+      </fieldset>
       <div className={s.actions}>
-        <button className="btn btn-primary" disabled={busy}>{busy ? d.saving : d.save}</button>
+        {readOnly ? (
+          <span className="small muted">{dict.demo.readOnly}</span>
+        ) : (
+          <button className="btn btn-primary" disabled={busy}>{busy ? d.saving : d.save}</button>
+        )}
         <span role="status" className={msg?.ok ? "badge badge-ok" : undefined}>{msg?.ok ? msg.text : null}</span>
         {msg && !msg.ok && <div role="alert" className={`alert alert-bad ${s.saveError}`}>{msg.text}</div>}
       </div>

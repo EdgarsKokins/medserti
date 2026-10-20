@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { currentUser } from "@/lib/auth";
+import { requireWritableUser } from "@/lib/auth";
 import { saveUser } from "@/lib/db";
 import { addYears, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
@@ -25,8 +25,9 @@ const FIELD_ERROR = { fullName: "nameRequired", requiredPointsOverride: "require
 
 export async function PUT(req: Request) {
   const m = t(await getLocale()).api;
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
+  const g = await requireWritableUser();
+  if (!g.ok) return g.response;
+  const { user } = g;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;

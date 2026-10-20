@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import ProductFrame from "@/components/landing/ProductFrame";
 import HowItWorks from "@/components/landing/HowItWorks";
 import ScatteredDocs from "@/components/landing/ScatteredDocs";
+import DemoButton from "@/components/DemoButton";
 import LangSwitch from "@/components/LangSwitch";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import { currentUserId } from "@/lib/auth";
@@ -97,6 +98,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               <p className={s.heroSub}>{a.heroSub}</p>
               <div className={s.ctas}>
                 <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{a.start}</Link>
+                <DemoButton label={d.demo.try} className={`btn ${s.ctaGhost}`} />
                 <a href="#answer" className={`btn ${s.ctaGhost}`}>{a.seeHow}</a>
               </div>
               <p className={s.freeNote}>{l.freeNote}</p>
@@ -258,6 +260,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             <ul className={s.footerLinks}>
               <li><Link href="/register">{d.nav.signup}</Link></li>
               <li><Link href="/login">{d.nav.login}</Link></li>
+              <li><DemoButton label={d.demo.try} className={s.footerDemo} /></li>
               <li><Link href="/par-mums">{d.nav.about}</Link></li>
               <li><a href={RULES.sourceUrl} target="_blank" rel="noreferrer">{l.footerRules}</a></li>
               <li><Link href="/privatums">{d.legal.privacyLink}</Link></li>

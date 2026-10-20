@@ -8,8 +8,9 @@ import { t, type Locale } from "@/lib/i18n";
 import styles from "./overview.module.css";
 
 /** The main action on the dashboard: add certificates without leaving the page */
-export default function DashboardUpload({ locale }: { locale: Locale }) {
-  const d = t(locale).dashboard;
+export default function DashboardUpload({ locale, readOnly = false }: { locale: Locale; readOnly?: boolean }) {
+  const dict = t(locale);
+  const d = dict.dashboard;
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState(0);
@@ -18,13 +19,13 @@ export default function DashboardUpload({ locale }: { locale: Locale }) {
     <section className={styles.upload} aria-label={d.uploadCta}>
       {!open ? (
         <div className={styles.uploadRow}>
-          <button type="button" className={`btn btn-primary ${styles.uploadBtn}`} onClick={() => setOpen(true)}>
+          <button type="button" className={`btn btn-primary ${styles.uploadBtn}`} onClick={() => setOpen(true)} disabled={readOnly}>
             <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
               <path d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2" />
             </svg>
             {d.uploadCta}
           </button>
-          <span className="small muted">{d.uploadHint}</span>
+          <span className="small muted">{readOnly ? dict.demo.uploadOff : d.uploadHint}</span>
         </div>
       ) : (
         <div className="stack" style={{ gap: 12 }}>

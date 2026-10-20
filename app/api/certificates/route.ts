@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { currentUser } from "@/lib/auth";
+import { currentUser, requireWritableUser } from "@/lib/auth";
 import { listCertificates, saveCertificate } from "@/lib/db";
 import { putBytes } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
@@ -43,8 +43,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const m = t(await getLocale()).api;
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
+  const g = await requireWritableUser();
+  if (!g.ok) return g.response;
+  const { user } = g;
 
   const form = await req.formData().catch(() => null);
   const files = (form?.getAll("files") ?? []).filter((f): f is File => f instanceof File);

@@ -95,6 +95,9 @@
 .footerName { font-family: var(--font-serif); font-weight: 600; font-size: 1.3rem; line-height: 1.2; }
 .footerLinks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .footerLinks a, .footerContact a { color: var(--text); }
+/* the demo sign-in is a form button (POST), drawn like the links around it */
+.footerDemo { background: none; border: 0; padding: 0; font: inherit; color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; text-align: left; }
+.footerDemo:hover { text-decoration-thickness: 2px; }
 .footerLabel { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .footerTools { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
 .footerBase { max-width: 1120px; margin: 0 auto; padding: 16px 20px 32px; border-top: 1px solid var(--border); }

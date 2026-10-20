@@ -48,6 +48,7 @@ export default function ReviewPanel({
   onClose,
   onSaved,
   onDeleted,
+  readOnly = false,
 }: {
   cert: CmeCertificate;
   specialty: string;
@@ -55,6 +56,7 @@ export default function ReviewPanel({
   onClose: () => void;
   onSaved: (c: CmeCertificate) => void;
   onDeleted: (id: string) => void;
+  readOnly?: boolean;
 }) {
   const dict = t(locale);
   const d = dict.review;
@@ -181,6 +183,7 @@ export default function ReviewPanel({
           </div>
         )}
 
+        <fieldset className="ro-fieldset" disabled={readOnly}>
         <div className={`form-grid ${styles.panelBody}`}>
           <div className={`field ${styles.wide}`}>
             <label htmlFor="c-title">{d.fTitle}{check("title")}</label>
@@ -243,11 +246,17 @@ export default function ReviewPanel({
             </div>
           )}
         </div>
+        </fieldset>
       </div>
 
       <div className={styles.panelFoot}>
         {error && <div className={`alert alert-bad ${styles.footMsg}`} role="alert">{error}</div>}
-        {ask ? (
+        {readOnly ? (
+          <div className={styles.footBtns}>
+            <span className="small muted">{dict.demo.readOnly}</span>
+            <button type="button" className="btn btn-primary" onClick={onClose} autoFocus>{dict.demo.close}</button>
+          </div>
+        ) : ask ? (
           <div className={styles.ask} role="alertdialog" aria-labelledby="review-ask">
             <p id="review-ask" className={styles.askText}>
               {ask === "discard" ? d.discardQuestion : d.deleteConfirm(cert.title || cert.fileName)}
