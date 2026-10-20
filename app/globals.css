@@ -31,8 +31,31 @@
   --font-serif: var(--font-newsreader), "Newsreader", Georgia, "Times New Roman", serif;
   color-scheme: light;
 }
+/* Dark palette: used when the viewer picks "dark", or picks "system" and the OS is dark */
+:root[data-theme="dark"] {
+  --bg: #15130f;
+  --surface: #1d1a16;
+  --surface-2: #27231d;
+  --text: #ede7da;
+  --muted: #a59d8d;
+  --faint: #7b7466;
+  --border: #312c25;
+  --border-strong: #463f35;
+  --ink: #ede7da;
+  --on-ink: #15130f;
+  --accent: #e0848b;
+  --accent-contrast: #1a0e10;
+  --accent-soft: #3a2125;
+  --ok: #86c29f;
+  --ok-soft: #1c2c22;
+  --warn: #dcae58;
+  --warn-soft: #33290f;
+  --bad: #ec8a80;
+  --bad-soft: #3a1c19;
+  color-scheme: dark;
+}
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #15130f;
     --surface: #1d1a16;
     --surface-2: #27231d;
@@ -101,6 +124,8 @@ p { margin: 0 0 10px; }
 .lang-switch { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; }
 .lang-switch button { font: inherit; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .lang-switch button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); cursor: default; }
+.lang-switch button svg { display: block; width: 14px; height: 14px; }
+.theme-switch button { padding: 4px 8px; }
 
 /* ---------- surfaces ---------- */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }

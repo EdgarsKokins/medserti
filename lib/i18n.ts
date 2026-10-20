@@ -40,6 +40,7 @@ const en = {
     tagline: "Your CME points and recertification in one place",
   },
   lang: { label: "Language" },
+  theme: { label: "Theme", system: "Match system", light: "Light", dark: "Dark" },
   nav: {
     dashboard: "Dashboard",
     certificates: "Certificates",
@@ -330,6 +331,7 @@ const lv: Dict = {
     tagline: "Jūsu TIP punkti un resertifikācija vienuviet",
   },
   lang: { label: "Valoda" },
+  theme: { label: "Krāsu režīms", system: "Kā sistēmā", light: "Gaišs", dark: "Tumšs" },
   nav: {
     dashboard: "Pārskats",
     certificates: "Sertifikāti",
