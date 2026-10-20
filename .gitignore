@@ -6,3 +6,9 @@ node_modules
 next-env.d.ts
 *.tsbuildinfo
 .env*
+
+# Claude Code / impeccable local state
+.claude/worktrees/
+.claude/settings.local.json
+.impeccable/config.local.json
+.claude/skills/impeccable/scripts/bin/
