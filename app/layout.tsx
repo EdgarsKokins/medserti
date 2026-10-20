@@ -5,10 +5,8 @@ import "./globals.css";
 import { currentUserId } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import LangSwitch from "@/components/LangSwitch";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
-import ThemeSwitch from "@/components/ThemeSwitch";
 import { RULES } from "@/lib/rules";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
 import { cookies } from "next/headers";
@@ -69,8 +67,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               />
             )}
             <div className="nav-tools">
-              <ThemeSwitch initial={theme} labels={d.theme} />
-              <LangSwitch locale={locale} label={d.lang.label} />
               {signedIn ? (
                 <form action="/api/auth/logout" method="post">
                   <button className="btn" type="submit">{d.nav.logout}</button>
@@ -84,7 +80,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <AppFooter
           theme={theme}
-          labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme }}
+          locale={locale}
+          labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
         />
       </body>
     </html>
