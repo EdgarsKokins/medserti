@@ -47,6 +47,11 @@ export function parseLabTipPage(html: string, today = todayIso()): { courses: Co
     if (lastDay < today) continue;
 
     const ref = /data-type="(application|publication)"[^>]*data-id="(\d+)"/.exec(cells[0]);
+    // contact person, phone and e-mail follow the organizer name as <small> lines
+    const smalls = [...org.matchAll(/<small>([\s\S]*?)<\/small>/g)].map((m) => textOf(m[1])).filter(Boolean);
+    const email = smalls.find((x) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x)) ?? null;
+    const phone = smalls.find((x) => /^\+?[\d\s-]{7,}$/.test(x))?.replace(/\s+/g, " ") ?? null;
+    const contactName = smalls.find((x) => x !== email && x !== phone && /\p{L}/u.test(x)) ?? null;
     const organizer = textOf(/<strong>([\s\S]*?)<\/strong>/.exec(org)?.[1] ?? org.split(/<br\s*\/?>/)[0] ?? "");
     const annex = /(\d+)\.\s*p/.exec(basis);
     courses.push({
@@ -71,6 +76,7 @@ export function parseLabTipPage(html: string, today = todayIso()): { courses: Co
       price: null,
       free: false,
       detailRef: ref ? `${ref[1]}:${ref[2]}` : null,
+      contact: email || phone ? { name: contactName, email, phone } : null,
     });
   }
   return { courses, oldestDecision, rows };

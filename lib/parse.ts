@@ -1,4 +1,4 @@
-import type { CmeCategory, CmeCertificate, Profile } from "./types";
+import type { CmeCategory, CmeCertificate, ParseNote, Profile } from "./types";
 
 /*
  * Free, local certificate parsing.
@@ -31,8 +31,11 @@ export type ParsedFields = Pick<
 export interface ParseResult {
   status: "needs_review";
   fields: ParsedFields;
+  /** JSON array of ParseNote (codes plus values), rendered in the UI language; null when there is nothing to say */
   notes: string | null;
 }
+
+const encodeNotes = (notes: ParseNote[]): string | null => (notes.length ? JSON.stringify(notes) : null);
 
 export const EMPTY_FIELDS: ParsedFields = {
   title: "",
@@ -67,18 +70,19 @@ export async function parseCertificate(
       text = await extractPdfText(bytes);
     } catch (err) {
       console.error("extractPdfText", err);
-      return manual("Could not read text from this PDF. Enter the details manually.");
+      return manual("pdfUnreadable");
     }
     if (text.replace(/\s/g, "").length < MIN_TEXT_CHARS)
-      return manual("This PDF looks like a scan (no text layer), so it could not be read automatically. Enter the details manually.");
+      return manual("pdfScan");
     return parseCertificateText(text, profile);
   }
 
   const text = (ocrText ?? "").trim();
   if (text.replace(/\s/g, "").length < MIN_TEXT_CHARS)
-    return manual("Could not read text from this image. Enter the details manually.");
+    return manual("imageUnreadable");
   const r = parseCertificateText(text, profile);
-  return { ...r, notes: ["Read from the image with OCR: check every field.", r.notes].filter(Boolean).join(" ") };
+  const notes: ParseNote[] = r.notes ? JSON.parse(r.notes) : [];
+  return { ...r, notes: encodeNotes([{ code: "ocr" }, ...notes]) };
 }
 
 export async function extractPdfText(bytes: Uint8Array): Promise<string> {
@@ -88,16 +92,16 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string> {
   return text;
 }
 
-function manual(notes: string): ParseResult {
-  return { status: "needs_review", fields: { ...EMPTY_FIELDS }, notes };
+function manual(code: "pdfUnreadable" | "pdfScan" | "imageUnreadable"): ParseResult {
+  return { status: "needs_review", fields: { ...EMPTY_FIELDS }, notes: encodeNotes([{ code }]) };
 }
 
 export function parseCertificateText(raw: string, profile: Pick<Profile, "specialty">): ParseResult {
   const text = normalize(raw);
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const notes: string[] = [];
+  const notes: ParseNote[] = [];
 
-  const title = findTitle(text, lines);
+  const title = findTitle(text, lines).replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizer = findOrganizer(lines);
   const { date, endDate } = findDates(text);
   const pts = findPoints(text);
@@ -107,31 +111,28 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const emergencyCare = EMERGENCY.some((re) => re.test(text));
   const abroad = findAbroad(text);
   const category = findCategory(text, abroad);
-  const country = abroad ?? (LATVIA.test(text) || /[āčēģīķļņšūž]/i.test(text) ? "Latvia" : null);
+  const country = abroad ?? (LATVIA.test(text) || /[āčēģīķļņšūž]/i.test(text) ? "LV" : null);
 
   let points = pts.value;
   const days = eventDays(date, endDate);
   if (points != null && /(?<![\p{L}])(?:ECTS|ECMEC)/u.test(text))
-    notes.push(`Credits on the certificate (ECTS/ECMEC) counted 1:1 as TIP, as set by the organizer (Annex 4 item 3).`);
+    notes.push({ code: "ects" });
   if (points != null && category === "training_abroad" && academicHours && academicHours.value !== points)
-    notes.push(
-      `Organizer gives ${points} points for ${academicHours.value} h. Annex 4 footnote 1: when foreign points are not 1 per academic hour, you must submit a justified recalculation.`,
-    );
+    notes.push({ code: "foreignRatio", p: { points, h: academicHours.value } });
   if (points != null && (category === "training_latvia" || category === "professional_meeting") && days && points > days * 8)
-    notes.push(`${points} TIP over ${days} day(s) is above the 8 TIP per day limit for events in Latvia (Annex 4 items 1, 2).`);
+    notes.push({ code: "dailyCap", p: { points, days } });
   if (points == null) {
     const d = derivePoints(category, academicHours, date, endDate);
     if (d) {
       points = d.points;
-      notes.push(d.note);
+      notes.push(...d.notes);
     } else {
-      notes.push("No points found. Enter them manually.");
+      notes.push({ code: "noPoints" });
     }
   }
-  if (!title) notes.push("No title found.");
-  if (!date) notes.push("No date found.");
-  if (!country)
-    notes.push("Country not found. Set it: in Latvia it's 1 TIP per academic hour (max 8 a day), abroad it's what the organizer set.");
+  if (!title) notes.push({ code: "noTitle" });
+  if (!date) notes.push({ code: "noDate" });
+  if (!country) notes.push({ code: "noCountry" });
 
   const found = [title, date, pts.value ?? (points != null ? "derived" : null)].filter(Boolean).length;
   return {
@@ -151,7 +152,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
       country,
       confidence: Math.round((found / 3) * 100) / 100,
     },
-    notes: notes.join(" ") || null,
+    notes: encodeNotes(notes),
   };
 }
 
@@ -189,7 +190,7 @@ const POINTS_BEFORE = rx(
 );
 const TOTAL = /kopā|total|kopsumm/i;
 
-function findPoints(text: string): { value: number | null; note: string | null } {
+function findPoints(text: string): { value: number | null; note: ParseNote | null } {
   const hits: { value: number; total: boolean; index: number }[] = [];
   for (const re of [POINTS_AFTER, POINTS_BEFORE]) {
     for (const m of text.matchAll(re)) {
@@ -203,7 +204,7 @@ function findPoints(text: string): { value: number | null; note: string | null }
   if (total) return { value: total.value, note: null };
   const distinct = [...new Set(hits.map((h) => h.value))];
   if (distinct.length === 1) return { value: distinct[0], note: null };
-  return { value: hits[0].value, note: `Several point values found (${distinct.join(", ")}); used the first. Check it.` };
+  return { value: hits[0].value, note: { code: "multiplePoints", p: { list: distinct.join("; ") } } };
 }
 
 // ----- hours -----
@@ -274,34 +275,24 @@ function derivePoints(
   hours: { value: number; academic: boolean } | null,
   date: string | null,
   endDate: string | null,
-): { points: number; note: string } | null {
+): { points: number; notes: ParseNote[] } | null {
   const days = eventDays(date, endDate);
+  const check: ParseNote = { code: "checkBeforeConfirming" };
   if (category === "practical_training" && days)
-    return { points: days * 8, note: `Points not printed; derived as ${days} day(s) x 8 TIP for practical training (Annex 4 item 10). Check before confirming.` };
-  if (category === "interdisciplinary_conference")
-    return { points: 12, note: "Points not printed; interdisciplinary conference of a certification body counts 12 TIP (Annex 4 item 4). Check before confirming." };
+    return { points: days * 8, notes: [{ code: "derivedPractical", p: { days } }, check] };
+  if (category === "interdisciplinary_conference") return { points: 12, notes: [{ code: "derivedInterdisciplinary" }, check] };
   if (!hours || hours.value <= 0) return null;
 
   const h = hours.value;
-  const hoursWord = hours.academic ? "academic hour" : "hour";
-  const plainNote = hours.academic ? "" : ` The certificate says "hours", not "academic hours"; we counted them 1:1.`;
-  if (category === "training_abroad")
-    return {
-      points: h,
-      note: `Points not printed; derived as 1 TIP per ${hoursWord} (${h} h). Abroad, points are as set by the organizer (Annex 4 item 3).${plainNote} Check before confirming.`,
-    };
-  if (category === "e_learning")
-    return { points: h, note: `Points not printed; derived as 1 TIP per ${hoursWord} (${h} h), no daily cap for distance learning (Annex 4 items 7, 9).${plainNote} Check before confirming.` };
+  const academic = hours.academic;
+  const plain: ParseNote[] = academic ? [] : [{ code: "plainHours" }];
+  if (category === "training_abroad") return { points: h, notes: [{ code: "derivedAbroad", p: { h, academic } }, ...plain, check] };
+  if (category === "e_learning") return { points: h, notes: [{ code: "derivedElearning", p: { h, academic } }, ...plain, check] };
 
   const cap = days ? days * 8 : null;
   const points = cap != null ? Math.min(h, cap) : h;
   const capped = cap != null && h > cap;
-  return {
-    points,
-    note: `Points not printed; derived as 1 TIP per ${hoursWord} (${h} h)${
-      capped ? `, capped at 8 TIP per day over ${days} day(s)` : ""
-    } (Annex 4 items 1, 2).${plainNote} Check before confirming.`,
-  };
+  return { points, notes: [{ code: "derivedLatvia", p: capped ? { h, academic, days: days! } : { h, academic } }, ...plain, check] };
 }
 
 function eventDays(start: string | null, end: string | null): number | null {
@@ -524,45 +515,46 @@ const EMERGENCY = [
   /emergency|resuscitation|first\s+aid|life\s+support/iu,
 ];
 
+/** Country patterns (LV and EN names, cities, postcodes) -> ISO 3166-1 alpha-2 code */
 const ABROAD: [RegExp, string][] = [
-  [/lietuv\p{L}*|lithuania|viļņ\p{L}*|vilnius|kaun\p{L}*|kaunas|klaipė?d\p{L}*|šiauli\p{L}*|siauliai|palang\p{L}*|LT-\d{5}/iu, "Lithuania"],
-  [/igaunij\p{L}*|estonia|eesti|tallin\p{L}*|tartu|pärnu|parnu/iu, "Estonia"],
-  [/somij\p{L}*|finland|suomi|helsink\p{L}*|tampere|turku|oulu/iu, "Finland"],
-  [/zviedrij\p{L}*|sweden|sverige|stockholm|stokholm\p{L}*|göteborg|gothenburg|malmö|uppsala/iu, "Sweden"],
-  [/norvēģij\p{L}*|norway|norge|oslo|bergen/iu, "Norway"],
-  [/dānij\p{L}*|denmark|danmark|copenhagen|københavn|kopenhāgen\p{L}*|aarhus/iu, "Denmark"],
-  [/īslandē|islande|iceland|reykjavik/iu, "Iceland"],
-  [/polij\p{L}*|poland|polska|warsaw|warszaw\p{L}*|varšav\p{L}*|kraków|krakow|gdańsk|gdansk|wrocław|wroclaw|poznań|poznan/iu, "Poland"],
-  [/vācij\p{L}*|germany|deutschland|berlin\p{L}*|münchen|munich|hamburg|frankfurt|köln|cologne|düsseldorf|dusseldorf|leipzig|dresden|heidelberg|stuttgart/iu, "Germany"],
-  [/austrij\p{L}*|austria|österreich|vienna|wien|vīn\p{L}*|salzburg|innsbruck|graz/iu, "Austria"],
-  [/šveic\p{L}*|switzerland|schweiz|suisse|geneva|genève|ženēv\p{L}*|zurich|zürich|cīrih\p{L}*|basel|bern|lausanne|davos/iu, "Switzerland"],
-  [/nīderland\p{L}*|netherlands|nederland|holland|amsterdam\p{L}*|rotterdam|utrecht|leiden|the hague|den haag|maastricht/iu, "Netherlands"],
-  [/beļģij\p{L}*|belgium|belgique|brussels|bruxelles|brisel\p{L}*|antwerp|ghent|leuven/iu, "Belgium"],
-  [/luksemburg\p{L}*|luxembourg/iu, "Luxembourg"],
-  [/francij\p{L}*|france|paris|parīz\p{L}*|lyon|marseille|nice|strasbourg|bordeaux|toulouse/iu, "France"],
-  [/spānij\p{L}*|spain|españa|barcelon\p{L}*|madrid\p{L}*|valencia|seville|sevilla|málaga|malaga/iu, "Spain"],
-  [/portugāl\p{L}*|portugal|lisbon|lisboa|lisabon\p{L}*|porto/iu, "Portugal"],
-  [/itālij\p{L}*|italy|italia|rome|roma|romā|milan|milano|milān\p{L}*|florence|firenze|bologna|turin|torino|naples|napoli|venice|venezia/iu, "Italy"],
-  [/grieķij\p{L}*|greece|athens|atēn\p{L}*|thessaloniki/iu, "Greece"],
-  [/kipr\p{L}*|cyprus|nicosia|limassol/iu, "Cyprus"],
-  [/maltā|malta|valletta/iu, "Malta"],
-  [/čehij\p{L}*|czech|česk\p{L}*|prague|praha|prāg\p{L}*|brno/iu, "Czechia"],
-  [/slovākij\p{L}*|slovakia|bratislav\p{L}*|košice/iu, "Slovakia"],
-  [/ungārij\p{L}*|hungary|magyarország|budapest\p{L}*|debrecen|szeged/iu, "Hungary"],
-  [/slovēnij\p{L}*|slovenia|ljubljan\p{L}*/iu, "Slovenia"],
-  [/horvātij\p{L}*|croatia|hrvatska|zagreb|split|dubrovnik/iu, "Croatia"],
-  [/rumānij\p{L}*|romania|bucharest|bucurești|bukareš\p{L}*|cluj/iu, "Romania"],
-  [/bulgārij\p{L}*|bulgaria|sofia|sofij\p{L}*|varna/iu, "Bulgaria"],
-  [/serbij\p{L}*|serbia|belgrade|beograd/iu, "Serbia"],
-  [/īrij\p{L}*|ireland|dublin|cork|galway/iu, "Ireland"],
-  [/lielbritānij\p{L}*|united kingdom|great britain|england|scotland|wales|london|londonā|edinburgh|manchester|birmingham|glasgow|oxford|cambridge|liverpool/iu, "United Kingdom"],
-  [/ukrain\p{L}*|kyiv|kiev|lviv|ļvov\p{L}*/iu, "Ukraine"],
-  [/gruzij\p{L}*|georgia(?!\s+state)|tbilisi/iu, "Georgia"],
-  [/turcij\p{L}*|turkey|türkiye|istanbul|stambul\p{L}*|ankara|antalya/iu, "Turkey"],
-  [/izraēl\p{L}*|israel|tel aviv|jerusalem/iu, "Israel"],
-  [/amerikas savienot\p{L}*|united states|usa(?![\p{L}])|new york|boston|chicago|san francisco|los angeles|washington,?\s*d\.?c/iu, "United States"],
-  [/kanād\p{L}*|canada|toronto|montreal|vancouver/iu, "Canada"],
-  [/apvienotie arābu|united arab emirates|dubai|abu dhabi/iu, "United Arab Emirates"],
+  [/lietuv\p{L}*|lithuania|viļņ\p{L}*|vilnius|kaun\p{L}*|kaunas|klaipė?d\p{L}*|šiauli\p{L}*|siauliai|palang\p{L}*|LT-\d{5}/iu, "LT"],
+  [/igaunij\p{L}*|estonia|eesti|tallin\p{L}*|tartu|pärnu|parnu/iu, "EE"],
+  [/somij\p{L}*|finland|suomi|helsink\p{L}*|tampere|turku|oulu/iu, "FI"],
+  [/zviedrij\p{L}*|sweden|sverige|stockholm|stokholm\p{L}*|göteborg|gothenburg|malmö|uppsala/iu, "SE"],
+  [/norvēģij\p{L}*|norway|norge|oslo|bergen/iu, "NO"],
+  [/dānij\p{L}*|denmark|danmark|copenhagen|københavn|kopenhāgen\p{L}*|aarhus/iu, "DK"],
+  [/īslandē|islande|iceland|reykjavik/iu, "IS"],
+  [/polij\p{L}*|poland|polska|warsaw|warszaw\p{L}*|varšav\p{L}*|kraków|krakow|gdańsk|gdansk|wrocław|wroclaw|poznań|poznan/iu, "PL"],
+  [/vācij\p{L}*|germany|deutschland|berlin\p{L}*|münchen|munich|hamburg|frankfurt|köln|cologne|düsseldorf|dusseldorf|leipzig|dresden|heidelberg|stuttgart/iu, "DE"],
+  [/austrij\p{L}*|austria|österreich|vienna|wien|vīn\p{L}*|salzburg|innsbruck|graz/iu, "AT"],
+  [/šveic\p{L}*|switzerland|schweiz|suisse|geneva|genève|ženēv\p{L}*|zurich|zürich|cīrih\p{L}*|basel|bern|lausanne|davos/iu, "CH"],
+  [/nīderland\p{L}*|netherlands|nederland|holland|amsterdam\p{L}*|rotterdam|utrecht|leiden|the hague|den haag|maastricht/iu, "NL"],
+  [/beļģij\p{L}*|belgium|belgique|brussels|bruxelles|brisel\p{L}*|antwerp|ghent|leuven/iu, "BE"],
+  [/luksemburg\p{L}*|luxembourg/iu, "LU"],
+  [/francij\p{L}*|france|paris|parīz\p{L}*|lyon|marseille|nice|strasbourg|bordeaux|toulouse/iu, "FR"],
+  [/spānij\p{L}*|spain|españa|barcelon\p{L}*|madrid\p{L}*|valencia|seville|sevilla|málaga|malaga/iu, "ES"],
+  [/portugāl\p{L}*|portugal|lisbon|lisboa|lisabon\p{L}*|porto/iu, "PT"],
+  [/itālij\p{L}*|italy|italia|rome|roma|romā|milan|milano|milān\p{L}*|florence|firenze|bologna|turin|torino|naples|napoli|venice|venezia/iu, "IT"],
+  [/grieķij\p{L}*|greece|athens|atēn\p{L}*|thessaloniki/iu, "GR"],
+  [/kipr\p{L}*|cyprus|nicosia|limassol/iu, "CY"],
+  [/maltā|malta|valletta/iu, "MT"],
+  [/čehij\p{L}*|czech|česk\p{L}*|prague|praha|prāg\p{L}*|brno/iu, "CZ"],
+  [/slovākij\p{L}*|slovakia|bratislav\p{L}*|košice/iu, "SK"],
+  [/ungārij\p{L}*|hungary|magyarország|budapest\p{L}*|debrecen|szeged/iu, "HU"],
+  [/slovēnij\p{L}*|slovenia|ljubljan\p{L}*/iu, "SI"],
+  [/horvātij\p{L}*|croatia|hrvatska|zagreb|split|dubrovnik/iu, "HR"],
+  [/rumānij\p{L}*|romania|bucharest|bucurești|bukareš\p{L}*|cluj/iu, "RO"],
+  [/bulgārij\p{L}*|bulgaria|sofia|sofij\p{L}*|varna/iu, "BG"],
+  [/serbij\p{L}*|serbia|belgrade|beograd/iu, "RS"],
+  [/īrij\p{L}*|ireland|dublin|cork|galway/iu, "IE"],
+  [/lielbritānij\p{L}*|united kingdom|great britain|england|scotland|wales|london|londonā|edinburgh|manchester|birmingham|glasgow|oxford|cambridge|liverpool/iu, "GB"],
+  [/ukrain\p{L}*|kyiv|kiev|lviv|ļvov\p{L}*/iu, "UA"],
+  [/gruzij\p{L}*|georgia(?!\s+state)|tbilisi/iu, "GE"],
+  [/turcij\p{L}*|turkey|türkiye|istanbul|stambul\p{L}*|ankara|antalya/iu, "TR"],
+  [/izraēl\p{L}*|israel|tel aviv|jerusalem/iu, "IL"],
+  [/amerikas savienot\p{L}*|united states|usa(?![\p{L}])|new york|boston|chicago|san francisco|los angeles|washington,?\s*d\.?c/iu, "US"],
+  [/kanād\p{L}*|canada|toronto|montreal|vancouver/iu, "CA"],
+  [/apvienotie arābu|united arab emirates|dubai|abu dhabi/iu, "AE"],
 ];
 const LATVIA = /latvij|latvia|rīg[aā]|riga|liepāj|daugavpil|jelgav|ventspil|valmier|rēzekn|jūrmal|ogr[eē]|tukum|cēs[iī]s|sigulda|LV-\d{4}/iu;
 
@@ -600,8 +592,12 @@ function findCategory(text: string, abroad: string | null): CmeCategory {
 
 // ----- specialty -----
 
-const STOP = new Set(["medicine", "medical", "medicīna", "medicīnas", "ārsts", "doctor", "general", "specialist", "speciālists", "and", "un", "of", "the", "care"]);
-/** English specialty word stem -> Latvian stems, since profiles are in English and certificates usually in Latvian */
+const STOP = new Set([
+  "medicine", "medical", "medicīna", "medicīnas", "ārsts", "ārsti", "doctor", "general", "specialist", "speciālists", "and", "un", "of", "the", "care",
+  // words in LĀB list names that say nothing about the field
+  "bērnu", "metode", "metodes", "terapeits", "terapija", "diagnostika", "eksperts", "prakses", "vispārējās", "skaitā",
+]);
+/** English specialty word stem -> Latvian stems, for older profiles typed in English and certificates usually in Latvian */
 const LV_STEMS: Record<string, string[]> = {
   famil: ["ģimen"],
   cardi: ["kardio"],
@@ -640,14 +636,20 @@ const LV_STEMS: Record<string, string[]> = {
   labor: ["laborat"],
 };
 
+/** Latvian stem -> English stems, so a Latvian specialty name (LĀB list) also matches English certificates */
+const EN_STEMS: Record<string, string[]> = {};
+for (const [en, lvs] of Object.entries(LV_STEMS))
+  for (const lv of lvs) (EN_STEMS[lv.slice(0, 5)] ??= []).push(en);
+
 export function matchesSpecialty(text: string, specialty: string): boolean {
   const hay = text.toLowerCase();
+  if (specialty.trim().length >= 4 && hay.includes(specialty.trim().toLowerCase())) return true;
   const words = specialty
     .toLowerCase()
     .split(/[^\p{L}]+/u)
     .filter((w) => w.length >= 4 && !STOP.has(w));
   return words.some((w) => {
     const stem = w.slice(0, 5);
-    return hay.includes(stem) || (LV_STEMS[stem] ?? []).some((s) => hay.includes(s));
+    return hay.includes(stem) || [...(LV_STEMS[stem] ?? []), ...(EN_STEMS[stem] ?? [])].some((s) => hay.includes(s));
   });
 }

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
+
+/** Keeps several switches on one page (nav and landing footer) in step */
+const SYNC_EVENT = "medserti:theme";
 
 const ICONS: Record<Theme, React.ReactNode> = {
   system: (
@@ -28,12 +31,19 @@ const ICONS: Record<Theme, React.ReactNode> = {
 export default function ThemeSwitch({ initial, labels }: { initial: Theme; labels: Record<Theme | "label", string> }) {
   const [theme, setTheme] = useState<Theme>(initial);
 
+  useEffect(() => {
+    const onSync = (e: Event) => setTheme((e as CustomEvent<Theme>).detail);
+    window.addEventListener(SYNC_EVENT, onSync);
+    return () => window.removeEventListener(SYNC_EVENT, onSync);
+  }, []);
+
   function pick(t: Theme) {
     setTheme(t);
     const root = document.documentElement;
     if (t === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", t);
     document.cookie = `${THEME_COOKIE}=${t}; path=/; max-age=31536000; samesite=lax`;
+    window.dispatchEvent(new CustomEvent(SYNC_EVENT, { detail: t }));
   }
 
   return (

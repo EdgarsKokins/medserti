@@ -5,7 +5,6 @@ import type { CmeCertificate, Profile } from "./types";
  * (18 June 2024, consolidated text as of 01 May 2026, likumi.lv/ta/id/352922).
  */
 export const RULES = {
-  source: "Cabinet Regulation No. 391 (18 Jun 2024) as amended by No. 703 (25 Nov 2025), points 6 and 51, Annex 4",
   sourceUrl: "https://likumi.lv/ta/id/352922",
   /** point 6: certificate issued for five years */
   validityYears: 5,
@@ -22,12 +21,17 @@ export const RULES = {
 
 export const REGISTER_URL = "https://registri.vi.gov.lv/";
 
-export function requiredPoints(p: Profile): number {
-  if (p.requiredPointsOverride && p.requiredPointsOverride > 0) return p.requiredPointsOverride;
+/** Points the rules require for this profile, ignoring any manual override */
+export function ruleRequiredPoints(p: Pick<Profile, "profession" | "certificationKind">): number {
   if (p.certificationKind === "method") return RULES.points.method;
   if (p.profession === "doctor" || p.profession === "dentist" || p.profession === "functional_specialist")
     return RULES.points.doctorTier;
   return RULES.points.otherProfessions;
+}
+
+export function requiredPoints(p: Profile): number {
+  if (p.requiredPointsOverride && p.requiredPointsOverride > 0) return p.requiredPointsOverride;
+  return ruleRequiredPoints(p);
 }
 
 export function addYears(isoDate: string, years: number): string {
@@ -44,7 +48,6 @@ export function certificateWindow(p: Profile): { start: string | null; end: stri
 
 export interface Check {
   id: "total" | "specialty" | "emergency_points" | "emergency_practical";
-  label: string;
   have: number;
   need: number;
   met: boolean;
@@ -123,24 +126,21 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
 
   const specialtyNeed = Math.ceil(required * RULES.specialtyShare);
   const checks: Check[] = [
-    { id: "total", label: "Total points (TIP)", have: total, need: required, met: total >= required },
+    { id: "total", have: total, need: required, met: total >= required },
     {
       id: "specialty",
-      label: `In own specialty (min ${RULES.specialtyShare * 100}%)`,
       have: round1(specialty),
       need: specialtyNeed,
       met: specialty >= specialtyNeed,
     },
     {
       id: "emergency_points",
-      label: "Emergency care training points",
       have: round1(emergencyPoints),
       need: RULES.emergencyMinPoints,
       met: emergencyPoints >= RULES.emergencyMinPoints,
     },
     {
       id: "emergency_practical",
-      label: "Emergency care practical hours",
       have: round1(emergencyPracticalHours),
       need: RULES.emergencyMinPracticalHours,
       met: emergencyPracticalHours >= RULES.emergencyMinPracticalHours,

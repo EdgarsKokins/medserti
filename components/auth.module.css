@@ -16,12 +16,15 @@
   font-family: var(--font-serif); font-size: 1.35rem; line-height: 1.3;
 }
 .points li:last-child { border-bottom: 1px solid var(--border); }
-.num { font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--faint); font-variant-numeric: tabular-nums; }
+.num { font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 .card { grid-area: card; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; }
 .title { font-size: 2rem; margin: 0 0 6px; }
 .lead { color: var(--muted); margin: 0 0 24px; }
 .form { display: flex; flex-direction: column; gap: 16px; }
+.hint { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.error { font-size: 0.85rem; color: var(--bad); line-height: 1.4; }
+.form :global(input[aria-invalid="true"]) { border-color: var(--bad); }
 .submit { width: 100%; padding-top: 11px; padding-bottom: 11px; margin-top: 6px; }
 .switch { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--muted); text-align: center; }
 

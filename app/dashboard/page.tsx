@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
@@ -11,6 +12,7 @@ import styles from "@/components/dashboard/dashboard.module.css";
 import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
+import DashboardUpload from "@/components/dashboard/DashboardUpload";
 import { categoryBreakdown, cumulativeSeries, headline, isoDay } from "@/components/dashboard/model";
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
@@ -25,6 +27,10 @@ function pickCourses(courses: Course[], specialty: string, todayIso: string, n =
   if (events.length >= n) return events;
   const recorded = courses.filter((c) => c.kind === "recorded" && c.free && fits(c)).slice(0, n - events.length);
   return [...events, ...recorded];
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(await getLocale()).nav.dashboard };
 }
 
 export default async function DashboardPage() {
@@ -48,46 +54,37 @@ export default async function DashboardPage() {
 
       <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
 
+      <DashboardUpload locale={locale} />
+
       <div className={styles.twoCol}>
         <Requirements p={p} locale={locale} />
         <CoursePicks courses={picks} locale={locale} />
       </div>
 
-      {certs.length === 0 ? (
-        <section className="card">
-          <h2>{d.noCertsTitle}</h2>
-          <p className="muted">{d.noCertsBody}</p>
-          <Link href="/certificates" className="btn btn-primary">
-            {d.uploadCerts}
-          </Link>
-        </section>
-      ) : (
-        <>
-          <section>
-            <div className={styles.sectionHead}>
+      {certs.length > 0 && (
+        <details className={styles.history}>
+          <summary>{d.history}</summary>
+          <div className="stack" style={{ gap: 40, marginTop: 24 }}>
+            <section>
               <h2>{d.chartTitle}</h2>
-              <Link href="/certificates" className="btn">
-                {d.addCert}
-              </Link>
+              <div className="card">
+                <ProgressChart
+                  series={cumulativeSeries(p)}
+                  required={p.required}
+                  windowStart={p.windowStart}
+                  windowEnd={p.windowEnd}
+                  today={isoDay(today)}
+                  labels={dict.chart}
+                  locale={locale}
+                />
+              </div>
+            </section>
+            <div className={styles.twoCol}>
+              <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} />
+              <RecentActivity p={p} locale={locale} />
             </div>
-            <div className="card">
-              <ProgressChart
-                series={cumulativeSeries(p)}
-                required={p.required}
-                windowStart={p.windowStart}
-                windowEnd={p.windowEnd}
-                today={isoDay(today)}
-                labels={dict.chart}
-                locale={locale}
-              />
-            </div>
-          </section>
-
-          <div className={styles.twoCol}>
-            <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} />
-            <RecentActivity p={p} locale={locale} />
           </div>
-        </>
+        </details>
       )}
 
       <p className={`small muted ${styles.footnote}`}>

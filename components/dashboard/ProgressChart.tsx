@@ -246,7 +246,8 @@ export default function ProgressChart({
   const tickLabel = (ms: number, i: number) => {
     const d = new Date(ms);
     if (tickStep >= 12 || d.getUTCMonth() === 0) return String(d.getUTCFullYear());
-    return i === 0 ? `${fmt.monthShort(ms)} ${d.getUTCFullYear()}` : fmt.monthShort(ms);
+    if (i !== 0) return fmt.monthShort(ms);
+    return locale === "lv" ? `${d.getUTCFullYear()}. g. ${fmt.monthShort(ms)}` : `${fmt.monthShort(ms)} ${d.getUTCFullYear()}`;
   };
 
   /* ---- geometry ---- */

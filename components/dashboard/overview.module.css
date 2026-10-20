@@ -8,10 +8,16 @@
 .daysLeft { font-family: var(--font-serif); font-size: 1.35rem; }
 .pace { color: var(--warn); }
 
+.status { margin: 18px 0 0; font-size: 1.1rem; max-width: 62ch; }
 .band { margin-top: 30px; }
+.upload { padding: 4px 0; }
+.uploadRow { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; }
+.uploadBtn { padding: 13px 26px; font-size: 1.05rem; }
+@media (max-width: 640px) { .uploadBtn { width: 100%; } }
 .track { position: relative; height: 12px; background: var(--surface-2); border-radius: 999px; }
-.fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 999px; min-width: 12px; }
-.fillBehind { background: var(--accent); }
+.fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 999px; }
+/* a visible sliver only when there are points; 0 TIP shows an empty track */
+.fillSome { min-width: 12px; }
 .todayMark { position: absolute; top: -10px; bottom: -10px; width: 2px; background: var(--ink); transform: translateX(-1px); }
 .todayLabel { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; color: var(--text); }
 .bandLabels { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -26,6 +32,7 @@
 
 /* Two-column area */
 .sectionHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+@media (pointer: coarse) { .headLink { display: inline-flex; align-items: center; min-height: 44px; } }
 .checklist, .picks { list-style: none; margin: 0; padding: 0; }
 .checklist li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .checklist li:first-child { border-top: 1px solid var(--border); }

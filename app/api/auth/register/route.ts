@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       fullName,
       profession: "doctor",
       specialty: "",
+      specialtyCode: null,
       certificationKind: "specialty",
       certificateNumber: "",
       certificateIssued: null,

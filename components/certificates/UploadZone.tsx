@@ -57,6 +57,7 @@ export default function UploadZone({
 }) {
   const d = t(locale).upload;
   const input = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<UploadItem[]>([]);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -137,6 +138,7 @@ export default function UploadZone({
     if (worker) await (worker as OcrWorker).terminate().catch(() => {});
     setBusy(false);
     if (input.current) input.current.value = "";
+    if (camera.current) camera.current.value = "";
   }
 
   return (
@@ -167,7 +169,10 @@ export default function UploadZone({
           <path d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M4 14v4.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <span className={styles.dropMain}>{d.drop}</span>
+        <span className={styles.dropMain}>
+          <span className={styles.dropMouse}>{d.drop}</span>
+          <span className={styles.dropTouch}>{d.dropTouch}</span>
+        </span>
         <span className={styles.dropHint}>{d.hint}</span>
         <input
           ref={input}
@@ -178,6 +183,15 @@ export default function UploadZone({
           onChange={(e) => handle(e.target.files)}
         />
       </div>
+      {/* phones only (see .photoBtn): opens the camera straight away */}
+      <button type="button" className={`btn ${styles.photoBtn}`} disabled={busy} onClick={() => camera.current?.click()}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+          <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+          <circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+        {d.takePhoto}
+      </button>
+      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => handle(e.target.files)} />
       {items.length > 0 && (
         <ul className={styles.uploads}>
           {items.map((it) => (

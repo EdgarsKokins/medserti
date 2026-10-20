@@ -37,8 +37,19 @@ export interface Course {
   /** e.g. "EUR 49,00"; null if unknown */
   price: string | null;
   free: boolean;
+  /**
+   * Registration contact as published by LĀB for this event (organizer's contact person).
+   * Only kept for upcoming events and only shown inside the opened course summary.
+   */
+  contact?: CourseContact | null;
   /** LĀB lecture programme reference, "application:9696" or "publication:123" */
   detailRef?: string | null;
+}
+
+export interface CourseContact {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export interface Lecture {
@@ -66,14 +77,6 @@ export interface CourseIndex {
   courses: Course[];
   sources: SourceStatus[];
 }
-
-export const SOURCE_LABELS: Record<CourseSource, string> = {
-  lab_tip: "LĀB apstiprinātie TIP pasākumi",
-  lab_courses: "LĀB kursi",
-  kursiarstiem: "kursiarstiem.lv",
-  medicinaskursi: "medicinaskursi.lv",
-  lumpii: "LUMPII",
-};
 
 export const SOURCE_URLS: Record<CourseSource, string> = {
   lab_tip: "https://is.arstubiedriba.lv/tip_list_approved",

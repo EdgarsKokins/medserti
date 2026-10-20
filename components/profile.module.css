@@ -11,11 +11,39 @@
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 20px; align-content: start; }
 .wide { grid-column: 1 / -1; }
 .hint { font-size: 0.8rem; color: var(--muted); line-height: 1.4; }
+.error { font-size: 0.85rem; color: var(--bad); line-height: 1.4; }
+.form :global(input[aria-invalid="true"]) { border-color: var(--bad); }
+.inlineBtn {
+  font: inherit; font-weight: 500; color: var(--text); background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.inlineBtn:hover { color: var(--accent); }
+.saveError { margin: 0; flex: 1 1 260px; }
+
+/* searchable specialty list */
+.combo { position: relative; }
+.combo input { padding-right: 40px; text-overflow: ellipsis; }
+.comboChevron { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; display: flex; }
+.comboList {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px);
+  max-height: min(320px, 50vh); overflow-y: auto; margin: 0; padding: 4px 0; list-style: none;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 14%, transparent);
+}
+.comboOpt { padding: 10px 12px; line-height: 1.3; cursor: pointer; }
+.comboActive { background: var(--surface-2); }
+.comboOpt[aria-selected="true"] { font-weight: 600; }
+.comboOther { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px; color: var(--muted); }
+.comboEmpty { padding: 10px 12px; color: var(--muted); font-size: 0.9rem; }
 .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 24px 0 0; border-top: 1px solid var(--border); }
-.footnote { margin: 40px 0 0; font-size: 0.8rem; line-height: 1.6; color: var(--faint); max-width: 680px; }
+.footnote { margin: 40px 0 0; font-size: 0.8rem; line-height: 1.6; color: var(--muted); max-width: 680px; }
 .footnote a { color: var(--muted); }
 .footnote a:hover { color: var(--accent); }
 
+/* two columns of ~170px are too narrow for Latvian labels */
+@media (max-width: 900px) {
+  .fields { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 760px) {
   .section { grid-template-columns: minmax(0, 1fr); padding: 24px 0; gap: 14px; }
   .summary { margin-top: 10px !important; }

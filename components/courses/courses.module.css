@@ -16,6 +16,7 @@
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--muted);
+  min-height: 44px;
   padding: 8px 12px;
   cursor: pointer;
   white-space: nowrap;
@@ -33,22 +34,28 @@
   text-align: center;
 }
 
+/* search on its own row, then the selects, then the two checkboxes */
 .filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 12px;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
   padding: 4px 0 8px;
 }
-.filters select { width: auto; max-width: 100%; }
-.search { flex: 1 1 240px; }
+.searchField { display: flex; flex-direction: column; gap: 6px; max-width: 560px; }
+.searchLabel { font-size: 0.85rem; color: var(--muted); }
+.search { width: 100%; }
+.selects { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+.selects select { width: auto; max-width: 100%; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 24px; }
+/* the whole label is the target: 44px tall */
 .check {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  gap: 10px;
+  min-height: 44px;
   cursor: pointer;
 }
+.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 
 .list { list-style: none; margin: 0; padding: 0; }
 .item { padding: 0; border-bottom: 1px solid var(--border); }
@@ -97,9 +104,23 @@
 .lectures li { display: flex; flex-direction: column; }
 .lectureTitle { overflow-wrap: anywhere; }
 
-@media (max-width: 720px) {
+@media (max-width: 640px) {
+  /* tabs stack as full-width rows so none hides off-screen; the count sits on the right */
+  .tabs { flex-direction: column; gap: 0; overflow: visible; }
+  .tab { display: flex; justify-content: space-between; align-items: center; gap: 12px; white-space: normal; text-align: left; border-bottom: 1px solid var(--border); border-left: 3px solid transparent; padding: 10px 12px; }
+  .tab:last-child { border-bottom: none; }
+  .tabActive { border-bottom-color: var(--border); border-left-color: var(--text); background: var(--surface); }
+  .selects select { flex: 1 1 100%; width: 100%; }
   .summary { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; padding: 12px; }
   .chevron { display: none; }
   .tip { font-size: 1.1rem; }
-  .panel { padding: 12px; }
+  /* facts line up under the title: 12px padding + 44px date + 12px gap */
+  .panel { padding: 12px 12px 14px 68px; }
+  .apply { padding: 12px; }
 }
+@media (max-width: 380px) {
+  .panel { padding-left: 12px; }
+}
+
+.apply { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.applyTitle { margin: 0; font-size: 1.05rem; }
