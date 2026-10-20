@@ -37,8 +37,19 @@ export interface Course {
   /** e.g. "EUR 49,00"; null if unknown */
   price: string | null;
   free: boolean;
+  /**
+   * Registration contact as published by LĀB for this event (organizer's contact person).
+   * Only kept for upcoming events and only shown inside the opened course summary.
+   */
+  contact?: CourseContact | null;
   /** LĀB lecture programme reference, "application:9696" or "publication:123" */
   detailRef?: string | null;
+}
+
+export interface CourseContact {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 export interface Lecture {

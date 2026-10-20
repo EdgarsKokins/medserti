@@ -39,6 +39,7 @@ export default async function CoursesPage() {
     free: c.free,
     source: c.source,
     detailRef: c.detailRef ?? null,
+    contact: c.contact ?? null,
   }));
 
   return (

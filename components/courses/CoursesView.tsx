@@ -240,6 +240,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
+          <ApplyBox r={r} locale={locale} date={date} />
           <dl className={styles.facts}>
             {date && <Fact k={s.details.date} v={date} />}
             <Fact k={s.details.format} v={s.formats[r.format]} />
@@ -251,12 +252,56 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
             {r.approvalId && <Fact k={s.details.approval} v={`${r.approvalId}${r.annexItem ? `, ${s.annex(r.annexItem)}` : ""}`} />}
           </dl>
           {r.detailRef && <Programme detailRef={r.detailRef} locale={locale} />}
-          <div className="row">
-            <a className="btn btn-primary" href={r.url} target="_blank" rel="noreferrer">{s.open} ↗</a>
-          </div>
         </div>
       )}
     </li>
+  );
+}
+
+/** The one thing a doctor needs from an opened course: how to sign up */
+function ApplyBox({ r, locale, date }: { r: CourseRow; locale: Locale; date: string | null }) {
+  const a = courseStrings(locale).apply;
+  const direct = r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !r.url.endsWith("/kursi"));
+  const c = r.contact;
+  return (
+    <section className={styles.apply} aria-label={a.title}>
+      <h3 className={styles.applyTitle}>{a.title}</h3>
+      {direct ? (
+        <div className="row">
+          <a className="btn btn-primary" href={r.url} target="_blank" rel="noreferrer">
+            {r.kind === "recorded" ? a.watch : a.online} ↗
+          </a>
+        </div>
+      ) : c && (c.email || c.phone) ? (
+        <>
+          <div className="row">
+            {c.email && (
+              <a
+                className="btn btn-primary"
+                href={`mailto:${c.email}?subject=${encodeURIComponent(a.subject(r.title, date))}&body=${encodeURIComponent(a.body(r.title, date))}`}
+              >
+                {a.email}
+              </a>
+            )}
+            {c.phone && (
+              <a className="btn" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>
+                {a.call} {c.phone}
+              </a>
+            )}
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>
+            {[r.organizer, c.name, c.email].filter(Boolean).join(" · ")}
+            <br />
+            {a.contactNote}
+          </p>
+        </>
+      ) : (
+        <p className="small muted" style={{ margin: 0 }}>
+          {a.noContact}{" "}
+          <a href={r.url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : courseStrings(locale).open} ↗</a>
+        </p>
+      )}
+    </section>
   );
 }
 

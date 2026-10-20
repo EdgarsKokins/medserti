@@ -40,6 +40,19 @@ const lv = {
   approval: "LĀB apstiprinājums",
   annex: (n: number) => `4. pielikuma ${n}. p.`,
   hours: (h: string) => `${h} st.`,
+  apply: {
+    title: "Kā pieteikties",
+    online: "Pieteikties tiešsaistē",
+    watch: "Atvērt kursu",
+    email: "Rakstīt organizatoram",
+    call: "Zvanīt",
+    contactNote: "Kontaktu pieteikšanās nolūkam publicējusi Latvijas Ārstu biedrība.",
+    noContact: "Organizators pieteikšanās kontaktus nav publicējis.",
+    listLink: "Atvērt LĀB sarakstā",
+    subject: (title: string, date: string | null) => `Pieteikšanās: ${title}${date ? ` (${date})` : ""}`,
+    body: (title: string, date: string | null) =>
+      `Labdien!\n\nVēlos pieteikties pasākumam "${title}"${date ? `, ${date}` : ""}.\n\nVārds, uzvārds:\nTālrunis:\n\nPaldies!`,
+  },
   details: {
     date: "Datums",
     format: "Formāts",
@@ -103,6 +116,19 @@ const en: typeof lv = {
   approval: "LĀB approval",
   annex: (n: number) => `Annex 4 item ${n}`,
   hours: (h: string) => `${h} h`,
+  apply: {
+    title: "How to apply",
+    online: "Apply online",
+    watch: "Open the course",
+    email: "Email the organizer",
+    call: "Call",
+    contactNote: "Contact published by the Latvian Medical Association for registrations.",
+    noContact: "The organizer hasn't published registration contacts.",
+    listLink: "Open in the LĀB list",
+    subject: (title: string, date: string | null) => `Registration: ${title}${date ? ` (${date})` : ""}`,
+    body: (title: string, date: string | null) =>
+      `Hello,\n\nI would like to register for "${title}"${date ? `, ${date}` : ""}.\n\nName:\nPhone:\n\nThank you.`,
+  },
   details: {
     date: "Date",
     format: "Format",
