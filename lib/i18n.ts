@@ -672,7 +672,7 @@ const en = {
         {
           title: "Who processes it for us",
           items: [
-            "Vercel Inc. (USA) hosts the site and stores the data and files in a private Vercel Blob store. Our server runs in Vercel's Washington, D.C. (USA) region, so data is transferred outside the EU. The transfer is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
+            "Vercel Inc. (USA) hosts the site. Our server and the private Vercel Blob store with your data and files are in Vercel's Frankfurt (Germany, EU) region. Vercel is a US company, so access from outside the EU (for example by its support staff) is possible; that is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
             "jsDelivr (a public file network): when you upload a photo, your browser downloads the text recognition program from cdn.jsdelivr.net. That service sees your IP address, not your files.",
             "Resend (USA) sends our emails, such as password reset links. It receives your email address and the message text.",
           ],
@@ -1390,7 +1390,7 @@ const lv: Dict = {
         {
           title: "Kas datus apstrādā mūsu vārdā",
           items: [
-            "Vercel Inc. (ASV) uztur vietni un glabā datus un failus privātā Vercel Blob krātuvē. Mūsu serveris darbojas Vercel Vašingtonas (ASV) reģionā, tāpēc dati tiek nosūtīti ārpus ES. Nosūtīšanu aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
+            "Vercel Inc. (ASV) uztur vietni. Mūsu serveris un privātā Vercel Blob krātuve ar jūsu datiem un failiem atrodas Vercel Frankfurtes (Vācija, ES) reģionā. Vercel ir ASV uzņēmums, tāpēc ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
             "jsDelivr (publisks failu tīkls): augšupielādējot foto, jūsu pārlūks lejupielādē teksta atpazīšanas programmu no cdn.jsdelivr.net. Šis pakalpojums redz jūsu IP adresi, bet ne jūsu failus.",
             "Resend (ASV) nosūta mūsu e-pastus, piemēram, paroles atjaunošanas saites. Tas saņem jūsu e-pasta adresi un vēstules tekstu.",
           ],

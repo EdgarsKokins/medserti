@@ -99,6 +99,8 @@
 * { box-sizing: border-box; }
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 html, body { margin: 0; padding: 0; }
+/* in-page links and "scroll down" buttons glide instead of jumping; off when the user asks for less motion */
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 body {
   background: var(--bg);
   color: var(--text);

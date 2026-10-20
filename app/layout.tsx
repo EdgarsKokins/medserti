@@ -53,6 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang={locale}
       className={`${body.variable} ${display.variable}`}
       data-theme={theme === "system" ? undefined : theme}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <body>
