@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import ProductFrame from "@/components/landing/ProductFrame";
 import HowItWorks from "@/components/landing/HowItWorks";
+import ScatteredDocs from "@/components/landing/ScatteredDocs";
 import LangSwitch from "@/components/LangSwitch";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import { currentUserId } from "@/lib/auth";
@@ -90,33 +91,72 @@ export default async function Home() {
               <p className={s.heroSub}>{a.heroSub}</p>
               <div className={s.ctas}>
                 <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{a.start}</Link>
-                <a href="#how" className={`btn ${s.ctaGhost}`}>{a.how}</a>
+                <a href="#answer" className={`btn ${s.ctaGhost}`}>{a.seeHow}</a>
               </div>
               <p className={s.freeNote}>{l.freeNote}</p>
             </div>
-            <ProductFrame
-              label={a.frameLabel}
-              badge={a.sampleBadge}
-              name={a.frameName}
-              role={a.frameRole}
-              collected={a.frameCollected}
-              of={a.frameOf}
-              total={ledgerTotal}
-              rulesTitle={a.frameRules}
-              rules={[
-                ...a.checksDone.map((label) => ({ label, done: true })),
-                { label: a.checkSpecialty, done: false },
-                { label: remaining(250 - ledgerTotal), done: false },
-              ]}
-              deadline={a.deadline}
-              deadlineValue={formatDate(DEADLINE, locale)}
-              recentTitle={a.frameRecent}
-              recent={LEDGER.slice().reverse().slice(0, 3).map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip }))}
+            <ScatteredDocs
+              label={a.scatterLabel}
+              email={a.scatterEmail}
+              emailSubject={a.scatterEmailSubject}
+              emailFrom={a.scatterEmailFrom}
+              paper={a.scatterPaper}
+              paperTitle={a.scatterPaperTitle}
+              paperName={a.sampleName}
+              portal={a.scatterPortal}
+              portalLine={a.scatterPortalLine}
+              questions={a.scatterQuestions}
+              deadline={a.scatterDeadline}
             />
           </div>
         </section>
 
         <div className={s.wrap}>
+          <section className={s.section} aria-labelledby="pain-title">
+            <h2 id="pain-title" className={s.h2}>{a.painTitle}</h2>
+            <ul className={s.pains}>
+              {a.pains.map((p) => (
+                <li key={p.title}>
+                  <h3 className={s.painTitle}>{p.title}</h3>
+                  <p className={s.painBody}>{p.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section id="answer" className={s.section} aria-labelledby="answer-title">
+            <div className={s.answer}>
+              <div className={s.answerCopy}>
+                <h2 id="answer-title" className={s.h2}>{a.answerTitle}</h2>
+                <p className={s.answerBody}>{a.answerBody}</p>
+                <ul className={s.answers}>
+                  {a.answers.map((x) => (
+                    <li key={x}><span className={s.answerMark} aria-hidden>✓</span>{x}</li>
+                  ))}
+                </ul>
+              </div>
+              <ProductFrame
+                label={a.frameLabel}
+                badge={a.sampleBadge}
+                name={a.frameName}
+                role={a.frameRole}
+                collected={a.frameCollected}
+                of={a.frameOf}
+                total={ledgerTotal}
+                rulesTitle={a.frameRules}
+                rules={[
+                  ...a.checksDone.map((label) => ({ label, done: true })),
+                  { label: a.checkSpecialty, done: false },
+                  { label: remaining(250 - ledgerTotal), done: false },
+                ]}
+                deadline={a.deadline}
+                deadlineValue={formatDate(DEADLINE, locale)}
+                recentTitle={a.frameRecent}
+                recent={LEDGER.slice().reverse().slice(0, 3).map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip }))}
+              />
+            </div>
+          </section>
+
           <section id="how" className={s.section} aria-labelledby="how-title">
             <h2 id="how-title" className={s.h2}>{a.how}</h2>
             <HowItWorks
