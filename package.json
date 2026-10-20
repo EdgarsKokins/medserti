@@ -11,7 +11,9 @@
   "dependencies": {
     "@vercel/blob": "2.8.2",
     "bcryptjs": "3.0.3",
+    "docx": "9.8.1",
     "jose": "6.2.12",
+    "jszip": "3.10.2",
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",

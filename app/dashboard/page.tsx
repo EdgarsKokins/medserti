@@ -55,6 +55,11 @@ export default async function DashboardPage() {
       <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
 
       <DashboardUpload locale={locale} />
+      {certs.some((c) => c.status === "confirmed") && (
+        <Link href="/export" className={styles.exportLink}>
+          {dict.exportDocs.cta} →
+        </Link>
+      )}
 
       <div className={styles.twoCol}>
         <Requirements p={p} locale={locale} />
