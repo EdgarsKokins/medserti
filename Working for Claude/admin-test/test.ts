@@ -4,13 +4,10 @@
  *   npx tsx --tsconfig tsconfig.json "Working for Claude/admin-test/test.ts"              # merge + validation only
  *   BASE_URL=http://localhost:3300 npx tsx --tsconfig tsconfig.json "Working for Claude/admin-test/test.ts"
  *
- * With BASE_URL it also checks the access rules against a running local dev server (localhost only: it creates accounts
- * in the local ./.data store). For the admin part, start the server with ADMIN_EMAILS=admin-test@medserti.test.
- * The test admin's random password is kept in ./.data/admin-test.json (gitignored), never printed.
+ * With BASE_URL it also checks the access rules against a running local dev server (localhost only: it creates a test
+ * account in the local ./.data store). It signs in to /admin with ADMIN_PASSWORD, or the default "1234".
  */
 import { randomBytes } from "crypto";
-import { promises as fs } from "fs";
-import path from "path";
 import { baseDict, t } from "@/lib/i18n";
 import { courseStrings } from "@/components/courses/strings";
 import { catalog, compileOverrides, validateOverrides } from "@/lib/i18n/catalog";
@@ -106,58 +103,57 @@ async function http() {
   const api = `${base}/api/admin/translations`;
   const anon = async (method: string) => (await fetch(api, { method, headers: { "Content-Type": "application/json" }, body: method === "GET" ? undefined : "{}" })).status;
   for (const m of ["GET", "PUT", "POST", "DELETE"]) eq(`signed out: ${m} API is 404`, await anon(m), 404);
-  eq("signed out: /admin page is 404", (await fetch(`${base}/admin`)).status, 404);
+  const loginPage = await fetch(`${base}/admin`);
+  const loginHtml = await loginPage.text();
+  check("signed out: /admin shows the password form, not the editor", loginHtml.includes("admin-password") && !loginHtml.includes("Rezerves kopija"));
 
-  async function session(email: string, password: string): Promise<string | null> {
-    for (const [p, body] of [
-      ["/api/auth/register", { email, password, fullName: "Admin Test" }],
-      ["/api/auth/login", { email, password }],
-    ] as const) {
-      const r = await fetch(base + p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      const c = r.headers.getSetCookie().find((x) => x.startsWith("cme_session="));
-      if (r.ok && c) return c.split(";")[0];
-    }
-    return null;
-  }
-
-  const user = await session(`user-${randomBytes(4).toString("hex")}@medserti.test`, randomBytes(12).toString("hex"));
+  // a normal signed-in user is not an admin
+  const email = `user-${randomBytes(4).toString("hex")}@medserti.test`;
+  const reg = await fetch(`${base}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: randomBytes(12).toString("hex"), fullName: "Test User" }),
+  });
+  const user = reg.headers.getSetCookie().find((x) => x.startsWith("cme_session="))?.split(";")[0];
   check("non-admin test account signed in", !!user);
   if (user) {
     const h = { Cookie: user, "Content-Type": "application/json" };
-    eq("non-admin: GET API is 404", (await fetch(api, { headers: h })).status, 404);
-    eq("non-admin: PUT API is 404", (await fetch(api, { method: "PUT", headers: h, body: JSON.stringify({ lv: { "nav.courses": "x" } }) })).status, 404);
-    eq("non-admin: POST restore is 404", (await fetch(api, { method: "POST", headers: h, body: JSON.stringify({ action: "restore" }) })).status, 404);
-    eq("non-admin: /admin page is 404", (await fetch(`${base}/admin`, { headers: { Cookie: user } })).status, 404);
+    eq("app user without admin password: GET API is 404", (await fetch(api, { headers: h })).status, 404);
+    eq("app user without admin password: PUT API is 404", (await fetch(api, { method: "PUT", headers: h, body: JSON.stringify({ lv: {} }) })).status, 404);
   }
 
-  // admin: only when the dev server lists the test admin in ADMIN_EMAILS
-  const credFile = path.join(process.cwd(), ".data", "admin-test.json");
-  let cred: { email: string; password: string };
-  try {
-    cred = JSON.parse(await fs.readFile(credFile, "utf8"));
-  } catch {
-    cred = { email: "admin-test@medserti.test", password: randomBytes(12).toString("hex") };
-    await fs.mkdir(path.dirname(credFile), { recursive: true });
-    await fs.writeFile(credFile, JSON.stringify(cred));
-  }
-  const admin = await session(cred.email, cred.password);
-  if (!admin) return console.log("(test admin could not sign in: skipping the admin checks)");
-  const h = { Cookie: admin, "Content-Type": "application/json" };
+  const login = (password: unknown) =>
+    fetch(`${base}/api/admin/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+  eq("wrong password is 401", (await login("0000")).status, 401);
+  eq("missing password is 401", (await login(undefined)).status, 401);
+  const forged = { Cookie: "medserti_admin=eyJhbGciOiJIUzI1NiJ9.eyJhZG0iOiJ4In0.x", "Content-Type": "application/json" };
+  eq("forged admin cookie: GET API is 404", (await fetch(api, { headers: forged })).status, 404);
+
+  // the project's default admin password, unless the server was started with another ADMIN_PASSWORD
+  const ok = await login(process.env.ADMIN_PASSWORD || "1234");
+  eq("right password is 200", ok.status, 200);
+  const cookie = ok.headers.getSetCookie().find((x) => x.startsWith("medserti_admin="))?.split(";")[0];
+  check("admin cookie set", !!cookie);
+  if (!cookie) return;
+  const h = { Cookie: cookie, "Content-Type": "application/json" };
   const get = await fetch(api, { headers: h });
-  if (get.status === 404) return console.log(`(${cred.email} is not in the server's ADMIN_EMAILS: skipping the admin checks)`);
   eq("admin: GET API is 200", get.status, 200);
   const before = (await get.json()).overrides;
-  eq("admin: /admin page is 200", (await fetch(`${base}/admin`, { headers: { Cookie: admin } })).status, 200);
+  check("admin: /admin shows the editor", (await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text()).includes("Rezerves kopija"));
   eq("admin: invalid save is 422", (await fetch(api, { method: "PUT", headers: h, body: JSON.stringify({ lv: { "courses.needLine": "{x}" } }) })).status, 422);
-  eq("admin: form-encoded save is refused", (await fetch(api, { method: "PUT", headers: { Cookie: admin, "Content-Type": "text/plain" }, body: "{}" })).status, 415);
+  eq("admin: form-encoded save is refused", (await fetch(api, { method: "PUT", headers: { Cookie: cookie, "Content-Type": "text/plain" }, body: "{}" })).status, 415);
   const marker = `Kursi-${randomBytes(3).toString("hex")}`;
   const put = await fetch(api, { method: "PUT", headers: h, body: JSON.stringify({ lv: { ...before.lv, "nav.courses": marker }, en: before.en }) });
   eq("admin: valid save is 200", put.status, 200);
-  const page = await (await fetch(`${base}/dashboard`, { headers: { Cookie: `${admin}; lang=lv` } })).text();
-  check("saved text shows up in the server-rendered nav", page.includes(marker));
+  if (user) {
+    const page = await (await fetch(`${base}/dashboard`, { headers: { Cookie: `${user}; lang=lv` } })).text();
+    check("saved text shows up in the server-rendered nav", page.includes(marker));
+  }
   const restore = await fetch(api, { method: "POST", headers: h, body: JSON.stringify({ action: "restore" }) });
   eq("admin: restore is 200", restore.status, 200);
   eq("admin: restore brings back the previous version", (await restore.json()).overrides, before);
+  const out = await fetch(`${base}/api/admin/logout`, { method: "POST", headers: { Cookie: cookie } });
+  check("logout clears the admin cookie", !!out.headers.getSetCookie().find((x) => x.startsWith("medserti_admin=;") || /medserti_admin=.*(Max-Age=0|Expires=Thu, 01 Jan 1970)/.test(x)));
 }
 
 http()

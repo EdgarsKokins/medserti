@@ -39,9 +39,9 @@ npm run dev
 
 Without `BLOB_READ_WRITE_TOKEN` the app stores everything in `./.data`, so you can run it with no accounts or keys. To use the real store, link the Vercel project and pull env vars (`vercel env pull .env.local`).
 
-Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_EMAILS`.
+Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_PASSWORD`.
 
-`ADMIN_EMAILS` is a comma-separated list of account emails that may open the text editor at `/admin` (e.g. `edgars@example.com,matiss@example.com`). Everyone else, signed in or not, gets a 404 there. Unset means nobody.
+`ADMIN_PASSWORD` is the password for the text editor at `/admin` (no user account needed). Unset, it is `1234`: set a real one before relying on it. Changing it signs every admin out.
 
 ## Editing texts
 

@@ -184,6 +184,12 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
     setNotice(null);
   }
 
+  async function logout() {
+    if (dirty && !confirm("Jums ir nesaglabātas izmaiņas. Iziet, tās nesaglabājot?")) return;
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => null);
+    window.location.reload();
+  }
+
   function pickBlock(b: BlockId) {
     setBlock(b);
     setQuery("");
@@ -197,6 +203,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
           <h1>Tekstu redaktors</h1>
           <p className="muted">Šeit varat labot jebkuru lapas tekstu latviski un angliski. Izmaiņas stājas spēkā pēc saglabāšanas.</p>
         </div>
+        <div className={s.headActions}>
         <div className={s.tabs} role="tablist" aria-label="Sadaļa">
           <button type="button" role="tab" aria-selected={tab === "texts"} className={s.tab} onClick={() => setTab("texts")}>
             Teksti
@@ -204,6 +211,10 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
           <button type="button" role="tab" aria-selected={tab === "backup"} className={s.tab} onClick={() => setTab("backup")}>
             Rezerves kopija
           </button>
+        </div>
+        <button type="button" className="btn" onClick={logout}>
+          Iziet
+        </button>
         </div>
       </header>
 

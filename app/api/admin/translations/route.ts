@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminNotFound, currentAdmin } from "@/lib/admin";
+import { adminNotFound, isAdmin } from "@/lib/admin";
 import { validateOverrides } from "@/lib/i18n/catalog";
 import {
   readPreviousOverrides,
@@ -14,14 +14,14 @@ const MAX_BODY = 1_000_000;
 
 /** Current overrides (for the backup download) */
 export async function GET() {
-  if (!(await currentAdmin())) return adminNotFound();
+  if (!(await isAdmin())) return adminNotFound();
   const [overrides, prev] = await Promise.all([readStoredOverrides(), readPreviousOverrides()]);
   return NextResponse.json({ overrides, hasPrevious: !!prev }, { headers: { "Cache-Control": "no-store" } });
 }
 
 /** Save the full set of overrides. Body: { lv: { key: text }, en: { key: text } } */
 export async function PUT(req: Request) {
-  if (!(await currentAdmin())) return adminNotFound();
+  if (!(await isAdmin())) return adminNotFound();
   // JSON only: a cross-site form cannot send this content type without a CORS preflight
   if (!req.headers.get("content-type")?.includes("application/json")) {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 415 });
@@ -42,7 +42,7 @@ export async function PUT(req: Request) {
 
 /** { action: "restore" }: swap in the version before the last save */
 export async function POST(req: Request) {
-  if (!(await currentAdmin())) return adminNotFound();
+  if (!(await isAdmin())) return adminNotFound();
   if (!req.headers.get("content-type")?.includes("application/json")) {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 415 });
   }
@@ -53,6 +53,5 @@ export async function POST(req: Request) {
   return NextResponse.json({ overrides: restored, hasPrevious: true });
 }
 
-/* other methods: the same 404 as everyone else gets, instead of a 405 that shows the route exists */
 export const DELETE = async () => adminNotFound();
 export const PATCH = async () => adminNotFound();

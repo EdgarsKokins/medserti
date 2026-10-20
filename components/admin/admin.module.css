@@ -109,3 +109,11 @@
   .saveActions :global(.btn) { flex: 1; }
   .admin { padding-bottom: 150px; }
 }
+
+.login { max-width: 400px; margin: 48px auto; display: flex; flex-direction: column; gap: 14px; }
+.login h1 { margin: 0; }
+.login p { margin: 0; }
+.login input { min-height: 48px; font-size: 1rem; }
+.login :global(.btn) { min-height: 48px; }
+.headActions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.headActions > :global(.btn) { min-height: 44px; }
