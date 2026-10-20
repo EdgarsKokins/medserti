@@ -14,6 +14,8 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   createdAt: string;
+  /** Bumped on password reset; sessions carrying an older version are rejected (missing = 0) */
+  sessionVersion?: number;
   profile: Profile;
 }
 
