@@ -87,7 +87,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AppFooter
             theme={theme}
             locale={locale}
-            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
+            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
           />
         </I18nOverrides>
       </body>

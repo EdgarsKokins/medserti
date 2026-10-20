@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
+import DeleteAccount from "@/components/legal/DeleteAccount";
 import { REGISTER_URL, RULES } from "@/lib/rules";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -20,6 +21,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
         {d.rules.validFor(RULES.validityYears)} {d.rules.checkDatesIn}{" "}
         <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>.
       </p>
+      <DeleteAccount locale={locale} />
     </main>
   );
 }

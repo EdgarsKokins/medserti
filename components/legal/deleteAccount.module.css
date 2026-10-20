@@ -1,0 +1,16 @@
+/* Delete account: set apart from the profile form, same two-column rhythm */
+.box {
+  display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 16px 56px;
+  max-width: 940px; margin-top: 56px; padding: 28px 24px;
+  border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--border)); border-radius: var(--radius);
+}
+.title { margin: 0 0 6px; }
+.note { margin: 0; font-size: 0.875rem; color: var(--bad); }
+.body { margin: 0 0 16px; color: var(--muted); max-width: 560px; }
+.form { display: flex; flex-direction: column; gap: 14px; max-width: 420px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.danger { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.danger:hover { background: color-mix(in srgb, var(--bad) 85%, var(--text)); border-color: color-mix(in srgb, var(--bad) 85%, var(--text)); }
+@media (max-width: 760px) {
+  .box { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 20px 16px; }
+}

@@ -5,32 +5,40 @@ import { createUser, getUserByEmail } from "@/lib/db";
 import { hashPassword, startSession } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { LEGAL_UPDATED } from "@/lib/legal";
 
 const Body = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   fullName: z.string().trim().min(1).max(120),
+  // checkbox value; the form sends nothing when it is unticked
+  consent: z.literal("on"),
 });
 
 /** User-facing message for the first failing field */
 const FIELD_ERROR = { email: "badEmail", password: "passwordShort", fullName: "nameRequired" } as const;
 
 export async function POST(req: Request) {
-  const m = t(await getLocale()).api;
+  const d = t(await getLocale());
+  const m = d.api;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;
+    const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | "consent" | undefined;
+    if (field === "consent") return NextResponse.json({ error: d.legal.consent.required }, { status: 400 });
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
   const { email, password, fullName } = parsed.data;
   if (await getUserByEmail(email)) return NextResponse.json({ error: m.emailTaken }, { status: 409 });
 
   const id = randomUUID();
+  const now = new Date().toISOString();
   await createUser({
     id,
     email: email.trim().toLowerCase(),
     passwordHash: await hashPassword(password),
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    termsAcceptedAt: now,
+    termsVersion: LEGAL_UPDATED,
     profile: {
       fullName,
       profession: "doctor",

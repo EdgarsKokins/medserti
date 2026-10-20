@@ -43,3 +43,9 @@
   .card { padding: 22px 18px; }
   .title { font-size: 1.75rem; }
 }
+
+/* Terms and privacy consent at registration */
+.consent { display: flex; flex-direction: column; gap: 6px; }
+.consentLabel { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; line-height: 1.45; cursor: pointer; }
+.consentLabel input { flex: none; margin-top: 1px; }
+.consentLabel input[aria-invalid="true"] { outline: 2px solid var(--bad); outline-offset: 1px; }
