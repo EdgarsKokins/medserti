@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { overlay } from "@/lib/i18n/overrides";
 import type { CourseFormat, CourseKind, CourseSource } from "@/lib/courses/types";
 
 const lv = {
@@ -186,4 +187,8 @@ export const applyEmail = {
 };
 
 export type CourseStrings = typeof lv;
-export const courseStrings = (locale: Locale): CourseStrings => (locale === "en" ? en : lv);
+/** Admin text overrides live under "courses." (lib/i18n/overrides.ts) */
+export const courseStrings = (locale: Locale): CourseStrings => overlay("courses", locale === "en" ? "en" : "lv", locale === "en" ? en : lv);
+
+/** The strings as written in code, without overrides (for /admin) */
+export const baseCourseStrings = (locale: Locale): CourseStrings => (locale === "en" ? en : lv);

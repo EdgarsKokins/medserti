@@ -6,7 +6,8 @@ import bcrypt from "bcryptjs";
 import { getUser } from "./db";
 import type { UserRecord } from "./types";
 
-const COOKIE = "cme_session";
+export const SESSION_COOKIE = "cme_session";
+const COOKIE = SESSION_COOKIE;
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 function secret() {
@@ -41,7 +42,11 @@ export async function endSession() {
 }
 
 export async function currentUserId(): Promise<string | null> {
-  const token = (await cookies()).get(COOKIE)?.value;
+  return userIdFromToken((await cookies()).get(COOKIE)?.value);
+}
+
+/** User id from a session cookie value; also used by proxy.ts, which has the request instead of cookies() */
+export async function userIdFromToken(token: string | undefined): Promise<string | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());

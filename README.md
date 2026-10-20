@@ -39,7 +39,13 @@ npm run dev
 
 Without `BLOB_READ_WRITE_TOKEN` the app stores everything in `./.data`, so you can run it with no accounts or keys. To use the real store, link the Vercel project and pull env vars (`vercel env pull .env.local`).
 
-Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`.
+Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_EMAILS`.
+
+`ADMIN_EMAILS` is a comma-separated list of account emails that may open the text editor at `/admin` (e.g. `edgars@example.com,matiss@example.com`). Everyone else, signed in or not, gets a 404 there. Unset means nobody.
+
+## Editing texts
+
+Admins can change any UI text, LV and EN, at `/admin` without a deploy. Edits are stored as overrides in the Blob store (`i18n/overrides.json`, the version before the last save in `i18n/overrides.prev.json`) and reach every page within a minute. The code dictionaries in `lib/i18n.ts` and `components/courses/strings.ts` stay the defaults. Texts with plural forms or conditions are read-only there and are changed in code.
 
 ## Deploying
 

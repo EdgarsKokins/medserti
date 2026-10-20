@@ -1,6 +1,7 @@
 import { RULES, type Check } from "./rules";
 import type { CertStatus, CmeCategory, Profession } from "./types";
 import type { ProgressChartLabels } from "@/components/dashboard/ProgressChart";
+import { overlay } from "./i18n/overrides";
 
 /* UI dictionaries. Client-safe: no server-only imports. The cookie reader lives in lib/i18n/server.ts. */
 
@@ -945,5 +946,11 @@ const lv: Dict = {
 
 const DICTS: Record<Locale, Dict> = { lv, en };
 
-/** Dictionary accessor: t(locale).nav.dashboard */
-export const t = (locale: Locale): Dict => DICTS[locale] ?? DICTS[DEFAULT_LOCALE];
+/** Dictionary accessor: t(locale).nav.dashboard. Admin text overrides (lib/i18n/overrides.ts) are applied on top. */
+export const t = (locale: Locale): Dict => {
+  const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
+  return overlay("", l, DICTS[l]);
+};
+
+/** The dictionary as written in code, without overrides (for /admin) */
+export const baseDict = (locale: Locale): Dict => DICTS[locale];
