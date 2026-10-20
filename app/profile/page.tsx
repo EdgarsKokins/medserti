@@ -11,17 +11,19 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const { welcome } = await searchParams;
   const locale = await getLocale();
   const d = t(locale);
+  const demo = isDemoUser(user);
   return (
     <main className="container">
       <h1 className={s.head}>{d.profile.title}</h1>
       {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{d.profile.welcome}</div>}
-      <ProfileForm initial={user.profile} locale={locale} readOnly={isDemoUser(user)} />
+      <ProfileForm initial={user.profile} locale={locale} readOnly={demo} />
       <p className={s.footnote}>
         {d.rules.label}: {d.rules.source} (<a href={RULES.sourceUrl} target="_blank" rel="noreferrer">likumi.lv</a>).{" "}
         {d.rules.validFor(RULES.validityYears)} {d.rules.checkDatesIn}{" "}
         <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>.
       </p>
-      <DeleteAccount locale={locale} />
+      {/* the shared demo account cannot be deleted; the API refuses it too */}
+      {!demo && <DeleteAccount locale={locale} />}
     </main>
   );
 }
