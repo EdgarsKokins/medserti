@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import About from "@/components/About";
+import HeroChart from "@/components/landing/HeroChart";
+import HowItWorks from "@/components/landing/HowItWorks";
 import LangSwitch from "@/components/LangSwitch";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import { currentUserId } from "@/lib/auth";
@@ -35,21 +36,33 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/** Next dated, TIP-approved events from the stored index; never builds the index on page load */
-async function upcomingEvents(): Promise<Course[]> {
+/** Next dated, TIP-approved events plus the size of the catalogue; reads the stored index, never builds it */
+async function upcomingEvents(): Promise<{ next: Course[]; total: number }> {
   try {
     const idx = await readCourseIndex();
     const today = new Date().toISOString().slice(0, 10);
-    return (idx?.courses ?? [])
+    const all = idx?.courses ?? [];
+    const next = all
       .filter((c) => c.kind === "event" && c.startDate && c.startDate >= today && c.tip != null)
       .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""))
       .slice(0, 3);
+    return { next, total: all.length };
   } catch {
-    return [];
+    return { next: [], total: 0 };
   }
 }
 
-const COURSE_SOURCES: CourseSource[] = ["lab_tip", "lumpii", "kursiarstiem", "medicinaskursi"];
+
+/** Example rows for the "your report" visual (not real data) */
+const LEDGER = [
+  { date: "2024-03-12", lv: "Akūts koronārais sindroms", en: "Acute coronary syndrome", tip: 12 },
+  { date: "2024-09-05", lv: "BLS un AED apmācība", en: "BLS and AED training", tip: 8 },
+  { date: "2025-02-14", lv: "Kardiologu kongress", en: "Cardiology congress", tip: 16 },
+  { date: "2025-09-25", lv: "Artroskopija", en: "Arthroscopy", tip: 16 },
+];
+const PHOTOS: Record<string, string> = { "Matīss Kokins": "/team/matiss.jpg", "Edgars Kokins": "/team/edgars.jpg" };
+const shortDate = (iso: string, locale: Locale) =>
+  locale === "lv" ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}.` : formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1");
 
 /** Public landing page; signed-in users go straight to their dashboard */
 export default async function Home() {
@@ -57,77 +70,55 @@ export default async function Home() {
   const locale = await getLocale();
   const d = t(locale);
   const l = d.landing;
+  const a = d.landingA;
   const saved = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(saved) ? saved : "system";
-  const events = await upcomingEvents();
+  const { next: events, total } = await upcomingEvents();
+  const startYear = new Date().getFullYear() - 3;
+  // only plain strings may cross into the client component (coursesBody is a function)
+  const { coursesBody: _coursesBody, ...howText } = a;
 
   return (
-    <>
-      <main className={s.page}>
+    <div className={s.root}>
+      <main>
         <section className={s.hero} aria-labelledby="landing-title">
-          <div className={s.heroText}>
-            <p className="eyebrow">{l.eyebrow}</p>
-            <h1 id="landing-title" className={s.title}>{l.title}</h1>
-            <p className={s.lead}>{l.lead}</p>
-            <div className={s.ctas}>
-              <Link href="/register" className={`btn btn-primary ${s.cta}`}>{l.start}</Link>
-              <Link href="/login" className={`btn ${s.cta}`}>{l.login}</Link>
+          <div className={s.heroInner}>
+            <div>
+              <h1 id="landing-title" className={s.heroTitle}>
+                {a.heroLines.map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </h1>
+              <p className={s.heroSub}>{a.heroSub}</p>
+              <div className={s.ctas}>
+                <Link href="/register" className={`btn ${s.ctaMain}`}>{a.start}</Link>
+                <a href="#how" className={`btn ${s.ctaGhost}`}>{a.how} ↓</a>
+              </div>
             </div>
-            <p className={s.freeNote}>{l.freeNote}</p>
-          </div>
-          <MockDashboard locale={locale} />
-        </section>
-
-        <section className={s.section} aria-labelledby="steps-title">
-          <h2 id="steps-title" className={s.h2}>{l.stepsTitle}</h2>
-          <ol className={s.steps}>
-            {l.steps.map((step, i) => (
-              <li key={i}>
-                <span className={s.stepNum} aria-hidden>{String(i + 1).padStart(2, "0")}</span>
-                <h3 className={s.stepTitle}>{step.title}</h3>
-                <p className={s.muted}>{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className={s.section} aria-labelledby="rules-title">
-          <div className={s.sectionHead}>
-            <h2 id="rules-title" className={s.h2}>{l.rulesTitle}</h2>
-            <p className={s.muted}>{l.rulesLead}</p>
-          </div>
-          <div>
-            <ul className={s.rules}>
-              {l.rules.map((r) => (
-                <li key={r.value}>
-                  <span className={s.ruleValue}>{r.value}</span>
-                  <span>{r.body}</span>
-                </li>
-              ))}
-            </ul>
-            <p className={s.note}>
-              {l.rulesNote}{" "}
-              <a href={RULES.sourceUrl} target="_blank" rel="noreferrer">{l.rulesSource}</a>
-            </p>
+            <HeroChart ofLabel={a.counterOf} chartLabel={a.chartLabel} startYear={startYear} />
           </div>
         </section>
 
-        <section className={s.section} aria-labelledby="courses-title">
-          <div className={s.sectionHead}>
-            <h2 id="courses-title" className={s.h2}>{l.coursesTitle}</h2>
-            <p className={s.muted}>{l.coursesLead}</p>
-            <ul className={s.sources}>
-              {COURSE_SOURCES.map((src) => (
-                <li key={src}>
-                  <a href={SOURCE_URLS[src]} target="_blank" rel="noreferrer">{courseStrings(locale).sourceLabels[src]}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            {events.length > 0 && (
-              <>
-                <h3 className={s.listTitle}>{l.coursesUpcoming}</h3>
+        <div className={s.wrap}>
+          <section id="how" className={s.section} aria-labelledby="how-title">
+            <h2 id="how-title" className={s.h2}>{a.how}</h2>
+            <HowItWorks
+              l={{
+                ...howText,
+                readDateValue: formatDate("2025-09-25", locale),
+                ledgerRows: LEDGER.map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip })),
+              }}
+            />
+          </section>
+
+          <section className={s.section} aria-labelledby="courses-title">
+            <div className={s.courses}>
+              <div>
+                <h2 id="courses-title" className={s.h2}>{a.coursesTitle}</h2>
+                {total > 0 && <p className={s.coursesBody}>{a.coursesBody(Math.floor(total / 100) * 100)}</p>}
+                <Link href="/register" className="btn btn-primary">{a.start}</Link>
+              </div>
+              {events.length > 0 && (
                 <ul className={s.events}>
                   {events.map((c) => (
                     <li key={c.id}>
@@ -136,38 +127,56 @@ export default async function Home() {
                         <span className={s.dateMon}>{MONTHS_SHORT[locale][Number(c.startDate!.slice(5, 7)) - 1]}</span>
                       </span>
                       <span className={s.eventMain}>
-                        <a href={c.url} target="_blank" rel="noreferrer" className={s.eventTitle}>{c.title}</a>
+                        <span className={s.eventTitle}>{c.title}</span>
                         <span className={`small ${s.muted}`}>
                           <span className="sr-only">{formatDate(c.startDate!, locale)} · </span>
-                          {(c.city === "Online" ? l.online : c.city === "Latvija" ? courseStrings(locale).wholeLatvia : c.city) ?? c.organizer}
+                          {(c.city === "Online" ? l.online : c.city) ?? c.organizer}
                         </span>
                       </span>
-                      <span className={s.eventTip}>{formatNumber(c.tip!, locale, 1)} TIP</span>
+                      <span className={s.eventTip}>+{formatNumber(c.tip!, locale, 1)} TIP</span>
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
-            <p className={s.note}>{l.coursesMore}</p>
-            <Link href="/register" className="btn btn-primary">{l.start}</Link>
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
 
-        <div className={s.about}>
-          <About locale={locale} />
-        </div>
-
-        <section className={s.section} aria-labelledby="faq-title">
-          <h2 id="faq-title" className={s.h2}>{l.faqTitle}</h2>
-          <dl className={s.faq}>
-            {l.faq.map((f) => (
-              <div key={f.q}>
-                <dt>{f.q}</dt>
-                <dd>{f.a}</dd>
+          <section className={s.section} aria-labelledby="founders-title">
+            <div className={s.founders}>
+              <div>
+                <h2 id="founders-title" className={s.h2}>{a.foundersTitle}</h2>
+                <p className={s.foundersBody}>{a.foundersBody}</p>
+                <Link href="/par-mums">{d.nav.about} →</Link>
               </div>
-            ))}
-          </dl>
-        </section>
+              <ul className={s.people}>
+                {d.about.people.map((p) => (
+                  <li key={p.name}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={PHOTOS[p.name]} alt={p.name} className={s.photo} width={132} height={132} loading="lazy" />
+                    <span className={s.personName}>{p.name}</span>
+                    <span className={s.personRole}>{p.role.split(" · ")[1] ?? p.role}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          <section className={s.section} aria-label={l.faqTitle}>
+            <div className={s.faq}>
+              {a.faq.map((f) => (
+                <details key={f.q} open>
+                  <summary>{f.q}</summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+
+          <div className={s.closing}>
+            <p className={s.closingText}>{a.heroLines.slice(0, 2).join(" ")}</p>
+            <Link href="/register" className={`btn ${s.ctaMain}`}>{a.start}</Link>
+          </div>
+        </div>
       </main>
 
       <footer className={s.footer}>
@@ -200,59 +209,6 @@ export default async function Home() {
           <span className={`small ${s.muted}`}>© {new Date().getFullYear()} {d.brand.name}. {d.rules.planningAid}</span>
         </div>
       </footer>
-    </>
-  );
-}
-
-/** Static miniature of the dashboard hero with example numbers (not a screenshot, so it follows the theme) */
-function MockDashboard({ locale }: { locale: Locale }) {
-  const d = t(locale);
-  const l = d.landing;
-  const total = 22;
-  const required = 250;
-  const pointsPct = (total / required) * 100;
-  const timePct = 52;
-  const daysLeft = 875;
-  const perMonth = (required - total) / (daysLeft / 30.44);
-  return (
-    <figure className={s.mock}>
-      <div className={s.mockCard} role="img" aria-label={`${l.mockLabel}: ${total} ${d.dashboard.ofRequired(required)}, ${d.dashboard.daysLeftShort(daysLeft)}`}>
-        <div className="eyebrow">{l.mockSpecialty} · {l.mockValidUntil}</div>
-        <div className={s.mockRow}>
-          <div className={s.mockBigLine}>
-            <span className={s.mockBig}>{total}</span>
-            <span className={s.mockOf}>{d.dashboard.ofRequired(required)}</span>
-          </div>
-          <div className={s.mockSide}>
-            <div className={s.mockDays}>{d.dashboard.daysLeftShort(daysLeft)}</div>
-            <div className={s.mockPace}>{d.dashboard.paceShort(formatNumber(perMonth, locale, 1))}</div>
-          </div>
-        </div>
-        <div className={s.track}>
-          <div className={s.fill} style={{ width: `${pointsPct}%` }} />
-          <div className={s.todayMark} style={{ left: `${timePct}%` }}>
-            <span className={s.todayLabel}>{d.dashboard.today}</span>
-          </div>
-        </div>
-        <div className={s.bandLabels}>
-          <span>2024</span>
-          <span className={s.bandLegend}>
-            <i className={s.keyFill} /> {d.dashboard.collected(Math.round(pointsPct))}
-            <i className={s.keyTime} /> {d.dashboard.timeElapsed(timePct)}
-          </span>
-          <span>2029</span>
-        </div>
-        <ul className={s.mockChecks} aria-hidden>
-          {(["total", "specialty", "emergency_points"] as const).map((id, i) => (
-            <li key={id}>
-              <span className={s.mockMark} />
-              <span>{d.checks[id]}</span>
-              <span className={s.mockVal}>{[`${total} / ${required}`, `14 / ${Math.ceil(required * RULES.specialtyShare)}`, `0 / ${RULES.emergencyMinPoints}`][i]}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <figcaption className={s.mockNote}>{l.mockNote}</figcaption>
-    </figure>
+    </div>
   );
 }
