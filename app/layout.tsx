@@ -17,7 +17,19 @@ const newsreader = Newsreader({ subsets: ["latin", "latin-ext"], weight: ["400",
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
-  return { title: d.brand.name, description: d.brand.tagline, applicationName: d.brand.name };
+  return {
+    metadataBase: new URL("https://medserti.lv"),
+    title: d.brand.name,
+    description: d.landing.metaDescription,
+    applicationName: d.brand.name,
+    openGraph: {
+      type: "website",
+      siteName: d.brand.name,
+      title: d.landing.metaTitle,
+      description: d.landing.metaDescription,
+      locale: d.landing.ogLocale,
+    },
+  };
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -41,17 +53,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="brand-name">{d.brand.name}</span>
             </Link>
             <NavLinks
-              links={[
-                ...(signedIn
+              links={
+                signedIn
                   ? [
                       { href: "/dashboard", label: d.nav.dashboard },
                       { href: "/certificates", label: d.nav.certificates },
                       { href: "/courses", label: d.nav.courses },
                       { href: "/profile", label: d.nav.profile },
                     ]
-                  : []),
-                { href: "/par-mums", label: d.nav.about },
-              ]}
+                  : [{ href: "/par-mums", label: d.nav.about }]
+              }
             />
             <div className="nav-tools">
               <ThemeSwitch initial={theme} labels={d.theme} />
@@ -63,7 +74,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               ) : (
                 <>
                   <Link href="/login" className="btn">{d.nav.login}</Link>
-                  <Link href="/register" className="btn btn-primary">{d.nav.signup}</Link>
+                  <Link href="/register" className="btn btn-primary nav-signup">{d.nav.signup}</Link>
                 </>
               )}
             </div>

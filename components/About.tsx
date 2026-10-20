@@ -1,7 +1,7 @@
 import { t, type Locale } from "@/lib/i18n";
 import s from "./about.module.css";
 
-/* "Who we are" on the public login / register pages: founding story and the two founders */
+/* "Who we are" on the landing page and /par-mums: founding story and the two founders */
 export default function About({ locale, page = false }: { locale: Locale; page?: boolean }) {
   const a = t(locale).about;
   return (
