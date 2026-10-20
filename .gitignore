@@ -12,3 +12,7 @@ next-env.d.ts
 .claude/settings.local.json
 .impeccable/config.local.json
 .claude/skills/impeccable/scripts/bin/
+
+# local Claude Code state: worktree copies (may contain .env.local) and personal settings
+.claude/worktrees/
+.claude/settings.local.json
