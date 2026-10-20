@@ -57,7 +57,7 @@ const BLOCK_OF: Record<string, BlockId> = {
   upload: "upload",
   courses: "courses",
   profile: "profile", professions: "profile", rules: "profile",
-  auth: "auth", demo: "auth",
+  auth: "auth", reset: "auth", demo: "auth",
   api: "errors", notFound: "errors", error: "errors",
   exportDocs: "export",
   about: "about",
@@ -95,6 +95,7 @@ const SAMPLES: Record<string, Record<Locale, unknown>> = {
   title: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026" },
   done: { lv: 3, en: 3 }, total: { lv: 8, en: 8 },
   firstName: { lv: "Anna", en: "Anna" },
+  link: { lv: "https://medserti.lv/atjaunot-paroli?token=…", en: "https://medserti.lv/atjaunot-paroli?token=…" },
 };
 const sample = (name: string, locale: Locale): unknown => SAMPLES[name]?.[locale] ?? (locale === "lv" ? "…" : "…");
 

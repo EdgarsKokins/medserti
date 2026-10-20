@@ -35,6 +35,10 @@ const lvPl = (n: number, one: string, many: string) => (Math.abs(n) % 10 === 1 &
 /** Values carried by a parser note (lib/parse.ts) */
 type NoteP = Record<string, string | number | boolean>;
 const fmtN = (v: unknown, locale: Locale) => (typeof v === "number" ? formatNumber(v, locale) : String(v ?? ""));
+/** "1.3 + 1.3" stored by the parser -> "1,3 + 1,3" in Latvian */
+const fmtList = (v: unknown, locale: Locale) => (locale === "lv" ? String(v ?? "").replace(/\./g, ",") : String(v ?? ""));
+/** "date,points" -> field names in the UI language */
+const fieldList = (v: unknown, names: Record<string, string>) => String(v ?? "").split(",").filter(Boolean).map((f) => names[f] ?? f).join(", ");
 
 const specialtyPct = RULES.specialtyShare * 100;
 const capPct = RULES.practicalCapShare * 100;
@@ -83,6 +87,7 @@ const en = {
     login: "Log in",
     genericError: "Something went wrong. Please try again.",
     passwordHint: "At least 8 characters",
+    forgotLink: "Forgot your password?",
     valueTitle: "What Medserti does",
     valuePoints: [
       "Upload your certificates and the points are read automatically",
@@ -90,11 +95,55 @@ const en = {
       "Find courses approved by the Latvian Medical Association (LĀB) for your specialty",
     ],
   },
+  reset: {
+    forgotTitle: "Reset your password",
+    forgotLead: "Enter the email you signed up with. We will send you a link to set a new password.",
+    send: "Send link",
+    sent: "If an account with this email exists, we have sent a link to reset the password. It is valid for 1 hour. Check your spam folder too.",
+    backToLogin: "Back to log in",
+    newTitle: "Set a new password",
+    newLead: "Choose a new password for your Medserti account. You will be signed out on all other devices.",
+    newPassword: "New password",
+    save: "Save password",
+    invalidTitle: "This link is no longer valid",
+    invalidBody: "The link has expired or has already been used. Request a new one.",
+    requestNew: "Request a new link",
+    tooMany: "Too many requests. Please try again later.",
+    emailSubject: "Medserti password reset",
+    emailBody: (link: string) =>
+      `Hello,\n\nWe received a request to reset the password for your Medserti account. Open this link to set a new password:\n\n${link}\n\nThe link is valid for 1 hour and works once. If you did not ask for this, ignore this email and your password stays the same.\n\nMedserti`,
+  },
   landingA: {
-    heroTitle: "All your TIP points in one place.",
-    heroSub: "Upload your certificates. Medserti counts them against Regulation No. 391, whether you need 250 or 150 TIP, and shows what's still missing.",
+    heroTitle: "Five years of certificates, scattered everywhere.",
+    heroSub: "Some are in your email, some on paper, some on each organizer's website. Come recertification, you have to find them all and work out how many TIP points are still missing.",
     start: "Start for free",
+    seeHow: "How Medserti helps",
     how: "How it works",
+    scatterLabel: "Certificates kept in different places, with open questions about what is still missing",
+    scatterEmail: "Email",
+    scatterEmailSubject: "Certificate of attendance.pdf",
+    scatterEmailFrom: "From the course organizer · 2023",
+    scatterPaper: "Paper, in a folder",
+    scatterPaperTitle: "Certificate",
+    scatterPortal: "Organizer's website",
+    scatterPortalLine: "Log in to download your certificate",
+    scatterQuestions: ["How many TIP so far?", `${specialtyPct}% in my specialty?`, "Emergency care done?"],
+    scatterDeadline: "Certificate expires in 4 months",
+    painTitle: "Sound familiar?",
+    pains: [
+      { title: "Certificates in five places", body: "Email, paper, PDFs from each organizer, photos on your phone. Nothing is in one list." },
+      { title: "No running total", body: "You only know how many points you have once you sit down and add them up by hand." },
+      { title: "Rules that are easy to miss", body: `${specialtyPct}% of the points must be in your specialty, plus ${RULES.emergencyMinPoints} TIP in emergency care, including at least ${RULES.emergencyMinPracticalHours} practical hours.` },
+      { title: "A scramble before the deadline", body: "Months before your certificate expires, you are chasing missing documents and courses you still need." },
+    ],
+    answerTitle: "Medserti puts it all in one place.",
+    answerBody: "Upload each certificate once. Medserti reads the points, counts them against Regulation No. 391 and shows what's still missing, and by when.",
+    answers: [
+      "Every certificate in one list",
+      "A running total as you upload",
+      "Specialty share and emergency care checked",
+      "Your deadline in view, well ahead",
+    ],
     frameLabel: "Example dashboard of a sample doctor",
     frameName: "Jānis Paraugs",
     frameRole: "Doctor · 250 TIP required",
@@ -381,7 +430,7 @@ const en = {
     hint: "PDF up to 4 MB, or a photo (JPG, PNG, WEBP). You can select several at once.",
     states: {
       queued: "Waiting",
-      reading: "Reading image...",
+      reading: "Reading text...",
       uploading: "Uploading...",
       done: "Done",
       failed: "Failed",
@@ -412,6 +461,7 @@ const en = {
     fApproval: "Approval number",
     fCountry: "Country",
     countryNone: "Not set",
+    checkField: "check",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
@@ -456,6 +506,16 @@ const en = {
       } (Annex 4 items 1 and 2).`,
     plainHours: () => `The certificate says "hours", not "academic hours"; we counted them 1:1.`,
     checkBeforeConfirming: () => "Check before confirming.",
+    pdfOcr: () => "This PDF is a scan, so it was read with text recognition: check every field.",
+    pointsSummed: (p: NoteP) => `Points added up from several lectures or days: ${fmtList(p.list, "en")} = ${fmtList(p.total, "en")} TIP.`,
+    courseTotal: (p: NoteP) =>
+      `${fmtList(p.points, "en")} credits is the accreditation of the whole event. Claim only the hours you actually attended.`,
+    lecturer: (p: NoteP): string =>
+      p.international
+        ? "You lectured at this event. A talk at an international event counts 30 TIP (Annex 4 item 22): add it as a separate lecture."
+        : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
+    lowConfidence: (p: NoteP) =>
+      `Not sure we read these right: ${fieldList(p.fields, { title: "title", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
   },
   dashboard: {
     title: "Dashboard",
@@ -607,6 +667,7 @@ const lv: Dict = {
     login: "Pieslēgties",
     genericError: "Radās kļūda. Mēģiniet vēlreiz.",
     passwordHint: "Vismaz 8 rakstzīmes",
+    forgotLink: "Aizmirsāt paroli?",
     valueTitle: "Ko dara Medserti",
     valuePoints: [
       "Augšupielādējiet sertifikātus, un punkti tiks nolasīti automātiski",
@@ -614,11 +675,55 @@ const lv: Dict = {
       "Atrodiet LĀB apstiprinātus kursus savai specialitātei",
     ],
   },
+  reset: {
+    forgotTitle: "Paroles atjaunošana",
+    forgotLead: "Ievadiet e-pastu, ar kuru reģistrējāties. Nosūtīsim saiti jaunas paroles iestatīšanai.",
+    send: "Nosūtīt saiti",
+    sent: "Ja konts ar šo e-pastu ir reģistrēts, esam nosūtījuši saiti paroles atjaunošanai. Tā ir derīga 1 stundu. Pārbaudiet arī surogātpasta mapi.",
+    backToLogin: "Atpakaļ uz pieslēgšanos",
+    newTitle: "Jaunas paroles iestatīšana",
+    newLead: "Izvēlieties jaunu paroli savam Medserti kontam. Pēc saglabāšanas citās ierīcēs būs jāpieslēdzas no jauna.",
+    newPassword: "Jaunā parole",
+    save: "Saglabāt paroli",
+    invalidTitle: "Saite vairs nav derīga",
+    invalidBody: "Saitei ir beidzies derīguma termiņš vai tā jau ir izmantota. Pieprasiet jaunu.",
+    requestNew: "Pieprasīt jaunu saiti",
+    tooMany: "Pārāk daudz pieprasījumu. Mēģiniet vēlreiz vēlāk.",
+    emailSubject: "Medserti paroles atjaunošana",
+    emailBody: (link: string) =>
+      `Labdien!\n\nSaņēmām pieprasījumu atjaunot jūsu Medserti konta paroli. Atveriet šo saiti, lai iestatītu jaunu paroli:\n\n${link}\n\nSaite ir derīga 1 stundu un izmantojama vienu reizi. Ja paroles maiņu nepieprasījāt, šo e-pastu varat neņemt vērā, un parole paliks iepriekšējā.\n\nMedserti`,
+  },
   landingA: {
-    heroTitle: "Visi jūsu TIP punkti vienuviet.",
-    heroSub: "Augšupielādējiet sertifikātus. Medserti tos saskaita pēc MK noteikumiem Nr. 391, vai jums vajag 250 vai 150 TIP, un parāda, kas vēl trūkst.",
+    heroTitle: "Piecu gadu sertifikāti, izkaisīti pa visām vietām.",
+    heroSub: "Daļa e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP punktu vēl trūkst.",
     start: "Sākt bez maksas",
+    seeHow: "Kā Medserti palīdz",
     how: "Kā tas strādā",
+    scatterLabel: "Sertifikāti glabājas dažādās vietās, un nav skaidrs, kas vēl trūkst",
+    scatterEmail: "E-pasts",
+    scatterEmailSubject: "Apliecinājums par dalību.pdf",
+    scatterEmailFrom: "No kursu rīkotāja · 2023",
+    scatterPaper: "Uz papīra, mapē",
+    scatterPaperTitle: "Sertifikāts",
+    scatterPortal: "Rīkotāja mājaslapa",
+    scatterPortalLine: "Pieslēdzieties, lai lejupielādētu sertifikātu",
+    scatterQuestions: ["Cik TIP jau ir?", `${specialtyPct}% savā specialitātē?`, "Neatliekamā palīdzība izpildīta?"],
+    scatterDeadline: "Sertifikāts beidzas pēc 4 mēnešiem",
+    painTitle: "Vai pazīstami?",
+    pains: [
+      { title: "Sertifikāti piecās vietās", body: "E-pasts, papīrs, katra rīkotāja PDF, foto telefonā. Nekas nav vienā sarakstā." },
+      { title: "Nav kopsummas", body: "Cik punktu jums ir, uzzināt tikai tad, kad apsēžaties un saskaitāt ar roku." },
+      { title: "Noteikumi, ko viegli palaist garām", body: `${specialtyPct}% punktu jābūt savā specialitātē, un vēl ${RULES.emergencyMinPoints} TIP neatliekamajā palīdzībā, no tiem vismaz ${RULES.emergencyMinPracticalHours} praktiskās stundas.` },
+      { title: "Steiga pirms termiņa", body: "Dažus mēnešus pirms sertifikāta beigām jūs meklējat trūkstošos dokumentus un kursus, kas vēl jāpaspēj." },
+    ],
+    answerTitle: "Medserti to visu saliek vienuviet.",
+    answerBody: "Augšupielādējiet katru sertifikātu vienreiz. Medserti nolasa punktus, saskaita tos pēc MK noteikumiem Nr. 391 un parāda, kas vēl trūkst un līdz kuram datumam.",
+    answers: [
+      "Visi sertifikāti vienā sarakstā",
+      "Kopsumma uzreiz pēc augšupielādes",
+      "Specialitātes daļa un neatliekamā palīdzība pārbaudīta",
+      "Termiņš redzams laikus",
+    ],
     frameLabel: "Parauga ārsta pārskata piemērs",
     frameName: "Jānis Paraugs",
     frameRole: "Ārsts · vajag 250 TIP",
@@ -912,7 +1017,7 @@ const lv: Dict = {
     hint: "PDF līdz 4 MB vai fotoattēls (JPG, PNG, WEBP). Var izvēlēties vairākus failus uzreiz.",
     states: {
       queued: "Gaida",
-      reading: "Nolasa attēlu...",
+      reading: "Nolasa tekstu...",
       uploading: "Augšupielādē...",
       done: "Gatavs",
       failed: "Kļūda",
@@ -943,6 +1048,7 @@ const lv: Dict = {
     fApproval: "Apstiprinājuma numurs",
     fCountry: "Valsts",
     countryNone: "Nav norādīta",
+    checkField: "pārbaudiet",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācība",
     fPractical: "Praktiskās stundas",
@@ -987,6 +1093,16 @@ const lv: Dict = {
       } (4. pielikuma 1. un 2. punkts).`,
     plainHours: () => "Sertifikātā norādītas „stundas”, nevis „akadēmiskās stundas”; tās ieskaitītas 1:1.",
     checkBeforeConfirming: () => "Pārbaudiet pirms apstiprināšanas.",
+    pdfOcr: () => "Šis PDF ir skenēts dokuments, tāpēc tas nolasīts ar teksta atpazīšanu: pārbaudiet katru lauku.",
+    pointsSummed: (p: NoteP) => `Punkti saskaitīti no vairākām lekcijām vai dienām: ${fmtList(p.list, "lv")} = ${fmtList(p.total, "lv")} TIP.`,
+    courseTotal: (p: NoteP) =>
+      `${fmtList(p.points, "lv")} kredītpunkti ir visa pasākuma akreditācija. Norādiet tikai tās stundas, kurās faktiski piedalījāties.`,
+    lecturer: (p: NoteP) =>
+      p.international
+        ? "Šajā pasākumā jūs uzstājāties. Ziņojums starptautiskā pasākumā dod 30 TIP (4. pielikuma 22. punkts): pievienojiet to kā atsevišķu ierakstu."
+        : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
+    lowConfidence: (p: NoteP) =>
+      `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
   },
   dashboard: {
     title: "Pārskats",

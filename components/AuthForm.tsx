@@ -133,6 +133,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
             />
             {errorText("password")}
             {mode === "register" && <span id="password-hint" className={s.hint}>{a.passwordHint}</span>}
+            {mode === "login" && <Link href="/aizmirsu-paroli" className={s.forgot}>{a.forgotLink}</Link>}
           </div>
           {error && <div className="alert alert-bad" role="alert">{error}</div>}
           <button className={`btn btn-primary ${s.submit}`} disabled={busy}>

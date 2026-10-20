@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CmeCategory, CmeCertificate } from "@/lib/types";
+import type { CmeCategory, CmeCertificate, ConfidenceField } from "@/lib/types";
+import { isUnsure } from "@/lib/parse/confidence";
 import { t, type Locale } from "@/lib/i18n";
 import { COUNTRY_CODES, countryCode, countryName, formatDate, parseNoteLines, STATUS_CLASS } from "./format";
 import styles from "./certificates.module.css";
@@ -127,6 +128,9 @@ export default function ReviewPanel({
   // "found 3 of 3 fields" says how much the parser filled in; for photos the OCR text itself may be wrong, so we don't show it
   const fieldsFound = cert.confidence != null && !cert.contentType.startsWith("image/") ? Math.round(cert.confidence * 3) : null;
   const confirmed = cert.status === "confirmed";
+  // the parser was unsure of this value and the user has not changed it yet
+  const check = (k: ConfidenceField) =>
+    isUnsure(cert, k) && f[k] === initial[k] ? <span className={`badge badge-warn ${styles.checkMark}`}>{d.checkField}</span> : null;
 
   return (
     <dialog
@@ -182,7 +186,7 @@ export default function ReviewPanel({
         <fieldset className="ro-fieldset" disabled={readOnly}>
         <div className={`form-grid ${styles.panelBody}`}>
           <div className={`field ${styles.wide}`}>
-            <label htmlFor="c-title">{d.fTitle}</label>
+            <label htmlFor="c-title">{d.fTitle}{check("title")}</label>
             <input id="c-title" value={f.title} onChange={(e) => set("title", e.target.value)} />
           </div>
           <div className="field">
@@ -198,7 +202,7 @@ export default function ReviewPanel({
             </select>
           </div>
           <div className="field">
-            <label htmlFor="c-date">{d.fDate}</label>
+            <label htmlFor="c-date">{d.fDate}{check("date")}</label>
             <input id="c-date" type="date" value={f.date ?? ""} onChange={(e) => set("date", e.target.value || null)} />
           </div>
           <div className="field">
@@ -206,7 +210,7 @@ export default function ReviewPanel({
             <input id="c-end" type="date" value={f.endDate ?? ""} onChange={(e) => set("endDate", e.target.value || null)} />
           </div>
           <div className="field">
-            <label htmlFor="c-points">{d.fPoints}</label>
+            <label htmlFor="c-points">{d.fPoints}{check("points")}</label>
             <input id="c-points" type="number" min={0} step="0.5" value={f.points ?? ""} onChange={(e) => set("points", toNum(e.target.value))} />
           </div>
           <div className="field">
@@ -218,7 +222,7 @@ export default function ReviewPanel({
             <input id="c-approval" value={f.approvalId ?? ""} onChange={(e) => set("approvalId", e.target.value || null)} />
           </div>
           <div className="field">
-            <label htmlFor="c-country">{d.fCountry}</label>
+            <label htmlFor="c-country">{d.fCountry}{check("country")}</label>
             <select id="c-country" value={f.country ?? ""} onChange={(e) => set("country", e.target.value || null)}>
               <option value="">{d.countryNone}</option>
               {unknownCountry && <option value={unknownCountry}>{unknownCountry}</option>}
