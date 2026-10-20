@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
 import s from "./auth.module.css";
 
-type Field = "fullName" | "email" | "password";
+type Field = "fullName" | "email" | "password" | "consent";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
@@ -21,12 +21,13 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   const m = d.api;
 
   /** Our own messages in the selected language, instead of the browser's validation bubbles */
-  function validate(values: Record<Field, string>): Partial<Record<Field, string>> {
+  function validate(values: Record<Exclude<Field, "consent">, string> & { consent: boolean }): Partial<Record<Field, string>> {
     const errs: Partial<Record<Field, string>> = {};
     if (mode === "register" && !values.fullName.trim()) errs.fullName = m.nameRequired;
     if (!EMAIL.test(values.email.trim())) errs.email = m.badEmail;
     if (!values.password) errs.password = m.passwordRequired;
     else if (mode === "register" && values.password.length < MIN_PASSWORD) errs.password = m.passwordShort;
+    if (mode === "register" && !values.consent) errs.consent = d.legal.consent.required;
     return errs;
   }
 
@@ -45,10 +46,11 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
       fullName: String(form.get("fullName") ?? ""),
       email: String(form.get("email") ?? ""),
       password: String(form.get("password") ?? ""),
+      consent: form.get("consent") === "on",
     };
     const errs = validate(values);
     setFieldErrors(errs);
-    const firstBad = (["fullName", "email", "password"] as Field[]).find((k) => errs[k]);
+    const firstBad = (["fullName", "email", "password", "consent"] as Field[]).find((k) => errs[k]);
     if (firstBad) {
       document.getElementById(firstBad)?.focus();
       return;
@@ -133,6 +135,28 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
             {errorText("password")}
             {mode === "register" && <span id="password-hint" className={s.hint}>{a.passwordHint}</span>}
           </div>
+          {mode === "register" && (
+            <div className={s.consent}>
+              <label className={s.consentLabel}>
+                <input
+                  id="consent"
+                  name="consent"
+                  type="checkbox"
+                  required
+                  onChange={() => clearField("consent")}
+                  {...invalid("consent")}
+                  aria-describedby={describedBy("consent")}
+                />
+                <span>
+                  {d.legal.consent.agree}{" "}
+                  <Link href="/noteikumi" target="_blank">{d.legal.consent.terms}</Link>{" "}
+                  {d.legal.consent.and}{" "}
+                  <Link href="/privatums" target="_blank">{d.legal.consent.privacy}</Link>
+                </span>
+              </label>
+              {errorText("consent")}
+            </div>
+          )}
           {error && <div className="alert alert-bad" role="alert">{error}</div>}
           <button className={`btn btn-primary ${s.submit}`} disabled={busy}>
             {busy ? a.wait : mode === "login" ? a.loginTitle : a.registerTitle}

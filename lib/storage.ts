@@ -55,9 +55,14 @@ export async function getJson<T>(pathname: string): Promise<T | null> {
 
 export async function remove(pathname: string): Promise<void> {
   if (useBlob) {
-    const { blobs } = await list({ prefix: pathname, limit: 1000 });
-    const urls = blobs.map((b) => b.url);
-    if (urls.length) await del(urls);
+    // page through: a prefix (a whole user folder) can hold more than one page of blobs
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix: pathname, cursor, limit: 1000 });
+      const urls = page.blobs.map((b) => b.url);
+      if (urls.length) await del(urls);
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
     return;
   }
   await fs.rm(localPath(pathname), { recursive: true, force: true });

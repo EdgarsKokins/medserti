@@ -50,3 +50,16 @@ export async function deleteCertificate(userId: string, certId: string): Promise
   await remove(`users/${userId}/certs/${certId}.json`);
   await remove(`users/${userId}/files/${certId}/`);
 }
+
+/**
+ * Delete an account and everything stored for it: certificate records, uploaded files, the user record and the email index.
+ * Files go first and the user record last, so a failed run can be retried while still signed in.
+ */
+export async function deleteUserData(user: UserRecord): Promise<void> {
+  // ids are UUIDs; anything else could reach outside the user's own folder (e.g. users/index/)
+  if (!/^[0-9a-f-]{36}$/i.test(user.id)) throw new Error("Unexpected user id");
+  await remove(`users/${user.id}/files/`);
+  await remove(`users/${user.id}/certs/`);
+  await remove(`users/${user.id}/`);
+  await remove(`users/index/${emailKey(user.email)}.json`);
+}

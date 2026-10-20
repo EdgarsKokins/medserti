@@ -14,6 +14,10 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   createdAt: string;
+  /** ISO time the user ticked "I agree to the terms and privacy policy" at registration; missing on accounts made before Oct 2026 */
+  termsAcceptedAt?: string;
+  /** LEGAL_UPDATED (lib/legal.ts) of the texts they agreed to */
+  termsVersion?: string;
   profile: Profile;
 }
 
