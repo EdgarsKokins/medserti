@@ -249,7 +249,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .nav-tools { flex-wrap: wrap; gap: 8px; }
   .nav-tools .btn { min-height: 44px; padding: 9px 14px; }
   /* the theme switch moves to the footer on phones; it is the least used control */
-  .nav .theme-switch { display: none; }
   /* signed out, the only link is "Par mums"; on phones it lives in the footer so the nav stays two rows */
   .nav-links-public { display: none; }
   .lang-switch button { min-width: 44px; min-height: 44px; }
@@ -272,6 +271,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 .app-footer-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-right: auto; }
 .app-footer a { color: var(--muted); }
+.app-footer-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .app-footer a:hover { color: var(--text); }
 @media (pointer: coarse) {
   .app-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }

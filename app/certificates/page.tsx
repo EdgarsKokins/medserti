@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
 import CertificatesView from "@/components/certificates/CertificatesView";
@@ -11,7 +12,8 @@ export default async function CertificatesPage() {
   const user = await requireUser();
   const certificates = await listCertificates(user.id);
   const locale = await getLocale();
-  const d = t(locale).certs;
+  const dict = t(locale);
+  const d = dict.certs;
   return (
     <main className="container stack">
       <div className="page-head">
@@ -19,6 +21,9 @@ export default async function CertificatesPage() {
           <h1>{d.title}</h1>
           <p className="muted">{d.leadShort}</p>
         </div>
+        {certificates.some((c) => c.status === "confirmed") && (
+          <Link href="/export" className="btn">{dict.exportDocs.cta} →</Link>
+        )}
       </div>
       <CertificatesView initial={certificates} specialty={specialtyLabel(user.profile.specialty, locale)} locale={locale} />
     </main>
