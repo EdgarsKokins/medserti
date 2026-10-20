@@ -3,7 +3,7 @@
  * the pages show whatever is here, and a value in [square brackets] is shown as "to be specified".
  */
 export const CONTROLLER = {
-  name: "SIA [nosaukums tiks precizēts]",
+  name: "SIA Medserti",
   regNo: "[reģistrācijas numurs tiks precizēts]",
   address: "[juridiskā adrese tiks precizēta]",
 };
