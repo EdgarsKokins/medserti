@@ -19,6 +19,15 @@ export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headl
     timePct = Math.max(0, Math.min(100, ((today.getTime() - a) / (b - a)) * 100));
   }
   const behind = timePct != null && pointsPct + 5 < timePct;
+  // requirements other than the total that are still open, as plain phrases ("2 TIP of emergency care training")
+  const missing = p.checks
+    .filter((c) => !c.met && c.id !== "total")
+    .map((c) => {
+      const gap = Math.max(0, c.need - c.have);
+      if (c.id === "specialty") return d.missingSpecialty(n(gap));
+      if (c.id === "emergency_points") return d.missingEmergencyPoints(n(gap));
+      return d.missingEmergencyHours(n(gap), Math.ceil(gap));
+    });
   const eyebrow = [specialty, p.windowEnd ? d.validUntilShort(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
 
   return (
@@ -46,6 +55,13 @@ export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headl
           </div>
         )}
       </div>
+
+      <p className={styles.status}>
+        {p.remaining > 0
+          ? d.statusRemaining(n(p.remaining), p.windowEnd && (p.daysLeft ?? 0) >= 0 ? fmtDate(p.windowEnd, locale) : null)
+          : d.statusDone}{" "}
+        {missing.length > 0 && <span className={styles.toneWarn}>{d.statusMissing(missing.join(", "))}</span>}
+      </p>
 
       {timePct != null && p.windowStart && p.windowEnd ? (
         <div className={styles.band} role="img" aria-label={`${d.collected(Math.round(pointsPct))}, ${d.timeElapsed(Math.round(timePct))}`}>

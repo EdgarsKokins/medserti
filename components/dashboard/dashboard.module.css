@@ -63,3 +63,9 @@
   .big { font-size: 2.2rem; }
   .twoCol { grid-template-columns: 1fr; }
 }
+
+.history { border-top: 1px solid var(--border); padding-top: 16px; }
+.history > summary { cursor: pointer; font-family: var(--font-serif); font-size: 1.2rem; list-style: none; display: flex; align-items: center; gap: 10px; }
+.history > summary::-webkit-details-marker { display: none; }
+.history > summary::before { content: "+"; font-family: var(--font-sans); color: var(--muted); width: 14px; }
+.history[open] > summary::before { content: "−"; }

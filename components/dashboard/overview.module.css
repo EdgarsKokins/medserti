@@ -8,7 +8,12 @@
 .daysLeft { font-family: var(--font-serif); font-size: 1.35rem; }
 .pace { color: var(--warn); }
 
+.status { margin: 18px 0 0; font-size: 1.1rem; max-width: 62ch; }
 .band { margin-top: 30px; }
+.upload { padding: 4px 0; }
+.uploadRow { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; }
+.uploadBtn { padding: 13px 26px; font-size: 1.05rem; }
+@media (max-width: 640px) { .uploadBtn { width: 100%; } }
 .track { position: relative; height: 12px; background: var(--surface-2); border-radius: 999px; }
 .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 999px; min-width: 12px; }
 .fillBehind { background: var(--accent); }
