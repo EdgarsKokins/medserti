@@ -79,6 +79,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     approvalId: fields.approvalId || null,
     country: fields.country || null,
     endDate: fields.endDate && fields.endDate !== fields.date ? fields.endDate : null,
+    // the user has looked at every field now; the parser's doubts no longer apply
+    fieldConfidence: null,
     status,
   };
   await saveCertificate(updated);

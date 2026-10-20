@@ -57,6 +57,7 @@ export function displayOrganizer(name: string): string {
 export const COUNTRY_CODES = [
   "LV", "LT", "EE", "FI", "SE", "NO", "DK", "IS", "PL", "DE", "AT", "CH", "NL", "BE", "LU", "FR", "ES", "PT", "IT", "GR",
   "CY", "MT", "CZ", "SK", "HU", "SI", "HR", "RO", "BG", "RS", "IE", "GB", "UA", "GE", "TR", "IL", "US", "CA", "AE",
+  "UZ", "KZ",
 ] as const;
 
 /** English names the parser stored before countries became ISO codes (Oct 2026) */

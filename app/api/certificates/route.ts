@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   const certificates: CmeCertificate[] = [];
   const errors: { fileName: string; error: string }[] = [];
 
-  // Images are OCR'd in the browser; their text arrives as "ocrText_<index>" (or "ocrText" for a single file)
+  // Images and scanned PDFs are OCR'd in the browser; their text arrives as "ocrText_<index>" (or "ocrText" for a single file)
   const ocrFor = (i: number) => {
     const v = form?.get(`ocrText_${i}`) ?? (files.length === 1 ? form?.get("ocrText") : null);
     return typeof v === "string" ? v.slice(0, MAX_OCR_CHARS) : null;
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       continue;
     }
 
-    const result = await parseCertificate(bytes, type, user.profile, type === "application/pdf" ? null : ocrFor(i));
+    const result = await parseCertificate(bytes, type, user.profile, ocrFor(i));
     const done: CmeCertificate = { ...cert, ...result.fields, status: result.status, parseNotes: result.notes };
     await saveCertificate(done);
     certificates.push(done);
