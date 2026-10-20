@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Public_Sans, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { currentUserId } from "@/lib/auth";
+import { isDemoUserId } from "@/lib/demo/id";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
@@ -38,7 +39,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const signedIn = !!(await currentUserId());
+  const userId = await currentUserId();
+  const signedIn = !!userId;
+  const demo = isDemoUserId(userId);
   const locale = await getLocale();
   // already loaded by getLocale(); passed down once so client components get the same texts
   const overrides = await loadRuntimeOverrides();
@@ -83,6 +86,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </nav>
+          {demo && (
+            <div className="demo-banner" role="note">
+              <div className="demo-banner-inner">
+                <span>{d.demo.banner}</span>
+                <Link href="/register">{d.demo.bannerCta} →</Link>
+              </div>
+            </div>
+          )}
           {children}
           <AppFooter
             theme={theme}

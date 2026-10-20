@@ -3,7 +3,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 import { getUser } from "./db";
+import { isDemoUserId } from "./demo/id";
+import { t } from "./i18n";
+import { getLocale } from "./i18n/server";
 import type { UserRecord } from "./types";
 
 const COOKIE = "cme_session";
@@ -61,4 +65,26 @@ export async function requireUser(): Promise<UserRecord> {
   const user = await currentUser();
   if (!user) redirect("/login");
   return user;
+}
+
+export const isDemoUser = (user: Pick<UserRecord, "id"> | null | undefined) => isDemoUserId(user?.id);
+
+/**
+ * For API routes that change data: the signed-in user, or the error response to return.
+ * The one place that keeps the public demo account read-only (lib/demo). Every write route goes through here:
+ *   const g = await requireWritableUser();
+ *   if (!g.ok) return g.response;
+ */
+export async function requireWritableUser(): Promise<{ ok: true; user: UserRecord } | { ok: false; response: NextResponse }> {
+  const user = await currentUser();
+  if (!user || isDemoUser(user)) {
+    const m = t(await getLocale()).api;
+    return {
+      ok: false,
+      response: user
+        ? NextResponse.json({ error: m.demoReadOnly, demo: true }, { status: 403 })
+        : NextResponse.json({ error: m.notSignedIn }, { status: 401 }),
+    };
+  }
+  return { ok: true, user };
 }

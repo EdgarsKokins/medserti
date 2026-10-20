@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
+import DemoButton from "./DemoButton";
 import s from "./auth.module.css";
 
 type Field = "fullName" | "email" | "password";
@@ -145,6 +146,11 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
             <>{a.already} <Link href="/login">{a.login}</Link></>
           )}
         </p>
+        {mode === "login" && (
+          <div className={s.demo}>
+            <DemoButton label={d.demo.try} className={`btn ${s.submit}`} />
+          </div>
+        )}
       </div>
     </main>
   );

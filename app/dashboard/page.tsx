@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { isDemoUser, requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
 import { computeProgress, REGISTER_URL, RULES } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
 
       <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
 
-      <DashboardUpload locale={locale} />
+      <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
       {certs.some((c) => c.status === "confirmed") && (
         <Link href="/export" className={styles.exportLink}>
           {dict.exportDocs.cta} →

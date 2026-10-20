@@ -97,6 +97,7 @@ export const SECTION_NAMES: Record<string, string> = {
   professions: "Profesijas",
   rules: "Noteikumi",
   auth: "Pieslēgšanās un reģistrācija",
+  demo: "Demo konts",
   "auth.valuePoints": "Ko dara Medserti (saraksts)",
   api: "Kļūdu ziņojumi",
   notFound: "Lapa nav atrasta (404)",
@@ -157,6 +158,14 @@ export const LABELS: Record<string, string> = {
   "nav.logout": "Poga: iziet",
   "nav.login": "Poga: pieslēgties",
   "nav.signup": "Poga: reģistrēties",
+
+  "demo.try": "Poga: apskatīt demo (sākumlapā un pieslēgšanās lapā)",
+  "demo.banner": "Josla demo kontā",
+  "demo.bannerCta": "Joslas saite: reģistrēties",
+  "demo.readOnly": "Piezīme: demo konts ir tikai lasāms",
+  "demo.uploadOff": "Ja demo kontā mēģina pievienot sertifikātu",
+  "demo.view": "Poga: skatīt sertifikātu",
+  "demo.close": "Poga: aizvērt sertifikātu",
 
   "auth.loginTitle": "Pieslēgšanās virsraksts",
   "auth.registerTitle": "Reģistrācijas virsraksts",
@@ -419,6 +428,7 @@ export const LABELS: Record<string, string> = {
   "chart.tooltipMore": "Uzrakstā: vēl citi",
   "chart.chartLabel": "Grafika apraksts (ekrāna lasītājiem)",
 
+  "api.demoReadOnly": "Demo kontā nevar neko mainīt",
   "api.notSignedIn": "Nav pieslēdzies",
   "api.notFound": "Nav atrasts",
   "api.invalidInput": "Nederīgi dati",

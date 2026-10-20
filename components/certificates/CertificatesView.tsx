@@ -16,10 +16,13 @@ export default function CertificatesView({
   initial,
   specialty,
   locale,
+  readOnly = false,
 }: {
   initial: CmeCertificate[];
   specialty: string;
   locale: Locale;
+  /** demo account: no upload, the panel only shows the fields */
+  readOnly?: boolean;
 }) {
   const dict = t(locale);
   const d = dict.certs;
@@ -69,7 +72,11 @@ export default function CertificatesView({
         </p>
       )}
 
-      <UploadZone onUploaded={onUploaded} locale={locale} />
+      {readOnly ? (
+        <p className="alert">{dict.demo.uploadOff}</p>
+      ) : (
+        <UploadZone onUploaded={onUploaded} locale={locale} />
+      )}
 
       <section aria-labelledby="certs-title">
         <div className={styles.listHead}>
@@ -118,7 +125,11 @@ export default function CertificatesView({
                     <a className={styles.linkBtn} href={`/api/certificates/${c.id}/file`} target="_blank" rel="noreferrer">
                       {d.file}
                     </a>
-                    {attention ? (
+                    {readOnly ? (
+                      <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
+                        {dict.demo.view}
+                      </button>
+                    ) : attention ? (
                       <button type="button" className={`btn btn-primary ${styles.smallBtn}`} onClick={() => setOpenId(c.id)}>
                         {d.review}
                       </button>
@@ -144,6 +155,7 @@ export default function CertificatesView({
           onClose={close}
           onSaved={replace}
           onDeleted={removed}
+          readOnly={readOnly}
         />
       )}
     </>

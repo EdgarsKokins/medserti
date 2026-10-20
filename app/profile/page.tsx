@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { isDemoUser, requireUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
 import { REGISTER_URL, RULES } from "@/lib/rules";
 import { t } from "@/lib/i18n";
@@ -14,7 +14,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     <main className="container">
       <h1 className={s.head}>{d.profile.title}</h1>
       {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{d.profile.welcome}</div>}
-      <ProfileForm initial={user.profile} locale={locale} />
+      <ProfileForm initial={user.profile} locale={locale} readOnly={isDemoUser(user)} />
       <p className={s.footnote}>
         {d.rules.label}: {d.rules.source} (<a href={RULES.sourceUrl} target="_blank" rel="noreferrer">likumi.lv</a>).{" "}
         {d.rules.validFor(RULES.validityYears)} {d.rules.checkDatesIn}{" "}

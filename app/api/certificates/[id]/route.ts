@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { currentUser } from "@/lib/auth";
+import { requireWritableUser } from "@/lib/auth";
 import { deleteCertificate, getCertificate, saveCertificate } from "@/lib/db";
 import type { CmeCertificate } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
@@ -60,8 +60,9 @@ const validId = (id: string) => z.uuid().safeParse(id).success;
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const m = t(await getLocale()).api;
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
+  const g = await requireWritableUser();
+  if (!g.ok) return g.response;
+  const { user } = g;
   const { id } = await params;
   const cert = validId(id) ? await getCertificate(user.id, id) : null;
   if (!cert || cert.userId !== user.id) return NextResponse.json({ error: m.notFound }, { status: 404 });
@@ -87,8 +88,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 export async function DELETE(_req: Request, { params }: Ctx) {
   const m = t(await getLocale()).api;
-  const user = await currentUser();
-  if (!user) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
+  const g = await requireWritableUser();
+  if (!g.ok) return g.response;
+  const { user } = g;
   const { id } = await params;
   const cert = validId(id) ? await getCertificate(user.id, id) : null;
   if (!cert || cert.userId !== user.id) return NextResponse.json({ error: m.notFound }, { status: 404 });

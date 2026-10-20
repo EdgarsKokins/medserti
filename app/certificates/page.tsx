@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { isDemoUser, requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
 import CertificatesView from "@/components/certificates/CertificatesView";
 import { t } from "@/lib/i18n";
@@ -25,7 +25,7 @@ export default async function CertificatesPage() {
           <Link href="/export" className="btn">{dict.exportDocs.cta} →</Link>
         )}
       </div>
-      <CertificatesView initial={certificates} specialty={specialtyLabel(user.profile.specialty, locale)} locale={locale} />
+      <CertificatesView initial={certificates} specialty={specialtyLabel(user.profile.specialty, locale)} locale={locale} readOnly={isDemoUser(user)} />
     </main>
   );
 }
