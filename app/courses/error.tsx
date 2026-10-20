@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
+import { t } from "@/lib/i18n";
+import { courseStrings } from "@/components/courses/strings";
+import { useDocLocale } from "@/components/useDocLocale";
 
 export default function CoursesError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => console.error("courses page failed", error), [error]);
-  const lv = typeof document === "undefined" || document.documentElement.lang !== "en";
+  const locale = useDocLocale();
+  const s = courseStrings(locale);
   return (
     <main className="container stack">
-      <h1>{lv ? "Kursi un pasākumi" : "Courses and events"}</h1>
+      <h1>{s.title}</h1>
       <div className="alert alert-bad">
-        {lv
-          ? "Kursu sarakstu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža."
-          : "The course list could not be loaded. Please try again in a moment."}
+        {s.loadError}
         {error.digest && <span className="small"> ({error.digest})</span>}
       </div>
       <div className="row">
-        <button className="btn btn-primary" onClick={reset}>{lv ? "Mēģināt vēlreiz" : "Try again"}</button>
+        <button type="button" className="btn btn-primary" onClick={reset}>{t(locale).common.retry}</button>
       </div>
     </main>
   );

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/i18n/server";
 import { listCertificates } from "@/lib/db";
@@ -5,8 +6,13 @@ import { computeProgress } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
 import { getCourseIndex } from "@/lib/courses/store";
 import CoursesView, { type CourseRow } from "@/components/courses/CoursesView";
+import { courseStrings } from "@/components/courses/strings";
 
 export const maxDuration = 60; // first visit may build the list
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: courseStrings(await getLocale()).title };
+}
 
 export default async function CoursesPage() {
   const user = await requireUser();

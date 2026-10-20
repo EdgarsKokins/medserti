@@ -1,5 +1,5 @@
-import type { CertStatus, CmeCertificate } from "@/lib/types";
-import { formatDate as fmtDate, formatNumber as fmtNum, type Locale } from "@/lib/i18n";
+import type { CertStatus, CmeCertificate, ParseNote } from "@/lib/types";
+import { formatDate as fmtDate, formatNumber as fmtNum, type Dict, type Locale } from "@/lib/i18n";
 
 /** YYYY-MM-DD -> LV "27.11.2026.", EN "27 Nov 2026"; "" for no date */
 export const formatDate = (iso: string | null, locale: Locale): string => (iso ? fmtDate(iso, locale) : "");
@@ -51,4 +51,63 @@ export function displayOrganizer(name: string): string {
     if (word.length <= 3) return word;
     return lower.charAt(0).toLocaleUpperCase("lv") + lower.slice(1);
   });
+}
+
+/** Countries offered in the review panel: Latvia first, then the ones the parser recognises */
+export const COUNTRY_CODES = [
+  "LV", "LT", "EE", "FI", "SE", "NO", "DK", "IS", "PL", "DE", "AT", "CH", "NL", "BE", "LU", "FR", "ES", "PT", "IT", "GR",
+  "CY", "MT", "CZ", "SK", "HU", "SI", "HR", "RO", "BG", "RS", "IE", "GB", "UA", "GE", "TR", "IL", "US", "CA", "AE",
+] as const;
+
+/** English names the parser stored before countries became ISO codes (Oct 2026) */
+const LEGACY_COUNTRY: Record<string, string> = {
+  latvia: "LV", lithuania: "LT", estonia: "EE", finland: "FI", sweden: "SE", norway: "NO", denmark: "DK", iceland: "IS",
+  poland: "PL", germany: "DE", austria: "AT", switzerland: "CH", netherlands: "NL", belgium: "BE", luxembourg: "LU",
+  france: "FR", spain: "ES", portugal: "PT", italy: "IT", greece: "GR", cyprus: "CY", malta: "MT", czechia: "CZ",
+  slovakia: "SK", hungary: "HU", slovenia: "SI", croatia: "HR", romania: "RO", bulgaria: "BG", serbia: "RS",
+  ireland: "IE", "united kingdom": "GB", ukraine: "UA", georgia: "GE", turkey: "TR", israel: "IL",
+  "united states": "US", canada: "CA", "united arab emirates": "AE", latvija: "LV", lietuva: "LT", igaunija: "EE",
+};
+
+/** Stored country (ISO code or a legacy English name) -> ISO code; null when empty or unknown */
+export function countryCode(value: string | null): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (/^[A-Za-z]{2}$/.test(v)) return v.toUpperCase();
+  return LEGACY_COUNTRY[v.toLowerCase()] ?? null;
+}
+
+/** ISO code -> "Latvija" / "Latvia" in the UI language */
+export function countryName(code: string, locale: Locale): string {
+  try {
+    return new Intl.DisplayNames([locale === "lv" ? "lv" : "en-GB"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/**
+ * Parser notes in the UI language. New certificates store a JSON array of codes; older ones a plain
+ * English sentence, which is returned as-is with `legacy: true` so the panel can label it.
+ */
+export function parseNoteLines(raw: string | null, dict: Dict): { lines: string[]; legacy: boolean } {
+  if (!raw) return { lines: [], legacy: false };
+  let notes: ParseNote[] | null = null;
+  try {
+    const v = JSON.parse(raw);
+    if (Array.isArray(v)) notes = v;
+  } catch {
+    // plain text from before notes were codes
+  }
+  if (!notes) return { lines: [raw], legacy: true };
+  const render = dict.parseNotes as Record<string, ((p: Record<string, string | number | boolean>) => string) | undefined>;
+  const lines: string[] = [];
+  for (const n of notes) {
+    const fn = n && typeof n.code === "string" ? render[n.code] : undefined;
+    if (!fn) continue;
+    // "Check before confirming" reads as the end of the note before it
+    if (n.code === "checkBeforeConfirming" && lines.length) lines[lines.length - 1] += ` ${fn({})}`;
+    else lines.push(fn(n.p ?? {}));
+  }
+  return { lines, legacy: false };
 }

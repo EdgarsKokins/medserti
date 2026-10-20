@@ -20,8 +20,10 @@ export interface UserRecord {
 export interface Profile {
   fullName: string;
   profession: Profession;
-  /** e.g. "Family medicine", "Orthopaedics" */
+  /** LV name from the LĀB list (lib/specialties.ts), or free text when specialtyCode is "other" */
   specialty: string;
+  /** LĀB specialty code, "other" for free text; missing on profiles saved before the list existed */
+  specialtyCode?: string | null;
   certificationKind: CertificationKind;
   /** Practitioner register ID / certificate number, optional */
   certificateNumber: string;
@@ -72,30 +74,37 @@ export interface CmeCertificate {
   practicalHours: number | null;
   /** approval / registration number printed on the certificate, if any */
   approvalId: string | null;
+  /** ISO 3166-1 alpha-2 code ("LV", "LT"); certificates saved before Oct 2026 may hold an English name ("Latvia") */
   country: string | null;
-  /** 0-1, model's confidence in the extraction */
+  /** 0-1, share of the key fields (title, date, points) the parser found */
   confidence: number | null;
+  /** JSON array of ParseNote; older certificates hold plain English text */
   parseNotes: string | null;
 }
 
-export const PROFESSION_LABELS: Record<Profession, string> = {
-  doctor: "Doctor",
-  dentist: "Dentist",
-  functional_specialist: "Functional specialist",
-  physician_assistant: "Physician assistant",
-  nurse: "Nurse",
-  midwife: "Midwife",
-  other_practitioner: "Other medical practitioner",
-};
+export type ParseNoteCode =
+  | "pdfUnreadable"
+  | "pdfScan"
+  | "imageUnreadable"
+  | "ocr"
+  | "ects"
+  | "foreignRatio"
+  | "dailyCap"
+  | "noPoints"
+  | "noTitle"
+  | "noDate"
+  | "noCountry"
+  | "multiplePoints"
+  | "derivedPractical"
+  | "derivedInterdisciplinary"
+  | "derivedAbroad"
+  | "derivedElearning"
+  | "derivedLatvia"
+  | "plainHours"
+  | "checkBeforeConfirming";
 
-export const CATEGORY_LABELS: Record<CmeCategory, string> = {
-  professional_meeting: "Professional society meeting",
-  training_latvia: "Training event in Latvia",
-  training_abroad: "Training event abroad",
-  interdisciplinary_conference: "Interdisciplinary conference",
-  e_learning: "E-learning course",
-  practical_training: "Supervised practical training",
-  lecture_or_publication: "Lecture or publication",
-  degree: "Academic degree",
-  other: "Other",
-};
+/** A parser note as a code plus values, rendered through dict.parseNotes in the UI language */
+export interface ParseNote {
+  code: ParseNoteCode;
+  p?: Record<string, string | number | boolean>;
+}

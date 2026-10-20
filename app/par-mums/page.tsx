@@ -5,7 +5,7 @@ import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
-  return { title: `${d.about.title} · ${d.brand.name}` };
+  return { title: d.about.title };
 }
 
 /** Public "About us" page; the same section sits on the landing page */

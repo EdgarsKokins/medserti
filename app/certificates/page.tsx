@@ -3,6 +3,7 @@ import { listCertificates } from "@/lib/db";
 import CertificatesView from "@/components/certificates/CertificatesView";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { specialtyLabel } from "@/lib/specialties";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function CertificatesPage() {
           <p className="muted">{d.leadShort}</p>
         </div>
       </div>
-      <CertificatesView initial={certificates} specialty={user.profile.specialty} locale={locale} />
+      <CertificatesView initial={certificates} specialty={specialtyLabel(user.profile.specialty, locale)} locale={locale} />
     </main>
   );
 }

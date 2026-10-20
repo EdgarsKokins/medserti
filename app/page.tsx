@@ -7,21 +7,22 @@ import LangSwitch from "@/components/LangSwitch";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import { currentUserId } from "@/lib/auth";
 import { readCourseIndex } from "@/lib/courses/store";
-import { SOURCE_LABELS, SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types";
+import { SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types";
+import { courseStrings } from "@/components/courses/strings";
+import { MONTHS_SHORT } from "@/components/dashboard/Overview";
 import { formatDate, formatNumber, t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { RULES } from "@/lib/rules";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { isTheme, THEME_COOKIE } from "@/lib/theme";
 import s from "./landing.module.css";
-
-// Public contact address shown in the footer (an alias for now)
-const CONTACT_EMAIL = "info@medserti.lv";
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
   const l = d.landing;
   return {
-    title: l.metaTitle,
+    // the landing page keeps its full marketing title, without the " · Medserti" template
+    title: { absolute: l.metaTitle },
     description: l.metaDescription,
     openGraph: {
       type: "website",
@@ -47,11 +48,6 @@ async function upcomingEvents(): Promise<Course[]> {
     return [];
   }
 }
-
-const MONTHS: Record<Locale, string[]> = {
-  lv: ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"],
-  en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
-};
 
 const COURSE_SOURCES: CourseSource[] = ["lab_tip", "lumpii", "kursiarstiem", "medicinaskursi"];
 
@@ -123,7 +119,7 @@ export default async function Home() {
             <ul className={s.sources}>
               {COURSE_SOURCES.map((src) => (
                 <li key={src}>
-                  <a href={SOURCE_URLS[src]} target="_blank" rel="noreferrer">{SOURCE_LABELS[src]}</a>
+                  <a href={SOURCE_URLS[src]} target="_blank" rel="noreferrer">{courseStrings(locale).sourceLabels[src]}</a>
                 </li>
               ))}
             </ul>
@@ -137,13 +133,13 @@ export default async function Home() {
                     <li key={c.id}>
                       <span className={s.dateBlock} aria-hidden>
                         <span className={s.dateDay}>{c.startDate!.slice(8, 10)}</span>
-                        <span className={s.dateMon}>{MONTHS[locale][Number(c.startDate!.slice(5, 7)) - 1]}</span>
+                        <span className={s.dateMon}>{MONTHS_SHORT[locale][Number(c.startDate!.slice(5, 7)) - 1]}</span>
                       </span>
                       <span className={s.eventMain}>
                         <a href={c.url} target="_blank" rel="noreferrer" className={s.eventTitle}>{c.title}</a>
                         <span className={`small ${s.muted}`}>
                           <span className="sr-only">{formatDate(c.startDate!, locale)} · </span>
-                          {(c.city === "Online" ? l.online : c.city) ?? c.organizer}
+                          {(c.city === "Online" ? l.online : c.city === "Latvija" ? courseStrings(locale).wholeLatvia : c.city) ?? c.organizer}
                         </span>
                       </span>
                       <span className={s.eventTip}>{formatNumber(c.tip!, locale, 1)} TIP</span>

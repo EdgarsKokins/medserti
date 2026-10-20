@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
@@ -26,6 +27,10 @@ function pickCourses(courses: Course[], specialty: string, todayIso: string, n =
   if (events.length >= n) return events;
   const recorded = courses.filter((c) => c.kind === "recorded" && c.free && fits(c)).slice(0, n - events.length);
   return [...events, ...recorded];
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(await getLocale()).nav.dashboard };
 }
 
 export default async function DashboardPage() {

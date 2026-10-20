@@ -78,14 +78,6 @@ export interface CourseIndex {
   sources: SourceStatus[];
 }
 
-export const SOURCE_LABELS: Record<CourseSource, string> = {
-  lab_tip: "LĀB apstiprinātie TIP pasākumi",
-  lab_courses: "LĀB kursi",
-  kursiarstiem: "kursiarstiem.lv",
-  medicinaskursi: "medicinaskursi.lv",
-  lumpii: "LUMPII",
-};
-
 export const SOURCE_URLS: Record<CourseSource, string> = {
   lab_tip: "https://is.arstubiedriba.lv/tip_list_approved",
   lab_courses: "https://is.arstubiedriba.lv/events/kursi/list",

@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatNumber, type Locale } from "@/lib/i18n";
-import { SOURCE_LABELS, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
-import { courseStrings } from "./strings";
+import { SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
+import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/Overview";
+import { specialtyLabel } from "@/lib/specialties";
 
 export type CourseRow = Omit<Course, never> & { forMe: boolean };
 
@@ -15,6 +16,10 @@ const KINDS: CourseKind[] = ["event", "recorded", "ongoing"];
 function addDays(days: number) {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 }
+
+/** "Latvija" in the source data means the whole country, not a city */
+const WHOLE_LATVIA = "Latvija";
+const cityLabel = (city: string, s: CourseStrings) => (city === WHOLE_LATVIA ? s.wholeLatvia : city);
 
 export default function CoursesView({
   locale,
@@ -48,31 +53,49 @@ export default function CoursesView({
     return c;
   }, [rows, mine]);
 
-  const cities = useMemo(() => {
-    const set = new Map<string, number>();
-    for (const r of rows) if (r.kind === kind && r.city && r.city !== "Online") set.set(r.city, (set.get(r.city) ?? 0) + 1);
-    return [...set.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
-  }, [rows, kind]);
-
-  const filtered = useMemo(() => {
+  // every filter except the city one; the city list is built from these rows so no option leads to zero results
+  const beforeCity = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const until = period === "all" ? null : addDays(Number(period));
-    const list = rows.filter((r) => {
+    return rows.filter((r) => {
       if (r.kind !== kind) return false;
       if (mine && !(r.forMe || r.allSpecialties)) return false;
       if (needle && !`${r.title} ${r.organizer ?? ""} ${r.audience}`.toLowerCase().includes(needle)) return false;
       if (format === "online" && !(r.format === "online_live" || r.city === "Online")) return false;
       if (format === "in_person" && !(r.format === "in_person" || r.format === "hybrid")) return false;
-      if (city && r.city !== city) return false;
       if (until && kind === "event" && r.startDate && r.startDate > until) return false;
       if (minTip && (r.tip ?? 0) < minTip) return false;
       if (freeOnly && !r.free) return false;
       return true;
     });
+  }, [rows, kind, q, mine, format, period, minTip, freeOnly]);
+
+  const cities = useMemo(() => {
+    const set = new Map<string, number>();
+    for (const r of beforeCity) if (r.city && r.city !== "Online") set.set(r.city, (set.get(r.city) ?? 0) + 1);
+    // keep the chosen city in the list even if other filters now exclude it, so the select still shows it
+    if (city && !set.has(city)) set.set(city, 0);
+    return [...set.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+  }, [beforeCity, city]);
+
+  const filtered = useMemo(() => {
+    const list = city ? beforeCity.filter((r) => r.city === city) : beforeCity;
     // specialty matches first within the same day, then by TIP
     if (kind === "event") return list;
     return [...list].sort((a, b) => Number(b.forMe) - Number(a.forMe) || (b.tip ?? 0) - (a.tip ?? 0));
-  }, [rows, kind, q, mine, format, city, period, minTip, freeOnly]);
+  }, [beforeCity, city, kind]);
+
+  const anyFilter = !!q.trim() || mine || !!format || !!city || period !== "all" || minTip > 0 || freeOnly;
+  const clearFilters = () => {
+    setQ("");
+    setMine(false);
+    setFormat("");
+    setCity("");
+    setPeriod("all");
+    setMinTip(0);
+    setFreeOnly(false);
+    setShown(PAGE);
+  };
 
   const reset = (fn: () => void) => {
     fn();
@@ -105,55 +128,64 @@ export default function CoursesView({
       <p className="small muted" style={{ marginTop: -6 }}>{s.tabHint[kind]}</p>
 
       <div className={styles.filters}>
-        <input
-          className={styles.search}
-          type="search"
-          placeholder={s.search}
-          value={q}
-          onChange={(e) => reset(() => setQ(e.target.value))}
-          aria-label={s.search}
-        />
-        <label className={styles.check} title={specialty ? s.mySpecialtyHint(specialty) : s.noSpecialty}>
-          <input type="checkbox" checked={mine} disabled={!specialty} onChange={(e) => reset(() => setMine(e.target.checked))} />
-          {s.mySpecialty}
+        <label className={styles.searchField}>
+          <span className={styles.searchLabel}>{s.search}</span>
+          <input
+            className={styles.search}
+            type="search"
+            placeholder={s.searchShort}
+            value={q}
+            onChange={(e) => reset(() => setQ(e.target.value))}
+          />
         </label>
-        <select aria-label={s.format} value={format} onChange={(e) => reset(() => setFormat(e.target.value as typeof format))}>
-          <option value="">{s.format}: {s.any}</option>
-          <option value="in_person">{s.formats.in_person}</option>
-          <option value="online">{s.online}</option>
-        </select>
-        {cities.length > 1 && (
-          <select aria-label={s.city} value={city} onChange={(e) => reset(() => setCity(e.target.value))}>
-            <option value="">{s.city}: {s.any}</option>
-            {cities.map((c) => (
-              <option key={c} value={c}>{c}</option>
+        <div className={styles.selects}>
+          <select aria-label={s.format} value={format} onChange={(e) => reset(() => setFormat(e.target.value as typeof format))}>
+            <option value="">{s.anyFormat}</option>
+            <option value="in_person">{s.formats.in_person}</option>
+            <option value="online">{s.online}</option>
+          </select>
+          {cities.length > 1 && (
+            <select aria-label={s.city} value={city} onChange={(e) => reset(() => setCity(e.target.value))}>
+              <option value="">{s.anyCity}</option>
+              {cities.map((c) => (
+                <option key={c} value={c}>{cityLabel(c, s)}</option>
+              ))}
+            </select>
+          )}
+          {kind === "event" && (
+            <select aria-label={s.period} value={period} onChange={(e) => reset(() => setPeriod(e.target.value as typeof period))}>
+              <option value="all">{s.allDates}</option>
+              <option value="30">{s.next30}</option>
+              <option value="90">{s.next90}</option>
+            </select>
+          )}
+          <select aria-label={s.minTip} value={minTip} onChange={(e) => reset(() => setMinTip(Number(e.target.value)))}>
+            <option value={0}>{s.anyTip}</option>
+            {[2, 4, 8, 16].map((n) => (
+              <option key={n} value={n}>≥ {n} TIP</option>
             ))}
           </select>
-        )}
-        {kind === "event" && (
-          <select aria-label={s.period} value={period} onChange={(e) => reset(() => setPeriod(e.target.value as typeof period))}>
-            <option value="all">{s.allDates}</option>
-            <option value="30">{s.next30}</option>
-            <option value="90">{s.next90}</option>
-          </select>
-        )}
-        <select aria-label={s.minTip} value={minTip} onChange={(e) => reset(() => setMinTip(Number(e.target.value)))}>
-          <option value={0}>{s.minTip}: {s.any}</option>
-          {[2, 4, 8, 16].map((n) => (
-            <option key={n} value={n}>≥ {n} TIP</option>
-          ))}
-        </select>
-        <label className={styles.check}>
-          <input type="checkbox" checked={freeOnly} onChange={(e) => reset(() => setFreeOnly(e.target.checked))} />
-          {s.freeOnly}
-        </label>
+        </div>
+        <div className={styles.checks}>
+          <label className={styles.check} title={specialty ? s.mySpecialtyHint(specialtyLabel(specialty, locale)) : s.noSpecialty}>
+            <input type="checkbox" checked={mine} disabled={!specialty} onChange={(e) => reset(() => setMine(e.target.checked))} />
+            {s.mySpecialty}
+          </label>
+          <label className={styles.check}>
+            <input type="checkbox" checked={freeOnly} onChange={(e) => reset(() => setFreeOnly(e.target.checked))} />
+            {s.freeOnly}
+          </label>
+        </div>
       </div>
       {!specialty && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
 
       <div className="row small muted">{s.results(filtered.length)}</div>
 
       {filtered.length === 0 ? (
-        <p className="muted">{s.none}</p>
+        <div className={styles.empty}>
+          <p className="muted">{s.none}</p>
+          {anyFilter && <button type="button" className="btn" onClick={clearFilters}>{s.clearFilters}</button>}
+        </div>
       ) : (
         <ul className={styles.list}>
           {filtered.slice(0, shown).map((r) => (
@@ -169,11 +201,11 @@ export default function CoursesView({
 
       <div className="card small muted stack" style={{ gap: 6 }}>
         <div>
-          {s.updated}: {formatDate(fetchedAt.slice(0, 10), locale)}. {s.sources}:{" "}
+          {s.updatedLine(formatDate(fetchedAt.slice(0, 10), locale))} {s.sources}:{" "}
           {sources.map((src, i) => (
             <span key={src.source}>
               {i > 0 && ", "}
-              <a href={SOURCE_URLS[src.source]} target="_blank" rel="noreferrer">{SOURCE_LABELS[src.source]}</a>
+              <a href={SOURCE_URLS[src.source]} target="_blank" rel="noreferrer">{s.sourceLabels[src.source]}</a>
               {src.ok ? ` (${src.count})` : ` (${s.sourceFailed})`}
             </span>
           ))}
@@ -196,10 +228,12 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
       ? `${formatDate(r.startDate, locale)} - ${formatDate(r.endDate, locale)}`
       : formatDate(r.startDate, locale)
     : r.availableUntil
-      ? `${s.availableUntil} ${formatDate(r.availableUntil, locale)}`
+      ? `${r.kind === "ongoing" ? s.approvedUntil : s.availableUntil} ${formatDate(r.availableUntil, locale)}`
       : null;
-  const place = r.city === "Online" ? s.online : r.city;
-  const venue = r.location && r.city !== "Online" && r.location !== r.city ? r.location : null;
+  // an online course's format already says "Online", so it gets no separate place
+  const online = r.city === "Online";
+  const place = online || !r.city ? null : cityLabel(r.city, s);
+  const venue = r.location && !online && r.location !== r.city ? r.location : null;
   const hours = hoursOf(r.minutes, locale);
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
@@ -233,18 +267,18 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
             {r.price && !r.free && <span className="tag">{r.price}</span>}
           </span>
         </span>
-        <span className={styles.tip} aria-label={r.tip != null ? `${r.tip} TIP` : "TIP ?"}>
+        <span className={styles.tip} aria-label={r.tip != null ? `${formatNumber(r.tip, locale, 1)} TIP` : s.tipUnknown}>
           {r.tip != null ? `+${formatNumber(r.tip, locale, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
         </span>
         <span className={styles.chevron} aria-hidden>{open ? "−" : "+"}</span>
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <ApplyBox r={r} locale={locale} date={date} />
+          <ApplyBox r={r} locale={locale} />
           <dl className={styles.facts}>
             {date && <Fact k={s.details.date} v={date} />}
             <Fact k={s.details.format} v={s.formats[r.format]} />
-            {(venue || place) && <Fact k={s.details.place} v={[venue, venue?.includes(place ?? "~") ? null : place].filter(Boolean).join(", ")} />}
+            {(venue || place) && <Fact k={s.details.place} v={[venue, place && venue?.includes(place) ? null : place].filter(Boolean).join(", ")} />}
             {hours && <Fact k={s.details.duration} v={`${s.hours(hours)} (${r.minutes} min)`} />}
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
@@ -259,8 +293,12 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
 }
 
 /** The one thing a doctor needs from an opened course: how to sign up */
-function ApplyBox({ r, locale, date }: { r: CourseRow; locale: Locale; date: string | null }) {
+function ApplyBox({ r, locale }: { r: CourseRow; locale: Locale }) {
   const a = courseStrings(locale).apply;
+  // the email goes to a Latvian organiser, so subject, body and date are always Latvian
+  const lvDate = r.startDate
+    ? `${formatDate(r.startDate, "lv")}${r.endDate ? ` - ${formatDate(r.endDate, "lv")}` : ""}`
+    : null;
   const direct = r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !r.url.endsWith("/kursi"));
   const c = r.contact;
   return (
@@ -278,7 +316,7 @@ function ApplyBox({ r, locale, date }: { r: CourseRow; locale: Locale; date: str
             {c.email && (
               <a
                 className="btn btn-primary"
-                href={`mailto:${c.email}?subject=${encodeURIComponent(a.subject(r.title, date))}&body=${encodeURIComponent(a.body(r.title, date))}`}
+                href={`mailto:${c.email}?subject=${encodeURIComponent(applyEmail.subject(r.title, lvDate))}&body=${encodeURIComponent(applyEmail.body(r.title, lvDate))}`}
               >
                 {a.email}
               </a>

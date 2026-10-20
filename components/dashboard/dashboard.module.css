@@ -1,46 +1,5 @@
-/* Headline */
-.hero { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.big { font-size: 2.8rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.of { font-size: 1.2rem; color: var(--muted); }
-:global(.bar).barLg { height: 14px; margin: 12px 0 10px; }
-.facts { display: grid; gap: 4px 24px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.facts strong { font-variant-numeric: tabular-nums; }
-.warnCard { border-color: var(--warn); }
-.badCard { border-color: var(--bad); }
-.okCard { border-color: var(--ok); }
+/* bar tones (global .bar from globals.css) */
 :global(.bar).barWarn > span { background: var(--warn); }
-:global(.bar).barBad > span { background: var(--bad); }
-:global(.bar).barOk > span { background: var(--ok); }
-
-/* Requirement tiles */
-.tile { display: flex; flex-direction: column; gap: 8px; }
-.tileHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.tileHead :global(.badge) { white-space: nowrap; }
-.tileValue { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.tileValue small { font-size: 0.95rem; font-weight: 400; color: var(--muted); }
-:global(.bar).barSm { height: 6px; }
-
-/* Chart */
-.chartFig { margin: 0; }
-.chart { display: block; width: 100%; height: auto; overflow: visible; }
-.chartNarrow { display: none; }
-.chart text { fill: var(--muted); font-size: 16px; font-family: inherit; }
-.grid { stroke: var(--border); stroke-width: 1; }
-.axis { stroke: var(--muted); stroke-width: 1; }
-.tick { stroke: var(--muted); stroke-width: 1; }
-.chart .axisY { text-anchor: end; dominant-baseline: middle; }
-.chart .axisX { text-anchor: middle; }
-.ref { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5; }
-.today { stroke: var(--text); stroke-width: 1; stroke-dasharray: 2 4; }
-.chart .todayLabel { fill: var(--text); dominant-baseline: hanging; font-size: 14px; }
-.line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
-.dot { fill: var(--surface); stroke: var(--accent); stroke-width: 2.5; cursor: help; }
-.dot:hover { fill: var(--accent); }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; align-items: center; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.keyLine, .keyRef, .keyToday { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--accent); }
-.keyRef { border-top: 1.5px dashed var(--muted); }
-.keyToday { border-top: 1.5px dotted var(--text); }
 
 /* Category bars */
 .cats { display: flex; flex-direction: column; gap: 10px; }
@@ -54,13 +13,11 @@
 .titleCell { overflow-wrap: anywhere; }
 .dateCell { white-space: nowrap; }
 .twoCol { display: grid; gap: 40px 56px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
-.sectionHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+/* "All certificates" link next to the heading: a full 44px target on touch screens */
+@media (pointer: coarse) { .headLink { display: inline-flex; align-items: center; min-height: 44px; } }
 .footnote { max-width: 72ch; border-top: 1px solid var(--border); padding-top: 16px; }
 
-@media (max-width: 480px) {
-  .chartWide { display: none; }
-  .chartNarrow { display: block; }
-  .big { font-size: 2.2rem; }
+@media (max-width: 640px) {
   .twoCol { grid-template-columns: 1fr; }
 }
 

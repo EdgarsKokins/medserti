@@ -1,6 +1,6 @@
 /*
  * Medserti design tokens.
- * Paper and ink with one brand colour: Latvian carmine. Serif (Newsreader) for headings and the numbers that matter,
+ * Paper and ink with one brand colour: Latvian carmine. Serif (Source Serif 4) for headings and the numbers that matter,
  * IBM Plex Sans for the interface. Colour carries meaning (carmine = brand / points, green = done,
  * ochre = needs attention, red = problem), never decoration.
  */
@@ -10,9 +10,14 @@
   --surface-2: #efe9dd;
   --text: #1b2433;
   --muted: #6b6558;
-  --faint: #9a9282;
+  --faint: #736d60;
   --border: #e3ddd0;
   --border-strong: #cfc6b4;
+  /* form-control outline: 3:1 against --surface (WCAG 1.4.11) */
+  --input-border: #958b77;
+  /* select chevron and search clear icon, drawn in --muted */
+  --icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b6558' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-clear: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' fill='none' stroke='%236b6558' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
   --ink: #1b2433;
   --on-ink: #fffdf8;
   --accent: #8e2a35;
@@ -28,7 +33,7 @@
   --radius-sm: 8px;
   --shadow: none;
   --font-sans: var(--font-plex), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-serif: var(--font-newsreader), "Newsreader", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, "Times New Roman", serif;
   color-scheme: light;
 }
 /* Dark palette: used when the viewer picks "dark", or picks "system" and the OS is dark */
@@ -38,9 +43,12 @@
   --surface-2: #27231d;
   --text: #ede7da;
   --muted: #a59d8d;
-  --faint: #7b7466;
+  --faint: #958d7e;
   --border: #312c25;
   --border-strong: #463f35;
+  --input-border: #6e6555;
+  --icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23a59d8d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-clear: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' fill='none' stroke='%23a59d8d' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
   --ink: #ede7da;
   --on-ink: #15130f;
   --accent: #e0848b;
@@ -61,9 +69,12 @@
     --surface-2: #27231d;
     --text: #ede7da;
     --muted: #a59d8d;
-    --faint: #7b7466;
+    --faint: #958d7e;
     --border: #312c25;
     --border-strong: #463f35;
+    --input-border: #6e6555;
+    --icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23a59d8d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --icon-clear: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' fill='none' stroke='%23a59d8d' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
     --ink: #ede7da;
     --on-ink: #15130f;
     --accent: #e0848b;
@@ -116,15 +127,16 @@ p { margin: 0 0 10px; }
 .nav a:hover { color: var(--text); }
 .nav-links a { padding: 6px 0; border-bottom: 1.5px solid transparent; }
 .nav-links a[aria-current="page"] { color: var(--text); border-bottom-color: var(--text); }
-.nav-tools { display: flex; gap: 10px; align-items: center; }
+/* margin-left: auto keeps the tools on the right when they wrap under the brand */
+.nav-tools { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-left: auto; }
 /* buttons in the nav keep their own colours */
 .nav a.btn { color: var(--text); }
 .nav a.btn-primary, .nav a.btn-primary:hover { color: var(--on-ink); }
 
 .lang-switch { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; overflow: hidden; }
-.lang-switch button { font: inherit; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.lang-switch button { font: inherit; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; min-height: 32px; min-width: 36px; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .lang-switch button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); cursor: default; }
-.lang-switch button svg { display: block; width: 14px; height: 14px; }
+.lang-switch button svg { display: block; width: 14px; height: 14px; margin: 0 auto; }
 .theme-switch button { padding: 4px 8px; }
 
 /* ---------- surfaces ---------- */
@@ -156,12 +168,25 @@ p { margin: 0 0 10px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 0.85rem; color: var(--muted); }
 input, select, textarea {
-  font: inherit; color: var(--text); background: var(--surface);
-  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 9px 12px; width: 100%;
+  font: inherit; color: var(--text); background-color: var(--surface);
+  border: 1px solid var(--input-border); border-radius: var(--radius-sm); padding: 9px 12px; width: 100%;
 }
+input, select { min-height: 44px; }
+/* one select style everywhere: our own chevron with room for it, long options end in an ellipsis */
+select {
+  appearance: none; -webkit-appearance: none;
+  padding-right: 40px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; cursor: pointer;
+  background-image: var(--icon-chevron); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px;
+}
+select::-ms-expand { display: none; }
 input::placeholder, textarea::placeholder { color: var(--faint); }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
-input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; min-height: 0; margin: 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+/* search clear button in the palette instead of Chrome's blue one */
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin-left: 8px; cursor: pointer;
+  background: var(--icon-clear) center / 12px 12px no-repeat;
+}
 .form-grid { display: grid; gap: 16px 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 
 /* ---------- tables ---------- */
@@ -209,12 +234,54 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   html { font-size: 18px; }
   .container, .nav-inner { max-width: 1360px; }
 }
+/* Breakpoints: 640 (phone) and 1024 (tablet). Below 1024 the links get their own row, so brand and tools share row one */
+@media (max-width: 1023px) {
+  .nav-inner { row-gap: 8px; }
+  .nav-links { order: 3; width: 100%; }
+}
 @media (max-width: 640px) {
   h1 { font-size: 1.85rem; }
   .container { padding: 24px 16px 64px; }
-  .nav-inner { gap: 12px; padding: 10px 16px; }
-  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; scrollbar-width: none; }
-  /* signed-out nav would not fit a phone; sign-up stays reachable from the landing hero and the login page */
-  .nav-signup { display: none; }
+  .nav-inner { gap: 8px 12px; padding: 10px 16px; }
+  /* links wrap to a second line instead of hiding in a scroll strip */
+  .nav-links { gap: 2px 18px; }
+  .nav-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .nav-tools { flex-wrap: wrap; gap: 8px; }
+  .nav-tools .btn { min-height: 44px; padding: 9px 14px; }
+  /* the theme switch moves to the footer on phones; it is the least used control */
+  .nav .theme-switch { display: none; }
+  /* signed out, the only link is "Par mums"; on phones it lives in the footer so the nav stays two rows */
+  .nav-links-public { display: none; }
+  .lang-switch button { min-width: 44px; min-height: 44px; }
   .card { padding: 16px; }
 }
+/* touch screens: every control at least 44px */
+@media (pointer: coarse) {
+  .btn { min-height: 44px; }
+  .brand { min-height: 44px; }
+  .nav-links a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; }
+  .lang-switch button { min-width: 44px; min-height: 44px; }
+  summary { min-height: 44px; }
+}
+
+/* ---------- app footer (the landing page has its own) ---------- */
+.app-footer { border-top: 1px solid var(--border); margin-top: 24px; }
+.app-footer-inner {
+  max-width: 1120px; margin: 0 auto; padding: 20px 20px 28px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; font-size: 0.875rem; color: var(--muted);
+}
+.app-footer-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-right: auto; }
+.app-footer a { color: var(--muted); }
+.app-footer a:hover { color: var(--text); }
+@media (pointer: coarse) {
+  .app-footer-links a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+@media (min-width: 1440px) { .app-footer-inner { max-width: 1240px; } }
+@media (min-width: 1920px) { .app-footer-inner { max-width: 1360px; } }
+@media (max-width: 640px) { .app-footer-inner { padding: 16px 16px 24px; } }
+
+/* ---------- 404 and error screens ---------- */
+.status-page { max-width: 640px; display: flex; flex-direction: column; gap: 12px; padding-top: 72px; }
+.status-page h1 { margin: 0; }
+.status-page p { margin: 0; }
+.status-code { font-size: 4.5rem; line-height: 1; color: var(--accent); margin: 0; font-variant-numeric: tabular-nums; }

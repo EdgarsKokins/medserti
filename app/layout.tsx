@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { currentUserId } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import LangSwitch from "@/components/LangSwitch";
-import NavLinks from "@/components/NavLinks";
+import NavLinks, { NavAuth } from "@/components/NavLinks";
+import AppFooter from "@/components/AppFooter";
 import ThemeSwitch from "@/components/ThemeSwitch";
+import { RULES } from "@/lib/rules";
 import { THEME_COOKIE, type Theme } from "@/lib/theme";
 import { cookies } from "next/headers";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
 const plex = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
-const newsreader = Newsreader({ subsets: ["latin", "latin-ext"], weight: ["400", "500"], variable: "--font-newsreader", display: "swap" });
+// Source Serif 4 instead of Newsreader: Newsreader draws "ī" as a dotted i with a floating macron
+const serif = Source_Serif_4({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-source-serif", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
   return {
     metadataBase: new URL("https://medserti.lv"),
-    title: d.brand.name,
+    // pages set their own name: "Kursi un pasākumi · Medserti"
+    title: { default: d.brand.name, template: `%s · ${d.brand.name}` },
     description: d.landing.metaDescription,
     applicationName: d.brand.name,
     openGraph: {
@@ -41,7 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={locale}
-      className={`${plex.variable} ${newsreader.variable}`}
+      className={`${plex.variable} ${serif.variable}`}
       data-theme={theme === "system" ? undefined : theme}
       suppressHydrationWarning
     >
@@ -53,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="brand-name">{d.brand.name}</span>
             </Link>
             <NavLinks
+              publicNav={!signedIn}
               links={
                 signedIn
                   ? [
@@ -72,15 +77,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <button className="btn" type="submit">{d.nav.logout}</button>
                 </form>
               ) : (
-                <>
-                  <Link href="/login" className="btn">{d.nav.login}</Link>
-                  <Link href="/register" className="btn btn-primary nav-signup">{d.nav.signup}</Link>
-                </>
+                <NavAuth login={d.nav.login} signup={d.nav.signup} />
               )}
             </div>
           </div>
         </nav>
         {children}
+        <AppFooter
+          theme={theme}
+          labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme }}
+        />
       </body>
     </html>
   );

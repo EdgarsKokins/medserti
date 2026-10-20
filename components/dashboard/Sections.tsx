@@ -2,116 +2,7 @@ import Link from "next/link";
 import { RULES, type Progress } from "@/lib/rules";
 import { t, type Locale } from "@/lib/i18n";
 import styles from "./dashboard.module.css";
-import {
-  certTitle,
-  exclusions,
-  fmtDate,
-  fmtNum,
-  needsReviewCount,
-  recent,
-  type CategoryRow,
-  type Headline,
-} from "./model";
-
-const toneCard = { ok: styles.okCard, warn: styles.warnCard, bad: styles.badCard, neutral: "" };
-const toneBar = { ok: styles.barOk, warn: styles.barWarn, bad: styles.barBad, neutral: "" };
-const toneAlert = { ok: "alert alert-ok", warn: "alert", bad: "alert alert-bad", neutral: "" };
-
-export function HeadlineCard({
-  p,
-  h,
-  onTrack,
-  locale,
-}: {
-  p: Progress;
-  h: Headline;
-  onTrack: number | null;
-  locale: Locale;
-}) {
-  const d = t(locale).dashboard;
-  const n = (v: number) => fmtNum(v, locale);
-  const daysLeft = p.daysLeft;
-  return (
-    <section className={`card ${toneCard[h.tone]}`} aria-labelledby="dash-headline">
-      <h2 id="dash-headline" className="muted small" style={{ fontWeight: 400 }}>
-        {d.headlineTitle}
-      </h2>
-      <div className={styles.hero}>
-        <span className={styles.big}>{n(p.total)}</span>
-        <span className={styles.of}>{d.ofRequired(p.required)}</span>
-      </div>
-      <div
-        className={`bar ${styles.barLg} ${toneBar[h.tone]}`}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={p.required}
-        aria-valuenow={p.total}
-      >
-        <span style={{ width: `${h.pct}%` }} />
-      </div>
-      <div className={styles.facts}>
-        <div>
-          <strong>{h.pct}%</strong> {d.done}, <strong>{p.remaining > 0 ? d.toGo(n(p.remaining)) : d.nothingToGo}</strong>
-        </div>
-        {p.windowEnd && daysLeft != null && (
-          <div>
-            {daysLeft >= 0 ? (
-              <>
-                {d.validUntil} <strong>{fmtDate(p.windowEnd, locale)}</strong> {d.daysLeft(daysLeft)}
-              </>
-            ) : (
-              <>
-                {d.expiredOn} <strong>{fmtDate(p.windowEnd, locale)}</strong>
-              </>
-            )}
-          </div>
-        )}
-        {p.perMonthNeeded != null && daysLeft != null && daysLeft >= 0 && (
-          <div>
-            {d.perMonthPre} <strong>{d.perMonth(n(p.perMonthNeeded))}</strong> {d.perMonthPost}
-          </div>
-        )}
-        {onTrack != null && p.remaining > 0 && daysLeft != null && daysLeft >= 0 && (
-          <div className="muted">
-            {d.onTrack(n(onTrack))}
-            {p.total >= onTrack ? d.ahead : d.behind(n(onTrack - p.total))}
-          </div>
-        )}
-      </div>
-      {h.message && (
-        <div className={toneAlert[h.tone]} style={{ marginTop: 12 }}>
-          {h.message}
-        </div>
-      )}
-    </section>
-  );
-}
-
-export function ChecksGrid({ p, locale }: { p: Progress; locale: Locale }) {
-  const dict = t(locale);
-  const d = dict.dashboard;
-  return (
-    <section aria-label={d.checksAria} className="grid">
-      {p.checks.map((c) => {
-        const pct = c.need > 0 ? Math.min(100, (c.have / c.need) * 100) : 100;
-        return (
-          <div key={c.id} className={`card ${styles.tile}`}>
-            <div className={styles.tileHead}>
-              <span className="small muted">{dict.checks[c.id]}</span>
-              <span className={`badge ${c.met ? "badge-ok" : "badge-bad"}`}>{c.met ? d.met : d.notMet}</span>
-            </div>
-            <div className={styles.tileValue}>
-              {fmtNum(c.have, locale)} <small>{d.of(fmtNum(c.need, locale))}</small>
-            </div>
-            <div className={`bar ${styles.barSm} ${c.met ? styles.barOk : ""}`}>
-              <span style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-        );
-      })}
-    </section>
-  );
-}
+import { certTitle, exclusions, fmtDate, fmtNum, needsReviewCount, recent, type CategoryRow } from "./model";
 
 export function CategoryBars({ p, rows, locale }: { p: Progress; rows: CategoryRow[]; locale: Locale }) {
   const d = t(locale).dashboard;
@@ -173,7 +64,7 @@ export function RecentActivity({ p, locale }: { p: Progress; locale: Locale }) {
     <section>
       <div className="page-head" style={{ marginBottom: 4 }}>
         <h2 style={{ margin: 0 }}>{d.recent}</h2>
-        <Link href="/certificates" className="small">
+        <Link href="/certificates" className={`small ${styles.headLink}`}>
           {d.allCerts}
         </Link>
       </div>
