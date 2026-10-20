@@ -63,6 +63,7 @@ export const PARAM_NAMES: Record<string, string[]> = {
   "exportDocs.unconfirmed": ["n"],
   "exportDocs.applyBy": ["date"],
   "exportDocs.preparing": ["done", "total"],
+  "reset.emailBody": ["link"],
 };
 
 /** Sub-headings inside a block: "top" or "top.sub" */
@@ -98,6 +99,7 @@ export const SECTION_NAMES: Record<string, string> = {
   rules: "Noteikumi",
   auth: "Pieslēgšanās un reģistrācija",
   "auth.valuePoints": "Ko dara Medserti (saraksts)",
+  reset: "Paroles atjaunošana un e-pasts",
   api: "Kļūdu ziņojumi",
   notFound: "Lapa nav atrasta (404)",
   error: "Lapas kļūda",
@@ -171,6 +173,23 @@ export const LABELS: Record<string, string> = {
   "auth.passwordHint": "Paroles norāde",
   "auth.valueTitle": "Virsraksts blokam “Ko dara Medserti”",
   "auth.valuePoints.#": "#. punkts",
+  "auth.forgotLink": "Saite: aizmirsāt paroli?",
+
+  "reset.forgotTitle": "Paroles pieprasīšanas virsraksts",
+  "reset.forgotLead": "Paroles pieprasīšanas ievadteksts",
+  "reset.send": "Poga: nosūtīt saiti",
+  "reset.sent": "Paziņojums pēc nosūtīšanas",
+  "reset.backToLogin": "Saite: atpakaļ uz pieslēgšanos",
+  "reset.newTitle": "Jaunas paroles virsraksts",
+  "reset.newLead": "Jaunas paroles ievadteksts",
+  "reset.newPassword": "Lauks: jaunā parole",
+  "reset.save": "Poga: saglabāt paroli",
+  "reset.invalidTitle": "Nederīgas saites virsraksts",
+  "reset.invalidBody": "Nederīgas saites teksts",
+  "reset.requestNew": "Poga: pieprasīt jaunu saiti",
+  "reset.tooMany": "Pārāk daudz pieprasījumu",
+  "reset.emailSubject": "E-pasta temats",
+  "reset.emailBody": "E-pasta teksts",
 
   "landingA.heroLines.#": "Lielais virsraksts, #. rinda",
   "landingA.heroSub": "Teksts zem lielā virsraksta",

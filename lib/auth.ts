@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { getUser } from "./db";
@@ -21,8 +22,9 @@ export function secret() {
 export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
 export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);
 
-export async function startSession(userId: string) {
-  const token = await new SignJWT({ sub: userId })
+/** Session version (`sv` claim) must match user.sessionVersion; bumping it signs out every existing session */
+export async function startSession(userId: string, sessionVersion = 0) {
+  const token = await new SignJWT({ sub: userId, sv: sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
@@ -40,20 +42,25 @@ export async function endSession() {
   (await cookies()).delete(COOKIE);
 }
 
-export async function currentUserId(): Promise<string | null> {
+/** Signed-in user from the cookie, or null. Sessions issued before the last password change are rejected. */
+export const currentUser = cache(async (): Promise<UserRecord | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
+  let payload;
   try {
-    const { payload } = await jwtVerify(token, secret());
-    return typeof payload.sub === "string" ? payload.sub : null;
+    ({ payload } = await jwtVerify(token, secret()));
   } catch {
     return null;
   }
-}
+  if (typeof payload.sub !== "string") return null;
+  const user = await getUser(payload.sub);
+  if (!user) return null;
+  const sv = typeof payload.sv === "number" ? payload.sv : 0;
+  return sv === (user.sessionVersion ?? 0) ? user : null;
+});
 
-export async function currentUser(): Promise<UserRecord | null> {
-  const id = await currentUserId();
-  return id ? getUser(id) : null;
+export async function currentUserId(): Promise<string | null> {
+  return (await currentUser())?.id ?? null;
 }
 
 /** For server components/pages: redirects to /login when signed out */
