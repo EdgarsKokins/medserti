@@ -5,6 +5,8 @@ import "./globals.css";
 import { currentUserId } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
+import I18nOverrides from "@/components/I18nOverrides";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
 import { RULES } from "@/lib/rules";
@@ -38,6 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const signedIn = !!(await currentUserId());
   const locale = await getLocale();
+  // already loaded by getLocale(); passed down once so client components get the same texts
+  const overrides = await loadRuntimeOverrides();
   const d = t(locale);
   const saved = (await cookies()).get(THEME_COOKIE)?.value;
   const theme: Theme = saved === "light" || saved === "dark" ? saved : "system";
@@ -49,41 +53,43 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <body>
-        <nav className="nav">
-          <div className="nav-inner">
-            <Link href={signedIn ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
-              <span className="brand-seal" aria-hidden>M</span>
-              <span className="brand-name">{d.brand.name}</span>
-            </Link>
-            {/* logged-out visitors get no section links: "Par mums" lives on the landing page and in the footer */}
-            {signedIn && (
-              <NavLinks
-                publicNav={false}
-                links={[
-                  { href: "/dashboard", label: d.nav.dashboard },
-                  { href: "/certificates", label: d.nav.certificates },
-                  { href: "/courses", label: d.nav.courses },
-                  { href: "/profile", label: d.nav.profile },
-                ]}
-              />
-            )}
-            <div className="nav-tools">
-              {signedIn ? (
-                <form action="/api/auth/logout" method="post">
-                  <button className="btn" type="submit">{d.nav.logout}</button>
-                </form>
-              ) : (
-                <NavAuth login={d.nav.login} signup={d.nav.signup} />
+        <I18nOverrides data={overrides}>
+          <nav className="nav">
+            <div className="nav-inner">
+              <Link href={signedIn ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
+                <span className="brand-seal" aria-hidden>M</span>
+                <span className="brand-name">{d.brand.name}</span>
+              </Link>
+              {/* logged-out visitors get no section links: "Par mums" lives on the landing page and in the footer */}
+              {signedIn && (
+                <NavLinks
+                  publicNav={false}
+                  links={[
+                    { href: "/dashboard", label: d.nav.dashboard },
+                    { href: "/certificates", label: d.nav.certificates },
+                    { href: "/courses", label: d.nav.courses },
+                    { href: "/profile", label: d.nav.profile },
+                  ]}
+                />
               )}
+              <div className="nav-tools">
+                {signedIn ? (
+                  <form action="/api/auth/logout" method="post">
+                    <button className="btn" type="submit">{d.nav.logout}</button>
+                  </form>
+                ) : (
+                  <NavAuth login={d.nav.login} signup={d.nav.signup} />
+                )}
+              </div>
             </div>
-          </div>
-        </nav>
-        {children}
-        <AppFooter
-          theme={theme}
-          locale={locale}
-          labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
-        />
+          </nav>
+          {children}
+          <AppFooter
+            theme={theme}
+            locale={locale}
+            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
+          />
+        </I18nOverrides>
       </body>
     </html>
   );

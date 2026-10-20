@@ -9,7 +9,7 @@ import type { UserRecord } from "./types";
 const COOKIE = "cme_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-function secret() {
+export function secret() {
   const s = process.env.AUTH_SECRET;
   if (!s) {
     if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is not set");
