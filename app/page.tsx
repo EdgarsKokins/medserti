@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import HeroChart from "@/components/landing/HeroChart";
+import ProductFrame from "@/components/landing/ProductFrame";
 import HowItWorks from "@/components/landing/HowItWorks";
 import LangSwitch from "@/components/LangSwitch";
 import ThemeSwitch from "@/components/ThemeSwitch";
@@ -76,7 +76,6 @@ export default async function Home() {
   const saved = (await cookies()).get(THEME_COOKIE)?.value;
   const theme = isTheme(saved) ? saved : "system";
   const { next: events, total } = await upcomingEvents();
-  const startYear = new Date().getFullYear() - 3;
   // only plain strings may cross into the client component (coursesBody is a function)
   const { coursesBody: _coursesBody, remaining, ...howText } = a;
   const ledgerTotal = LEDGER.reduce((n, r) => n + r.tip, 0);
@@ -86,19 +85,34 @@ export default async function Home() {
       <main>
         <section className={s.hero} aria-labelledby="landing-title">
           <div className={s.heroInner}>
-            <div>
-              <h1 id="landing-title" className={s.heroTitle}>
-                {a.heroLines.map((line) => (
-                  <span key={line}>{line}</span>
-                ))}
-              </h1>
+            <div className={s.heroCopy}>
+              <h1 id="landing-title" className={s.heroTitle}>{a.heroTitle}</h1>
               <p className={s.heroSub}>{a.heroSub}</p>
               <div className={s.ctas}>
-                <Link href="/register" className={`btn ${s.ctaMain}`}>{a.start}</Link>
-                <a href="#how" className={`btn ${s.ctaGhost}`}>{a.how} ↓</a>
+                <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{a.start}</Link>
+                <a href="#how" className={`btn ${s.ctaGhost}`}>{a.how}</a>
               </div>
+              <p className={s.freeNote}>{l.freeNote}</p>
             </div>
-            <HeroChart exampleLabel={a.chartExample} ofLabel={a.counterOf} chartLabel={a.chartLabel} startYear={startYear} />
+            <ProductFrame
+              label={a.frameLabel}
+              badge={a.sampleBadge}
+              name={a.frameName}
+              role={a.frameRole}
+              collected={a.frameCollected}
+              of={a.frameOf}
+              total={ledgerTotal}
+              rulesTitle={a.frameRules}
+              rules={[
+                ...a.checksDone.map((label) => ({ label, done: true })),
+                { label: a.checkSpecialty, done: false },
+                { label: remaining(250 - ledgerTotal), done: false },
+              ]}
+              deadline={a.deadline}
+              deadlineValue={formatDate(DEADLINE, locale)}
+              recentTitle={a.frameRecent}
+              recent={LEDGER.slice().reverse().slice(0, 3).map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip }))}
+            />
           </div>
         </section>
 
@@ -121,7 +135,7 @@ export default async function Home() {
               <div>
                 <h2 id="courses-title" className={s.h2}>{a.coursesTitle}</h2>
                 {total > 0 && <p className={s.coursesBody}>{a.coursesBody(Math.floor(total / 100) * 100)}</p>}
-                <Link href="/register" className="btn btn-primary">{a.start}</Link>
+                <Link href="/register" className="btn">{a.start}</Link>
               </div>
               {events.length > 0 && (
                 <ul className={s.events}>
@@ -166,20 +180,21 @@ export default async function Home() {
             </div>
           </section>
 
-          <section className={s.section} aria-label={l.faqTitle}>
-            <div className={s.faq}>
+          <section className={s.section} aria-labelledby="faq-title">
+            <h2 id="faq-title" className={s.h2}>{l.faqTitle}</h2>
+            <dl className={s.faq}>
               {a.faq.map((f) => (
-                <details key={f.q} open>
-                  <summary>{f.q}</summary>
-                  <p>{f.a}</p>
-                </details>
+                <div key={f.q}>
+                  <dt>{f.q}</dt>
+                  <dd>{f.a}</dd>
+                </div>
               ))}
-            </div>
+            </dl>
           </section>
 
           <div className={s.closing}>
-            <p className={s.closingText}>{a.heroLines.slice(0, 2).join(" ")}</p>
-            <Link href="/register" className={`btn ${s.ctaMain}`}>{a.start}</Link>
+            <p className={s.closingText}>{a.closing}</p>
+            <Link href="/register" className={`btn ${s.closingCta}`}>{a.start}</Link>
           </div>
         </div>
       </main>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
+import { Public_Sans, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { currentUserId } from "@/lib/auth";
 import { t } from "@/lib/i18n";
@@ -14,9 +14,10 @@ import { THEME_COOKIE, type Theme } from "@/lib/theme";
 import { cookies } from "next/headers";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
-const plex = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
-// Source Serif 4 instead of Newsreader: Newsreader draws "ī" as a dotted i with a floating macron
-const serif = Source_Serif_4({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-source-serif", display: "swap" });
+// Public Sans for text and controls: built for government services, open and plain numerals for 60+ readers
+const body = Public_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
+// Schibsted Grotesk for headings and the numbers that matter
+const display = Schibsted_Grotesk({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "700"], variable: "--font-display-face", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
@@ -45,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={locale}
-      className={`${plex.variable} ${serif.variable}`}
+      className={`${body.variable} ${display.variable}`}
       data-theme={theme === "system" ? undefined : theme}
       suppressHydrationWarning
     >
