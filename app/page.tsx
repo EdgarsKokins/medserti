@@ -60,6 +60,8 @@ const LEDGER = [
   { date: "2025-02-14", lv: "Kardiologu kongress", en: "Cardiology congress", tip: 16 },
   { date: "2025-09-25", lv: "Artroskopija", en: "Arthroscopy", tip: 16 },
 ];
+/** Example certificate period end for the same sample doctor (issued Jan 2024) */
+const DEADLINE = "2029-01-15";
 const PHOTOS: Record<string, string> = { "Matīss Kokins": "/team/matiss.jpg", "Edgars Kokins": "/team/edgars.jpg" };
 const shortDate = (iso: string, locale: Locale) =>
   locale === "lv" ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}.` : formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1");
@@ -76,7 +78,8 @@ export default async function Home() {
   const { next: events, total } = await upcomingEvents();
   const startYear = new Date().getFullYear() - 3;
   // only plain strings may cross into the client component (coursesBody is a function)
-  const { coursesBody: _coursesBody, ...howText } = a;
+  const { coursesBody: _coursesBody, remaining, ...howText } = a;
+  const ledgerTotal = LEDGER.reduce((n, r) => n + r.tip, 0);
 
   return (
     <div className={s.root}>
@@ -95,7 +98,7 @@ export default async function Home() {
                 <a href="#how" className={`btn ${s.ctaGhost}`}>{a.how} ↓</a>
               </div>
             </div>
-            <HeroChart ofLabel={a.counterOf} chartLabel={a.chartLabel} startYear={startYear} />
+            <HeroChart exampleLabel={a.chartExample} ofLabel={a.counterOf} chartLabel={a.chartLabel} startYear={startYear} />
           </div>
         </section>
 
@@ -106,6 +109,8 @@ export default async function Home() {
               l={{
                 ...howText,
                 readDateValue: formatDate("2025-09-25", locale),
+                remainingValue: remaining(250 - ledgerTotal),
+                deadlineValue: formatDate(DEADLINE, locale),
                 ledgerRows: LEDGER.map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip })),
               }}
             />

@@ -1,20 +1,34 @@
-/* ---------- hero chart (sits on the deep green hero) ---------- */
-.heroChart { position: relative; }
+/* ---------- hero chart (sits on the deep green hero) ----------
+   Everything below renders finished. Animations run from first paint in CSS (no script needed);
+   .wait holds the "before" frame only while the visual is still off screen. */
+@property --tip { syntax: "<integer>"; inherits: false; initial-value: 0; }
+.heroChart { position: relative; --ease: cubic-bezier(0.16, 1, 0.3, 1); }
 .counter { display: flex; align-items: baseline; gap: 10px; justify-content: flex-end; margin-bottom: 4px; }
+.counterNote { margin-right: auto; align-self: flex-end; font-size: 0.9rem; color: var(--l-mint); padding-bottom: 6px; }
 .counterNum { font-size: clamp(3.5rem, 8vw, 6rem); line-height: 1; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--l-cream); min-width: 3ch; text-align: right; }
+/* keyframes are generated from STEPS in HeroChart.tsx; the name comes in via a variable so CSS modules leave it unscoped */
+.counterAnim { --tip: 250; counter-reset: tip var(--tip); animation: var(--count-anim) var(--sweep) linear both; }
+.counterAnim::after { content: counter(tip); }
 .counterOf { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--l-mint); }
 .chartSvg { display: block; width: 100%; height: auto; overflow: visible; }
 .goal { stroke: var(--l-mint); stroke-opacity: 0.55; stroke-dasharray: 4 6; }
 .goalLabel { fill: var(--l-mint); font-size: 12px; font-family: var(--font-sans); }
 .base { stroke: var(--l-line); }
 .year { fill: var(--l-mint); font-size: 12px; font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
-.area { fill: var(--l-amber); fill-opacity: 0.12; transition: d 0.2s; }
+.sweep { animation: sweep var(--sweep) linear both; }
+.area { fill: var(--l-amber); fill-opacity: 0.12; }
 .line { fill: none; stroke: var(--l-amber); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
-.dot { fill: var(--l-cream); stroke: var(--l-green); stroke-width: 2; animation: drop 0.35s ease-out; transform-box: fill-box; transform-origin: center; }
+.dot { fill: var(--l-cream); stroke: var(--l-green); stroke-width: 2; animation: drop 0.45s var(--ease) both; transform-box: fill-box; transform-origin: center; }
+@keyframes sweep { from { clip-path: inset(-10% 100% -10% 0); } to { clip-path: inset(-10% 0 -10% 0); } }
 @keyframes drop { from { transform: translateY(-18px) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+.heroChart.wait .sweep { animation: none; clip-path: inset(-10% 100% -10% 0); }
+.heroChart.wait .dot { animation: none; opacity: 0; }
+.heroChart.wait .counterAnim { animation: none; --tip: 0; }
 
-/* ---------- how it works ---------- */
-.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* ---------- how it works ----------
+   One sample doctor across three steps. Same rule as the hero: finished by default, animated from
+   first paint, and a step that starts below the fold waits in its "before" frame (.wait) until seen. */
+.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; grid-template-columns: repeat(3, minmax(0, 1fr)); --ease: cubic-bezier(0.16, 1, 0.3, 1); }
 .stage { height: 250px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); padding: 18px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
 .stepTitle { display: flex; align-items: center; gap: 10px; margin: 18px 0 4px; font-family: var(--font-sans); font-weight: 600; font-size: 1.1rem; letter-spacing: -0.01em; }
 .stepNo { width: 26px; height: 26px; border-radius: 50%; background: var(--l-green); color: var(--l-cream); font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; flex: none; }
@@ -28,40 +42,48 @@
 .certName { font-weight: 600; }
 .certCourse { color: #4a463e; margin: 2px 0 8px; }
 .certRow { display: flex; gap: 8px; flex-wrap: wrap; }
-.hl { padding: 1px 4px; border-radius: 3px; outline: 2px solid transparent; transition: outline-color 0.3s, background 0.3s; }
+.hl { padding: 1px 4px; border-radius: 3px; outline: 2px solid var(--l-amber); background: rgba(232, 176, 74, 0.18); animation: mark 0.4s ease-out both; }
+.hl1 { animation-delay: 0.3s; }
+.hl2 { animation-delay: 0.6s; }
+@keyframes mark { from { outline-color: transparent; background: transparent; } }
 .read { margin: 14px 0 0; display: flex; gap: 6px; flex-wrap: wrap; }
-.read > div { background: var(--l-green); color: var(--l-cream); border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; display: flex; gap: 6px; opacity: 0; transform: translateY(8px); transition: opacity 0.35s, transform 0.35s; }
+.chip { background: var(--l-green); color: var(--l-cream); border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; display: flex; gap: 6px; animation: rise 0.45s var(--ease) both; }
 .read dt { color: var(--l-mint); }
 .read dd { margin: 0; font-weight: 600; }
-.seen .hl1 { outline-color: var(--l-amber); background: rgba(232, 176, 74, 0.18); transition-delay: 0.3s; }
-.seen .hl2 { outline-color: var(--l-amber); background: rgba(232, 176, 74, 0.18); transition-delay: 0.6s; }
-.seen .chip1 { opacity: 1; transform: none; transition-delay: 0.9s; }
-.seen .chip2 { opacity: 1; transform: none; transition-delay: 1.15s; }
-.seen .chip3 { opacity: 1; transform: none; transition-delay: 1.4s; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 
-/* 2. ledger filling */
+/* 2. the read certificate lands as the newest row of the report */
 .ledger { font-size: 0.8rem; font-variant-numeric: tabular-nums; background-image: linear-gradient(var(--border) 1px, transparent 1px); background-size: 100% 30px; background-position: 0 29px; }
 .ledgerHead { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); height: 30px; display: flex; align-items: center; }
-.ledgerRow { display: grid; grid-template-columns: 70px minmax(0, 1fr) 36px; gap: 8px; height: 30px; align-items: center; opacity: 0; transform: translateX(-10px); transition: opacity 0.3s, transform 0.3s; }
-.seen .ledgerRow { opacity: 1; transform: none; }
+.ledgerRow { display: grid; grid-template-columns: 70px minmax(0, 1fr) 36px; gap: 8px; height: 30px; align-items: center; animation: slide 0.4s var(--ease) both; }
+.ledgerNew { font-weight: 600; }
+@keyframes slide { from { opacity: 0; transform: translateX(-10px); } }
 .ledgerDate { color: var(--muted); }
 .ledgerTitleCell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ledgerTip { text-align: right; color: var(--l-green-text); font-weight: 600; }
 .ledgerTotal { display: flex; justify-content: space-between; border-top: 2px solid var(--text); margin-top: 4px; padding-top: 6px; font-weight: 600; }
 
-/* 3. requirements ticking off */
-.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.92rem; }
+/* 3. the same report: what is met, what is still open, and the deadline */
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 0.92rem; }
 .checks li { display: flex; align-items: center; gap: 10px; }
-.tick { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; color: transparent; flex: none; transition: background 0.3s, border-color 0.3s, color 0.3s; }
-.seen .checks li:not(.checkOpen) .tick { background: var(--l-green); border-color: var(--l-green); color: var(--l-cream); }
-.seen .checkOpen .tick { border-color: var(--l-amber); }
-.checkOpen { color: var(--muted); }
+.tick { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; flex: none; animation: tick 0.35s ease-out both; }
+.checkDone .tick { background: var(--l-green); border-color: var(--l-green); color: var(--l-cream); }
+.checkOpen .tick { border-color: var(--l-amber); }
+.checkOpen { font-weight: 600; }
+@keyframes tick { from { background: transparent; border-color: var(--border-strong); color: transparent; } }
+.deadline { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.92rem; animation: rise 0.45s var(--ease) both; }
+.deadline span:first-child { color: var(--muted); }
+.deadline span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.wait .hl, .wait .chip, .wait .ledgerRow, .wait .tick, .wait .deadline { animation: none; }
+.wait .hl { outline-color: transparent; background: transparent; }
+.wait .chip, .wait .ledgerRow, .wait .deadline { opacity: 0; }
+.wait .tick { background: transparent; border-color: var(--border-strong); color: transparent; }
 
 @media (max-width: 900px) {
   .how { grid-template-columns: minmax(0, 1fr); }
   .stage { height: auto; min-height: 220px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dot { animation: none; }
-  .read > div, .ledgerRow, .hl, .tick { transition: none; }
+  .sweep, .dot, .counterAnim, .hl, .chip, .ledgerRow, .tick, .deadline { animation: none; }
 }

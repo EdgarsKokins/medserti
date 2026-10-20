@@ -18,8 +18,8 @@
 /* ---------- hero ---------- */
 .hero { background: var(--l-green); color: var(--l-cream); }
 .heroInner { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 40px 56px; align-items: center; padding: 72px 20px 64px; max-width: 1160px; margin: 0 auto; }
-.heroTitle { font-family: var(--font-sans); font-weight: 600; font-size: clamp(2.6rem, 5.2vw, 4.4rem); line-height: 1.02; letter-spacing: -0.035em; margin: 0 0 22px; }
-.heroTitle span { display: block; }
+.heroTitle { font-family: var(--font-sans); font-weight: 600; font-size: clamp(2.6rem, 5.2vw, 4.2rem); line-height: 1.02; letter-spacing: -0.035em; margin: 0 0 22px; }
+.heroTitle span { display: block; text-wrap: balance; }
 .heroTitle span:last-child { color: var(--l-amber); }
 .heroSub { font-size: 1.15rem; line-height: 1.5; color: var(--l-mint); max-width: 30rem; margin: 0 0 30px; }
 .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
