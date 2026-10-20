@@ -214,5 +214,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .container { padding: 24px 16px 64px; }
   .nav-inner { gap: 12px; padding: 10px 16px; }
   .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; scrollbar-width: none; }
+  /* signed-out nav would not fit a phone; sign-up stays reachable from the landing hero and the login page */
+  .nav-signup { display: none; }
   .card { padding: 16px; }
 }
