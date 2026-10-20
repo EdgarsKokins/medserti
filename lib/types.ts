@@ -18,6 +18,8 @@ export interface UserRecord {
   termsAcceptedAt?: string;
   /** LEGAL_UPDATED (lib/legal.ts) of the texts they agreed to */
   termsVersion?: string;
+  /** Bumped on password reset; sessions carrying an older version are rejected (missing = 0) */
+  sessionVersion?: number;
   profile: Profile;
 }
 
@@ -82,6 +84,8 @@ export interface CmeCertificate {
   country: string | null;
   /** 0-1, share of the key fields (title, date, points) the parser found */
   confidence: number | null;
+  /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */
+  fieldConfidence?: FieldConfidence | null;
   /** JSON array of ParseNote; older certificates hold plain English text */
   parseNotes: string | null;
 }
@@ -105,7 +109,17 @@ export type ParseNoteCode =
   | "derivedElearning"
   | "derivedLatvia"
   | "plainHours"
-  | "checkBeforeConfirming";
+  | "checkBeforeConfirming"
+  // added Oct 2026 with the parsing module
+  | "pdfOcr"
+  | "pointsSummed"
+  | "courseTotal"
+  | "lecturer"
+  | "lowConfidence";
+
+/** Fields the parser scores; the review panel marks those below the threshold */
+export type ConfidenceField = "title" | "date" | "points" | "country";
+export type FieldConfidence = Partial<Record<ConfidenceField, number>>;
 
 /** A parser note as a code plus values, rendered through dict.parseNotes in the UI language */
 export interface ParseNote {

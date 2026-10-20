@@ -14,6 +14,6 @@ export async function POST(req: Request) {
   const user = await getUserByEmail(parsed.data.email);
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash)))
     return NextResponse.json({ error: m.wrongCredentials }, { status: 401 });
-  await startSession(user.id);
+  await startSession(user.id, user.sessionVersion ?? 0);
   return NextResponse.json({ ok: true });
 }
