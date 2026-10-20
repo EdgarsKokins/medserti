@@ -2,11 +2,15 @@ import { t, type Locale } from "@/lib/i18n";
 import s from "./about.module.css";
 
 /* "Who we are" on the public login / register pages: founding story and the two founders */
-export default function About({ locale }: { locale: Locale }) {
+export default function About({ locale, page = false }: { locale: Locale; page?: boolean }) {
   const a = t(locale).about;
   return (
     <section className={s.about} aria-labelledby="about-title">
-      <h2 id="about-title" className={s.title}>{a.title}</h2>
+      {page ? (
+        <h1 id="about-title" className={s.pageTitle}>{a.title}</h1>
+      ) : (
+        <h2 id="about-title" className={s.title}>{a.title}</h2>
+      )}
 
       <div className={s.story}>
         <h3 className={s.kicker}>{a.storyTitle}</h3>
