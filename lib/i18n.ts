@@ -152,7 +152,6 @@ const en = {
     ],
     footerRules: "Regulation No. 391 (likumi.lv)",
     footerContact: "Contact",
-    footerContactPending: "[contact email to be added]",
     footerNav: "Footer",
   },
   professions: {
@@ -527,7 +526,6 @@ const lv: Dict = {
     ],
     footerRules: "MK noteikumi Nr. 391 (likumi.lv)",
     footerContact: "Kontakti",
-    footerContactPending: "[kontaktu e-pasts vēl jānorāda]",
     footerNav: "Kājene",
   },
   professions: {

@@ -14,8 +14,8 @@ import { RULES } from "@/lib/rules";
 import { isTheme, THEME_COOKIE } from "@/lib/theme";
 import s from "./landing.module.css";
 
-// TODO(Edgars): set the public contact address; until then the footer shows a visible placeholder
-const CONTACT_EMAIL: string | null = null;
+// Public contact address shown in the footer (an alias for now)
+const CONTACT_EMAIL = "info@medserti.lv";
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
@@ -193,7 +193,7 @@ export default async function Home() {
           </nav>
           <div className={s.footerContact}>
             <div className={s.footerLabel}>{l.footerContact}</div>
-            {CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <span>{l.footerContactPending}</span>}
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </div>
           <div className={s.footerTools}>
             <ThemeSwitch initial={theme} labels={d.theme} />
