@@ -619,6 +619,135 @@ const en = {
     requiredPointsInvalid: "Points required must be a whole number between 1 and 5000",
     demoReadOnly: "The demo account is read-only. Sign up to save your own certificates.",
   },
+  legal: {
+    privacyLink: "Privacy policy",
+    termsLink: "Terms of use",
+    updated: "Last updated",
+    toBeSpecified: "to be specified",
+    controllerTitle: "Who is responsible for your data",
+    controllerName: "Data controller",
+    controllerRegNo: "Registration number",
+    controllerAddress: "Address",
+    controllerEmail: "Email",
+    contactTitle: "Questions and requests",
+    contactBody: "Write to us about your data or to use any of your rights. We answer within one month.",
+    complaintTitle: "Complaints",
+    complaintBody: "If you think we handle your data unlawfully, you can complain to the Data State Inspectorate (Datu valsts inspekcija), the Latvian supervisory authority.",
+    seeAlsoTerms: "See also the terms of use.",
+    seeAlsoPrivacy: "How we handle your data is described in the privacy policy.",
+    privacy: {
+      title: "Privacy policy",
+      lead: "What data Medserti stores, why, and how to have it deleted.",
+      sections: [
+        {
+          title: "What we store",
+          items: [
+            "Account: your email address, your password (only as a one-way hash, never in plain text), the date you created the account and the date you agreed to these terms.",
+            "Profile: full name, profession, specialty, certificate type, certificate number if you enter it, certificate issue and expiry dates, and a TIP target if you set one yourself.",
+            "Certificates: the files you upload (PDF or photo) and the data read from them or entered by you: course title, organizer, dates, points, hours, category, country and approval number.",
+          ],
+        },
+        {
+          title: "What we do not store",
+          items: [
+            "Your personal code, address and workplaces. You enter them only when you export recertification documents. The documents are built in your browser, and these fields never reach our server.",
+            "Text in photos is recognized in your browser. We receive the photo and the recognized text, nothing else from your device.",
+            "No analytics, advertising or tracking tools.",
+          ],
+        },
+        {
+          title: "Why we use it",
+          items: [
+            "To run your account, count your CME points (TIP) against Cabinet Regulation No. 391, show courses that fit your specialty and build your recertification documents.",
+            "We do not sell your data, do not use it for advertising and do not pass it to the Latvian Medical Association (LĀB), employers or anyone else.",
+          ],
+        },
+        {
+          title: "Legal basis",
+          items: [
+            "Contract (GDPR Article 6(1)(b)): we need this data to provide the service you signed up for.",
+            "Consent (GDPR Article 6(1)(a)): you agree to this policy when you register. You can withdraw consent at any time by deleting your account.",
+          ],
+        },
+        {
+          title: "Who processes it for us",
+          items: [
+            "Vercel Inc. (USA) hosts the site and stores the data and files in a private Vercel Blob store. Our server runs in Vercel's Washington, D.C. (USA) region, so data is transferred outside the EU. The transfer is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
+            "jsDelivr (a public file network): when you upload a photo, your browser downloads the text recognition program from cdn.jsdelivr.net. That service sees your IP address, not your files.",
+            "Resend (USA) sends our emails, such as password reset links. It receives your email address and the message text.",
+          ],
+        },
+        {
+          title: "Cookies",
+          items: [
+            "We only use cookies the site needs to work: a sign-in cookie (30 days) and your language and theme choice (1 year). No consent banner is needed for these.",
+          ],
+        },
+        {
+          title: "How long we keep it",
+          items: [
+            "Until you delete your account. Deleting it in your profile removes your account, profile, all certificate records and all uploaded files at once.",
+            "Password reset links expire after 1 hour.",
+            "Vercel keeps short-lived technical logs (for example, IP addresses of requests) under its own rules.",
+          ],
+        },
+        {
+          title: "Your rights",
+          items: [
+            "Under the GDPR you can ask to see your data, correct it, delete it, restrict or object to its use, and get it in a portable format.",
+            "You can correct most data yourself in your profile and certificate list, and delete everything with the \"Delete account\" button in your profile.",
+          ],
+        },
+        {
+          title: "Courses",
+          items: [
+            "Course listings come from public sources: the websites of course organizers and the Latvian Medical Association (LĀB). They contain no data about you.",
+          ],
+        },
+        {
+          title: "Changes",
+          items: [
+            "If we change this policy, we update the date at the top of this page.",
+          ],
+        },
+      ],
+    },
+    terms: {
+      title: "Terms of use",
+      lead: "The key points. By creating an account you agree to them.",
+      points: [
+        "Medserti is free.",
+        "Medserti is a planning aid. It is not an official record of the Latvian Medical Association (LĀB) or any certifying body, and it does not decide your recertification. The certifying body makes the final decision.",
+        "You are responsible for the documents and data you submit for recertification.",
+        "Certificates are read automatically, and the result can be wrong. Check the data of every certificate before you rely on it.",
+        "Course listings come from public sources and can be incomplete or out of date. Check the details with the organizer.",
+        "The service is provided as is, without any warranty of accuracy or availability. To the extent the law allows, we are not liable for losses from using it.",
+        "Keep your password safe. One account per person.",
+        "You can delete your account at any time in your profile. We may close accounts that misuse the service.",
+        "Latvian law applies.",
+      ],
+    },
+    consent: {
+      agree: "I agree to the",
+      terms: "terms of use",
+      and: "and the",
+      privacy: "privacy policy",
+      required: "Agree to the terms of use and privacy policy to create an account",
+    },
+    deleteAccount: {
+      title: "Delete account",
+      note: "Permanent. It cannot be undone.",
+      body: "This deletes your account, profile, all certificates and every uploaded file. Export your documents first if you still need them.",
+      open: "Delete account...",
+      confirmLabel: "Enter your password to confirm",
+      confirm: "Delete my account and all data",
+      deleting: "Deleting...",
+      cancel: "Cancel",
+      wrongPassword: "Wrong password",
+      failed: "Could not delete the account. Please try again.",
+      done: "Your account and all its data have been deleted.",
+    },
+  },
 };
 
 export type Dict = typeof en;
@@ -1207,6 +1336,135 @@ const lv: Dict = {
     endBeforeStart: "Beigu datums ir pirms sākuma datuma",
     requiredPointsInvalid: "Nepieciešamo TIP skaitam jābūt veselam skaitlim no 1 līdz 5000",
     demoReadOnly: "Demo kontā izmaiņas nav iespējamas. Reģistrējieties, lai saglabātu savus sertifikātus.",
+  },
+  legal: {
+    privacyLink: "Privātuma politika",
+    termsLink: "Lietošanas noteikumi",
+    updated: "Pēdējās izmaiņas",
+    toBeSpecified: "tiks precizēts",
+    controllerTitle: "Kas atbild par jūsu datiem",
+    controllerName: "Datu pārzinis",
+    controllerRegNo: "Reģistrācijas numurs",
+    controllerAddress: "Adrese",
+    controllerEmail: "E-pasts",
+    contactTitle: "Jautājumi un pieprasījumi",
+    contactBody: "Rakstiet mums par saviem datiem vai lai izmantotu kādu no savām tiesībām. Atbildam viena mēneša laikā.",
+    complaintTitle: "Sūdzības",
+    complaintBody: "Ja uzskatāt, ka jūsu datus apstrādājam nelikumīgi, varat iesniegt sūdzību Datu valsts inspekcijā, kas Latvijā uzrauga datu aizsardzību.",
+    seeAlsoTerms: "Skatiet arī lietošanas noteikumus.",
+    seeAlsoPrivacy: "Kā apstrādājam jūsu datus, aprakstīts privātuma politikā.",
+    privacy: {
+      title: "Privātuma politika",
+      lead: "Kādus datus Medserti glabā, kāpēc un kā tos izdzēst.",
+      sections: [
+        {
+          title: "Ko mēs glabājam",
+          items: [
+            "Konts: jūsu e-pasta adrese, parole (tikai kā neatgriezenisks jaucējkods, nekad atklātā veidā), konta izveides datums un datums, kad piekritāt šiem noteikumiem.",
+            "Profils: vārds un uzvārds, profesija, specialitāte, sertifikāta veids, sertifikāta numurs, ja to norādāt, sertifikāta izsniegšanas un derīguma datumi un TIP mērķis, ja to iestatāt pats.",
+            "Sertifikāti: augšupielādētie faili (PDF vai foto) un no tiem nolasītie vai jūsu ievadītie dati: kursa nosaukums, organizators, datumi, punkti, stundas, kategorija, valsts un apstiprinājuma numurs.",
+          ],
+        },
+        {
+          title: "Ko mēs neglabājam",
+          items: [
+            "Jūsu personas kodu, adresi un darbavietas. Tos ievadāt tikai, eksportējot resertifikācijas dokumentus. Dokumenti tiek veidoti jūsu pārlūkā, un šie lauki mūsu serveri nesasniedz.",
+            "Teksts foto attēlos tiek nolasīts jūsu pārlūkā. Mēs saņemam foto un nolasīto tekstu, neko citu no jūsu ierīces.",
+            "Nekādu analītikas, reklāmas vai izsekošanas rīku.",
+          ],
+        },
+        {
+          title: "Kāpēc mēs tos izmantojam",
+          items: [
+            "Lai uzturētu jūsu kontu, skaitītu tālākizglītības punktus (TIP) pēc Ministru kabineta noteikumiem Nr. 391, rādītu jūsu specialitātei atbilstošus kursus un sagatavotu resertifikācijas dokumentus.",
+            "Mēs nepārdodam jūsu datus, neizmantojam tos reklāmai un nenododam Latvijas Ārstu biedrībai (LĀB), darba devējiem vai citiem.",
+          ],
+        },
+        {
+          title: "Tiesiskais pamats",
+          items: [
+            "Līgums (VDAR 6. panta 1. punkta b) apakšpunkts): šie dati ir vajadzīgi, lai sniegtu pakalpojumu, kuram pieteicāties.",
+            "Piekrišana (VDAR 6. panta 1. punkta a) apakšpunkts): reģistrējoties jūs piekrītat šai politikai. Piekrišanu varat atsaukt jebkurā laikā, izdzēšot kontu.",
+          ],
+        },
+        {
+          title: "Kas datus apstrādā mūsu vārdā",
+          items: [
+            "Vercel Inc. (ASV) uztur vietni un glabā datus un failus privātā Vercel Blob krātuvē. Mūsu serveris darbojas Vercel Vašingtonas (ASV) reģionā, tāpēc dati tiek nosūtīti ārpus ES. Nosūtīšanu aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
+            "jsDelivr (publisks failu tīkls): augšupielādējot foto, jūsu pārlūks lejupielādē teksta atpazīšanas programmu no cdn.jsdelivr.net. Šis pakalpojums redz jūsu IP adresi, bet ne jūsu failus.",
+            "Resend (ASV) nosūta mūsu e-pastus, piemēram, paroles atjaunošanas saites. Tas saņem jūsu e-pasta adresi un vēstules tekstu.",
+          ],
+        },
+        {
+          title: "Sīkdatnes",
+          items: [
+            "Izmantojam tikai vietnes darbībai nepieciešamās sīkdatnes: pieslēgšanās sīkdatni (30 dienas) un valodas un krāsu režīma izvēli (1 gads). Šīm sīkdatnēm piekrišana nav jāprasa.",
+          ],
+        },
+        {
+          title: "Cik ilgi mēs tos glabājam",
+          items: [
+            "Līdz brīdim, kad izdzēšat kontu. Dzēšot to profilā, uzreiz tiek izdzēsts konts, profils, visi sertifikātu ieraksti un visi augšupielādētie faili.",
+            "Paroles atjaunošanas saites derīgums beidzas pēc 1 stundas.",
+            "Vercel pēc saviem noteikumiem īsu laiku glabā tehniskos žurnālus (piemēram, pieprasījumu IP adreses).",
+          ],
+        },
+        {
+          title: "Jūsu tiesības",
+          items: [
+            "Saskaņā ar VDAR varat lūgt piekļuvi saviem datiem, to labošanu, dzēšanu, apstrādes ierobežošanu, iebilst pret apstrādi un saņemt datus pārnesamā formātā.",
+            "Lielāko daļu datu varat labot pats profilā un sertifikātu sarakstā, bet visu izdzēst ar pogu \"Dzēst kontu\" profilā.",
+          ],
+        },
+        {
+          title: "Kursi",
+          items: [
+            "Kursu saraksts tiek ņemts no publiskiem avotiem: kursu organizatoru un Latvijas Ārstu biedrības (LĀB) vietnēm. Tajā nav datu par jums.",
+          ],
+        },
+        {
+          title: "Izmaiņas",
+          items: [
+            "Ja mainīsim šo politiku, atjaunosim datumu šīs lapas augšā.",
+          ],
+        },
+      ],
+    },
+    terms: {
+      title: "Lietošanas noteikumi",
+      lead: "Galvenais īsumā. Izveidojot kontu, jūs tiem piekrītat.",
+      points: [
+        "Medserti ir bez maksas.",
+        "Medserti ir plānošanas palīgrīks. Tas nav Latvijas Ārstu biedrības (LĀB) vai citas sertifikācijas institūcijas oficiāls reģistrs un nelemj par jūsu resertifikāciju. Galīgo lēmumu pieņem sertifikācijas institūcija.",
+        "Jūs atbildat par dokumentiem un datiem, ko iesniedzat resertifikācijai.",
+        "Sertifikāti tiek nolasīti automātiski, un rezultāts var būt kļūdains. Pārbaudiet katra sertifikāta datus, pirms uz tiem paļaujaties.",
+        "Kursu saraksts tiek ņemts no publiskiem avotiem un var būt nepilnīgs vai novecojis. Precizējiet informāciju pie organizatora.",
+        "Pakalpojums tiek sniegts tāds, kāds tas ir, bez jebkādas garantijas par precizitāti vai pieejamību. Ciktāl to pieļauj likums, mēs neatbildam par zaudējumiem, kas radušies to lietojot.",
+        "Glabājiet savu paroli drošībā. Viens konts katrai personai.",
+        "Kontu varat izdzēst jebkurā laikā savā profilā. Mēs varam slēgt kontus, kas pakalpojumu izmanto ļaunprātīgi.",
+        "Piemērojami Latvijas Republikas tiesību akti.",
+      ],
+    },
+    consent: {
+      agree: "Piekrītu",
+      terms: "lietošanas noteikumiem",
+      and: "un",
+      privacy: "privātuma politikai",
+      required: "Lai izveidotu kontu, piekrītiet lietošanas noteikumiem un privātuma politikai",
+    },
+    deleteAccount: {
+      title: "Dzēst kontu",
+      note: "Neatgriezeniski. To nevar atsaukt.",
+      body: "Tiks izdzēsts jūsu konts, profils, visi sertifikāti un visi augšupielādētie faili. Ja dokumenti vēl vajadzīgi, vispirms tos eksportējiet.",
+      open: "Dzēst kontu...",
+      confirmLabel: "Lai apstiprinātu, ievadiet paroli",
+      confirm: "Dzēst kontu un visus datus",
+      deleting: "Dzēš...",
+      cancel: "Atcelt",
+      wrongPassword: "Nepareiza parole",
+      failed: "Kontu neizdevās izdzēst. Mēģiniet vēlreiz.",
+      done: "Jūsu konts un visi tā dati ir izdzēsti.",
+    },
   },
 };
 

@@ -16,7 +16,7 @@ export default function AppFooter({
 }: {
   theme: Theme;
   locale: Locale;
-  labels: { nav: string; about: string; rules: string; rulesUrl: string; theme: Record<Theme | "label", string>; lang: string };
+  labels: { nav: string; about: string; rules: string; privacy: string; terms: string; rulesUrl: string; theme: Record<Theme | "label", string>; lang: string };
 }) {
   if (usePathname() === "/") return null;
   return (
@@ -25,6 +25,8 @@ export default function AppFooter({
         <nav className="app-footer-links" aria-label={labels.nav}>
           <Link href="/par-mums">{labels.about}</Link>
           <a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a>
+          <Link href="/privatums">{labels.privacy}</Link>
+          <Link href="/noteikumi">{labels.terms}</Link>
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         </nav>
         <div className="app-footer-tools">

@@ -31,7 +31,7 @@ export type Entry = { key: string; block: BlockId; section: string; label: strin
 export type StoredOverrides = { lv: Record<string, string>; en: Record<string, string> };
 
 export type BlockId =
-  | "nav" | "landing" | "dashboard" | "certs" | "upload" | "courses" | "profile" | "auth" | "errors" | "export" | "about" | "other";
+  | "nav" | "landing" | "dashboard" | "certs" | "upload" | "courses" | "profile" | "auth" | "errors" | "export" | "about" | "legal" | "other";
 
 export const BLOCKS: { id: BlockId; name: string; href?: string }[] = [
   { id: "nav", name: "Navigācija", href: "/" },
@@ -45,6 +45,7 @@ export const BLOCKS: { id: BlockId; name: string; href?: string }[] = [
   { id: "errors", name: "Kļūdas un paziņojumi" },
   { id: "export", name: "Resertifikācijas dokumenti", href: "/export" },
   { id: "about", name: "Par mums", href: "/par-mums" },
+  { id: "legal", name: "Privātums, noteikumi un konta dzēšana", href: "/privatums" },
   { id: "other", name: "Citi teksti" },
 ];
 
@@ -61,6 +62,7 @@ const BLOCK_OF: Record<string, BlockId> = {
   api: "errors", notFound: "errors", error: "errors",
   exportDocs: "export",
   about: "about",
+  legal: "legal",
 };
 
 /** Texts not shown to users, or not words (locale codes). Editing them would do nothing or break something. */

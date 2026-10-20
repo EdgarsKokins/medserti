@@ -69,10 +69,11 @@ const shortDate = (iso: string, locale: Locale) =>
   locale === "lv" ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}.` : formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1");
 
 /** Public landing page; signed-in users go straight to their dashboard */
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   if (await currentUserId()) redirect("/dashboard");
   const locale = await getLocale();
   const d = t(locale);
+  const { deleted } = await searchParams;
   const l = d.landing;
   const a = d.landingA;
   const saved = (await cookies()).get(THEME_COOKIE)?.value;
@@ -85,6 +86,11 @@ export default async function Home() {
   return (
     <div className={s.root}>
       <main>
+        {deleted && (
+          <div className="container" style={{ paddingBottom: 0 }}>
+            <div className="alert alert-ok" role="status">{d.legal.deleteAccount.done}</div>
+          </div>
+        )}
         <section className={s.hero} aria-labelledby="landing-title">
           <div className={s.heroInner}>
             <div className={s.heroCopy}>
@@ -257,6 +263,8 @@ export default async function Home() {
               <li><DemoButton label={d.demo.try} className={s.footerDemo} /></li>
               <li><Link href="/par-mums">{d.nav.about}</Link></li>
               <li><a href={RULES.sourceUrl} target="_blank" rel="noreferrer">{l.footerRules}</a></li>
+              <li><Link href="/privatums">{d.legal.privacyLink}</Link></li>
+              <li><Link href="/noteikumi">{d.legal.termsLink}</Link></li>
             </ul>
           </nav>
           <div className={s.footerContact}>
