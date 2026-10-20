@@ -7,6 +7,9 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import LangSwitch from "@/components/LangSwitch";
 import NavLinks from "@/components/NavLinks";
+import ThemeSwitch from "@/components/ThemeSwitch";
+import { THEME_COOKIE, type Theme } from "@/lib/theme";
+import { cookies } from "next/headers";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
 const plex = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], variable: "--font-plex", display: "swap" });
@@ -21,8 +24,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const signedIn = !!(await currentUserId());
   const locale = await getLocale();
   const d = t(locale);
+  const saved = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme: Theme = saved === "light" || saved === "dark" ? saved : "system";
   return (
-    <html lang={locale} className={`${plex.variable} ${newsreader.variable}`}>
+    <html
+      lang={locale}
+      className={`${plex.variable} ${newsreader.variable}`}
+      data-theme={theme === "system" ? undefined : theme}
+      suppressHydrationWarning
+    >
       <body>
         <nav className="nav">
           <div className="nav-inner">
@@ -41,6 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               />
             )}
             <div className="nav-tools">
+              <ThemeSwitch initial={theme} labels={d.theme} />
               <LangSwitch locale={locale} label={d.lang.label} />
               {signedIn ? (
                 <form action="/api/auth/logout" method="post">
