@@ -86,6 +86,10 @@ export interface CmeCertificate {
   confidence: number | null;
   /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */
   fieldConfidence?: FieldConfidence | null;
+  /** confirmed by the parser without the user (lib/parse/confidence.ts autoConfirm); cleared when the user saves */
+  autoConfirmed?: boolean;
+  /** sha256 of the uploaded file, to spot the same file uploaded twice */
+  fileHash?: string | null;
   /** JSON array of ParseNote; older certificates hold plain English text */
   parseNotes: string | null;
 }
@@ -118,7 +122,7 @@ export type ParseNoteCode =
   | "lowConfidence";
 
 /** Fields the parser scores; the review panel marks those below the threshold */
-export type ConfidenceField = "title" | "date" | "points" | "country";
+export type ConfidenceField = "title" | "organizer" | "date" | "points" | "country";
 export type FieldConfidence = Partial<Record<ConfidenceField, number>>;
 
 /** A parser note as a code plus values, rendered through dict.parseNotes in the UI language */

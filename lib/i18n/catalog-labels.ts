@@ -402,6 +402,7 @@ export const LABELS: Record<string, string> = {
   "review.fApproval": "Lauks: apstiprinājuma numurs",
   "review.fCountry": "Lauks: valsts",
   "review.checkField": "Atzīme pie nedroši nolasīta lauka",
+  "review.autoConfirmed": "Statuss: apstiprināts automātiski (bez lietotāja)",
   "review.countryNone": "Ja valsts nav norādīta",
   "review.fInSpecialty": "Atzīme: manā specialitātē",
   "review.fEmergency": "Atzīme: neatliekamā palīdzība",

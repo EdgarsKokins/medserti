@@ -462,6 +462,7 @@ const en = {
     fCountry: "Country",
     countryNone: "Not set",
     checkField: "check",
+    autoConfirmed: "Confirmed automatically",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
@@ -515,7 +516,7 @@ const en = {
         ? "You lectured at this event. A talk at an international event counts 30 TIP (Annex 4 item 22): add it as a separate lecture."
         : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
     lowConfidence: (p: NoteP) =>
-      `Not sure we read these right: ${fieldList(p.fields, { title: "title", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
+      `Not sure we read these right: ${fieldList(p.fields, { title: "title", organizer: "organiser", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
   },
   dashboard: {
     title: "Dashboard",
@@ -1178,6 +1179,7 @@ const lv: Dict = {
     fCountry: "Valsts",
     countryNone: "Nav norādīta",
     checkField: "pārbaudiet",
+    autoConfirmed: "Apstiprināts automātiski",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācība",
     fPractical: "Praktiskās stundas",
@@ -1231,7 +1233,7 @@ const lv: Dict = {
         ? "Šajā pasākumā jūs uzstājāties. Ziņojums starptautiskā pasākumā dod 30 TIP (4. pielikuma 22. punkts): pievienojiet to kā atsevišķu ierakstu."
         : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
     lowConfidence: (p: NoteP) =>
-      `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
+      `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", organizer: "organizators", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
   },
   dashboard: {
     title: "Pārskats",

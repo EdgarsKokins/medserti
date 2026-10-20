@@ -193,6 +193,8 @@ export function findDates(t: Text): DateResult {
   // another date that scores close and starts on a different day: we might have picked the wrong one
   const rival = scored.find((x) => x !== best && x.c.start !== best.c.start && x.c.start !== best.c.end && best.s - x.s < 1);
   if (rival) confidence -= 0.3;
+  // the only date on the certificate, with no issue/validity words near it: nothing to confuse it with
+  if (scored.length === 1 && best.s >= 0) confidence = Math.max(confidence, 0.9);
   return { date: best.c.start, endDate: best.c.end, confidence: Math.max(0.1, Math.round(confidence * 100) / 100) };
 }
 

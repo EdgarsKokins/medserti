@@ -82,6 +82,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     endDate: fields.endDate && fields.endDate !== fields.date ? fields.endDate : null,
     // the user has looked at every field now; the parser's doubts no longer apply
     fieldConfidence: null,
+    // the user saved it themselves now
+    autoConfirmed: false,
     status,
   };
   await saveCertificate(updated);

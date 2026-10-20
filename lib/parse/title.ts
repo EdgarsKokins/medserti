@@ -69,7 +69,7 @@ export function findTitle(t: Text): { value: string; confidence: number } {
     const anchorAt = TITLE_ANCHORS.map((re) => rx(re.source, "u").exec(t.fold)?.index ?? -1).filter((i) => i >= 0);
     const firstAnchor = anchorAt.length ? Math.min(...anchorAt) : -1;
     const pick = quoted.find((q) => firstAnchor >= 0 && q.index > firstAnchor) ?? quoted[0];
-    return { value: pick.value, confidence: firstAnchor >= 0 ? 0.85 : 0.7 };
+    return { value: pick.value, confidence: firstAnchor >= 0 ? 0.9 : 0.7 };
   }
 
   // 2. rest of the anchor line, or the next line(s)
@@ -81,14 +81,15 @@ export function findTitle(t: Text): { value: string; confidence: number } {
       const rest = cleanTitle(lines[i].slice(m.index + m[0].length));
       const organisedBy = ORGANISED_BY.test(restFolded.trim());
       if (wordy(rest) && !organisedBy && !looksLikeDateOrPoints(rest) && !/^(?:un |and )/u.test(restFolded.trim()))
-        return { value: rest, confidence: 0.75 };
+        return { value: rest, confidence: 0.8 };
       if (usable(i + 1)) {
         // a title often runs over two lines; keep the second unless it is who/points/approval/when
         const next = cleanTitle(lines[i + 1]);
         // a one-word line ("Kardioloģijas") is a title running on; a second full line usually is too, unless it is a place/date
         const second = (usable(i + 2) || (!!lines[i + 2] && /^\p{L}{4,}[?.!]?$/u.test(lines[i + 2]) && !STOP_LINE.test(folded[i + 2])))
           && !YEAR.test(lines[i + 2]) && !/[?.!]$/.test(next);
-        return { value: second ? cleanTitle(`${next} ${lines[i + 2]}`) : next, confidence: 0.7 };
+        // one clean line right after "participated in" is the surest unquoted title; a joined second line less so
+        return { value: second ? cleanTitle(`${next} ${lines[i + 2]}`) : next, confidence: second ? 0.75 : 0.9 };
       }
     }
   }
@@ -113,7 +114,8 @@ const ORG_WORDS =
 const NOT_ORG = /saskanot|apstiprin|akreditet|registr|accredited|approved|endorsed|ar\s+\p{L}+\s+biedrib|sertifikacijas padome|lab sertifik|data collected|public institution/u;
 const HEADINGS = /^(?:apliecība|sertifikāts|sertifikats|certificate(?:\s+of\s+\p{L}+)?|diploms|izziņa|attestation|apliecina|this is to certify|apliecinājums)/iu;
 
-export function findOrganizer(t: Text): string {
+/** Organizer and how sure we are (0-1) */
+export function findOrganizer(t: Text): { value: string; confidence: number } {
   const top = t.lines.slice(0, 25);
   const i = top.findIndex((l) => ORG_WORDS.test(fold(l)) && !NOT_ORG.test(fold(l)) && l.length <= 160);
   if (i >= 0) {
@@ -121,11 +123,23 @@ export function findOrganizer(t: Text): string {
     let org = collapse(top[i].replace(/(?<![\p{L}\p{N}])\p{L}(?![\p{L}\p{N}.])/gu, " "));
     // logos often split the name over two lines: "Klaipeda" / "University"
     const prev = i > 0 ? collapse(top[i - 1]) : "";
-    if (org.split(" ").length <= 2 && /^\p{Lu}[\p{L}-]+(?:\s+\p{Lu}[\p{L}-]+)?$/u.test(prev) && !HEADINGS.test(prev)) org = `${prev} ${org}`;
-    return org.replace(/\s+(?:rector|dean|director|rektors|dekāns|direktors)\b.*$/iu, "").replace(/[,;:]+$/, "");
+    let joined = false;
+    if (org.split(" ").length <= 2 && /^\p{Lu}[\p{L}-]+(?:\s+\p{Lu}[\p{L}-]+)?$/u.test(prev) && !HEADINGS.test(prev)) {
+      org = `${prev} ${org}`;
+      joined = true;
+    }
+    // "The certificate was issued by SIA “Med4U”, Reg. No. ...": the organizer is what follows "issued by"
+    const issued = /(?:issued by|izsniedza|izsniedzējs:?)\s+(.+?)(?:,|\.?$)/iu.exec(org);
+    if (issued) org = issued[1].replace(/[“”"„]/g, "");
+    const value = org.replace(/\s+(?:rector|dean|director|rektors|dekāns|direktors)\b.*$/iu, "").replace(/[,;:]+$/, "");
+    // "Tartu University Hospital, Estonia." is where it took place, not necessarily who organized it
+    const venue = /,\s*\p{L}+\.?$/u.test(collapse(top[i]));
+    // a short clean line naming an institution is sure; a long line, digits, a venue or a name glued from two lines less so
+    const clean = value.length <= 80 && !/\d{3}/.test(value) && !joined && !venue;
+    return { value, confidence: clean ? 0.9 : 0.7 };
   }
   const first = t.lines.find((l) => !HEADINGS.test(l) && l.length >= 3);
-  return first ? collapse(first) : "";
+  return { value: first ? collapse(first) : "", confidence: first ? 0.3 : 0 };
 }
 
 // ----- approval id -----
