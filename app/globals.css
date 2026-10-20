@@ -213,6 +213,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   h1 { font-size: 1.85rem; }
   .container { padding: 24px 16px 64px; }
   .nav-inner { gap: 12px; padding: 10px 16px; }
-  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; }
+  .nav-links { order: 3; width: 100%; gap: 20px; overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; scrollbar-width: none; }
   .card { padding: 16px; }
 }

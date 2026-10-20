@@ -40,16 +40,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="brand-seal" aria-hidden>M</span>
               <span className="brand-name">{d.brand.name}</span>
             </Link>
-            {signedIn && (
-              <NavLinks
-                links={[
-                  { href: "/dashboard", label: d.nav.dashboard },
-                  { href: "/certificates", label: d.nav.certificates },
-                  { href: "/courses", label: d.nav.courses },
-                  { href: "/profile", label: d.nav.profile },
-                ]}
-              />
-            )}
+            <NavLinks
+              links={[
+                ...(signedIn
+                  ? [
+                      { href: "/dashboard", label: d.nav.dashboard },
+                      { href: "/certificates", label: d.nav.certificates },
+                      { href: "/courses", label: d.nav.courses },
+                      { href: "/profile", label: d.nav.profile },
+                    ]
+                  : []),
+                { href: "/par-mums", label: d.nav.about },
+              ]}
+            />
             <div className="nav-tools">
               <ThemeSwitch initial={theme} labels={d.theme} />
               <LangSwitch locale={locale} label={d.lang.label} />
