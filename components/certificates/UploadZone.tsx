@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { Worker as OcrWorker } from "tesseract.js";
 import type { CmeCertificate } from "@/lib/types";
 import { t, type Locale } from "@/lib/i18n";
+import { ocrPdfIfScanned } from "./pdfOcr";
 import styles from "./certificates.module.css";
 
 /** Vercel caps request bodies at ~4.5 MB; photos are downscaled in the browser to fit */
@@ -100,7 +101,17 @@ export default function UploadZone({
         continue;
       }
       let ocrText = "";
-      if (isImage(file)) {
+      const isPdf = !isImage(file) && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
+      if (isPdf) {
+        // scanned PDFs have no usable text layer: read them like photos
+        currentKey = item.key;
+        try {
+          ocrText = await ocrPdfIfScanned(file, getWorker, () => update(item.key, { state: "reading", progress: 0 }));
+        } catch (err) {
+          console.error("PDF OCR failed", err); // upload anyway; the server reads the text layer or asks for manual entry
+        }
+        currentKey = "";
+      } else if (isImage(file)) {
         update(item.key, { state: "reading", progress: 0 });
         currentKey = item.key;
         try {

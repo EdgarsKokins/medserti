@@ -35,6 +35,10 @@ const lvPl = (n: number, one: string, many: string) => (Math.abs(n) % 10 === 1 &
 /** Values carried by a parser note (lib/parse.ts) */
 type NoteP = Record<string, string | number | boolean>;
 const fmtN = (v: unknown, locale: Locale) => (typeof v === "number" ? formatNumber(v, locale) : String(v ?? ""));
+/** "1.3 + 1.3" stored by the parser -> "1,3 + 1,3" in Latvian */
+const fmtList = (v: unknown, locale: Locale) => (locale === "lv" ? String(v ?? "").replace(/\./g, ",") : String(v ?? ""));
+/** "date,points" -> field names in the UI language */
+const fieldList = (v: unknown, names: Record<string, string>) => String(v ?? "").split(",").filter(Boolean).map((f) => names[f] ?? f).join(", ");
 
 const specialtyPct = RULES.specialtyShare * 100;
 const capPct = RULES.practicalCapShare * 100;
@@ -372,7 +376,7 @@ const en = {
     hint: "PDF up to 4 MB, or a photo (JPG, PNG, WEBP). You can select several at once.",
     states: {
       queued: "Waiting",
-      reading: "Reading image...",
+      reading: "Reading text...",
       uploading: "Uploading...",
       done: "Done",
       failed: "Failed",
@@ -403,6 +407,7 @@ const en = {
     fApproval: "Approval number",
     fCountry: "Country",
     countryNone: "Not set",
+    checkField: "check",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
@@ -447,6 +452,16 @@ const en = {
       } (Annex 4 items 1 and 2).`,
     plainHours: () => `The certificate says "hours", not "academic hours"; we counted them 1:1.`,
     checkBeforeConfirming: () => "Check before confirming.",
+    pdfOcr: () => "This PDF is a scan, so it was read with text recognition: check every field.",
+    pointsSummed: (p: NoteP) => `Points added up from several lectures or days: ${fmtList(p.list, "en")} = ${fmtList(p.total, "en")} TIP.`,
+    courseTotal: (p: NoteP) =>
+      `${fmtList(p.points, "en")} credits is the accreditation of the whole event. Claim only the hours you actually attended.`,
+    lecturer: (p: NoteP): string =>
+      p.international
+        ? "You lectured at this event. A talk at an international event counts 30 TIP (Annex 4 item 22): add it as a separate lecture."
+        : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
+    lowConfidence: (p: NoteP) =>
+      `Not sure we read these right: ${fieldList(p.fields, { title: "title", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
   },
   dashboard: {
     title: "Dashboard",
@@ -893,7 +908,7 @@ const lv: Dict = {
     hint: "PDF līdz 4 MB vai fotoattēls (JPG, PNG, WEBP). Var izvēlēties vairākus failus uzreiz.",
     states: {
       queued: "Gaida",
-      reading: "Nolasa attēlu...",
+      reading: "Nolasa tekstu...",
       uploading: "Augšupielādē...",
       done: "Gatavs",
       failed: "Kļūda",
@@ -924,6 +939,7 @@ const lv: Dict = {
     fApproval: "Apstiprinājuma numurs",
     fCountry: "Valsts",
     countryNone: "Nav norādīta",
+    checkField: "pārbaudiet",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācība",
     fPractical: "Praktiskās stundas",
@@ -968,6 +984,16 @@ const lv: Dict = {
       } (4. pielikuma 1. un 2. punkts).`,
     plainHours: () => "Sertifikātā norādītas „stundas”, nevis „akadēmiskās stundas”; tās ieskaitītas 1:1.",
     checkBeforeConfirming: () => "Pārbaudiet pirms apstiprināšanas.",
+    pdfOcr: () => "Šis PDF ir skenēts dokuments, tāpēc tas nolasīts ar teksta atpazīšanu: pārbaudiet katru lauku.",
+    pointsSummed: (p: NoteP) => `Punkti saskaitīti no vairākām lekcijām vai dienām: ${fmtList(p.list, "lv")} = ${fmtList(p.total, "lv")} TIP.`,
+    courseTotal: (p: NoteP) =>
+      `${fmtList(p.points, "lv")} kredītpunkti ir visa pasākuma akreditācija. Norādiet tikai tās stundas, kurās faktiski piedalījāties.`,
+    lecturer: (p: NoteP) =>
+      p.international
+        ? "Šajā pasākumā jūs uzstājāties. Ziņojums starptautiskā pasākumā dod 30 TIP (4. pielikuma 22. punkts): pievienojiet to kā atsevišķu ierakstu."
+        : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
+    lowConfidence: (p: NoteP) =>
+      `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
   },
   dashboard: {
     title: "Pārskats",

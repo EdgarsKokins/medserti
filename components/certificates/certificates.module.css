@@ -179,3 +179,9 @@
   .footBtns > .btn { flex: 1 1 auto; }
   .deleteBtn { margin-left: 0; }
 }
+
+/* "check" next to a field the parser was unsure of */
+.checkMark {
+  margin-left: 8px;
+  vertical-align: 1px;
+}
