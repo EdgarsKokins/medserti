@@ -43,7 +43,7 @@ export const BLOCKS: { id: BlockId; name: string; href?: string }[] = [
   { id: "profile", name: "Profils", href: "/profile" },
   { id: "auth", name: "Pieslēgšanās un reģistrācija", href: "/login" },
   { id: "errors", name: "Kļūdas un paziņojumi" },
-  { id: "export", name: "Resertifikācijas dokumenti", href: "/dashboard" },
+  { id: "export", name: "Resertifikācijas dokumenti", href: "/export" },
   { id: "about", name: "Par mums", href: "/par-mums" },
   { id: "other", name: "Citi teksti" },
 ];
@@ -93,6 +93,7 @@ const SAMPLES: Record<string, Record<Locale, unknown>> = {
   specialty: { lv: "Kardioloģija", en: "Cardiology" }, s: { lv: "Kardioloģija", en: "Cardiology" },
   reasons: { lv: "2 ārpus sertifikāta perioda", en: "2 outside your certificate period" },
   title: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026" },
+  done: { lv: 3, en: 3 }, total: { lv: 8, en: 8 },
   firstName: { lv: "Anna", en: "Anna" },
 };
 const sample = (name: string, locale: Locale): unknown => SAMPLES[name]?.[locale] ?? (locale === "lv" ? "…" : "…");

@@ -3,12 +3,12 @@
 .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 20px; }
 .head p { margin: 0; max-width: 60ch; }
 
-.tabs { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 999px; padding: 3px; gap: 2px; }
+.tabs { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; gap: 2px; background: var(--surface); }
 .tab {
-  min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text);
+  min-height: 42px; padding: 0 18px; border: 0; border-radius: 6px; background: transparent; color: var(--text);
   font: inherit; font-weight: 500; cursor: pointer;
 }
-.tab[aria-selected="true"] { background: var(--ink); color: var(--on-ink); }
+.tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
 .tab:not([aria-selected="true"]):hover { background: var(--surface-2); }
 
 .shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 36px; align-items: start; }
@@ -60,14 +60,14 @@
   min-height: 48px; resize: vertical; overflow: hidden; line-height: 1.5; font-size: 1rem;
   background: var(--surface);
 }
-.cellEdited .textarea { box-shadow: inset 3px 0 0 var(--ink); }
+.cellEdited .textarea { box-shadow: inset 3px 0 0 var(--accent); }
 .textarea[aria-invalid="true"] { border-color: var(--bad); background: var(--bad-soft); }
 
 .error { margin: 0; color: var(--bad); font-size: 0.9rem; font-weight: 500; }
 .hint { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .fields { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .chip {
-  min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: 999px; background: transparent;
+  min-height: 36px; padding: 0 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); background: transparent;
   color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; cursor: pointer;
 }
 .chip:hover { background: var(--surface-2); border-style: solid; }
@@ -80,7 +80,7 @@
 .codeBox p { margin: 0; }
 .codeBox p + p { margin-top: 4px; }
 
-.saveBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bg); border-top: 1px solid var(--border-strong); }
+.saveBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--border-strong); }
 .saveInner { max-width: 1240px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; }
 .saveStatus { margin: 0; flex: 1 1 280px; }
 .saveActions { display: flex; gap: 10px; }
