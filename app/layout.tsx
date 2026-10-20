@@ -56,19 +56,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="brand-seal" aria-hidden>M</span>
               <span className="brand-name">{d.brand.name}</span>
             </Link>
-            <NavLinks
-              publicNav={!signedIn}
-              links={
-                signedIn
-                  ? [
-                      { href: "/dashboard", label: d.nav.dashboard },
-                      { href: "/certificates", label: d.nav.certificates },
-                      { href: "/courses", label: d.nav.courses },
-                      { href: "/profile", label: d.nav.profile },
-                    ]
-                  : [{ href: "/par-mums", label: d.nav.about }]
-              }
-            />
+            {/* logged-out visitors get no section links: "Par mums" lives on the landing page and in the footer */}
+            {signedIn && (
+              <NavLinks
+                publicNav={false}
+                links={[
+                  { href: "/dashboard", label: d.nav.dashboard },
+                  { href: "/certificates", label: d.nav.certificates },
+                  { href: "/courses", label: d.nav.courses },
+                  { href: "/profile", label: d.nav.profile },
+                ]}
+              />
+            )}
             <div className="nav-tools">
               <ThemeSwitch initial={theme} labels={d.theme} />
               <LangSwitch locale={locale} label={d.lang.label} />
