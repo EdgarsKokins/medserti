@@ -13,6 +13,8 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
 import DashboardUpload from "@/components/dashboard/DashboardUpload";
+import { confirmCheckedEligible } from "@/lib/parse/confidence";
+import { certificateWindow } from "@/lib/rules";
 import { categoryBreakdown, cumulativeSeries, headline, isoDay } from "@/components/dashboard/model";
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
@@ -54,7 +56,11 @@ export default async function DashboardPage() {
 
       <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
 
-      <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
+      <DashboardUpload
+        locale={locale}
+        readOnly={isDemoUser(user)}
+        checked={certs.filter((c) => confirmCheckedEligible(c, certs, certificateWindow(user.profile), isoDay(today)))}
+      />
       {certs.some((c) => c.status === "confirmed") && (
         <Link href="/export" className={styles.exportLink}>
           {dict.exportDocs.cta} →

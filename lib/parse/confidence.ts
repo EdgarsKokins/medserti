@@ -51,17 +51,47 @@ export function autoConfirmBlocks(x: AutoConfirmInput): AutoConfirmBlock[] {
   if (!f.title || !f.organizer || !f.date || f.points == null) out.push("missing");
   if (KEY_FIELDS.some((k) => (f.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) out.push("unsure");
   if (x.pointsKind !== "printed") out.push("pointsNotPrinted");
-  if (f.date) {
-    if (f.date > x.today) out.push("future");
-    const { start, end } = x.window;
-    const earliest = start ?? `${Number(x.today.slice(0, 4)) - PLAUSIBLE_YEARS}${x.today.slice(4)}`;
-    if (f.date < earliest || (end && f.date > end)) out.push("outsideWindow");
-  }
-  const same = x.existing.some(
-    (c) =>
-      (x.fileHash && c.fileHash === x.fileHash) ||
-      (c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
-  );
-  if (same) out.push("duplicate");
+  out.push(...dateBlocks(f.date, x.window, x.today));
+  if (isDuplicate({ ...f, fileHash: x.fileHash }, x.existing)) out.push("duplicate");
   return out;
+}
+
+/** A date in the future, or outside the certificate window (the last PLAUSIBLE_YEARS years when none is set) */
+function dateBlocks(date: string | null, window: { start: string | null; end: string | null }, today: string): AutoConfirmBlock[] {
+  if (!date) return [];
+  const out: AutoConfirmBlock[] = [];
+  if (date > today) out.push("future");
+  const earliest = window.start ?? `${Number(today.slice(0, 4)) - PLAUSIBLE_YEARS}${today.slice(4)}`;
+  if (date < earliest || (window.end && date > window.end)) out.push("outsideWindow");
+  return out;
+}
+
+type DupFields = Pick<CmeCertificate, "title" | "organizer" | "date"> & { fileHash?: string | null };
+
+/** Same file, or same title + organizer + date as one of `others` */
+function isDuplicate(c: DupFields, others: DupFields[]): boolean {
+  return others.some(
+    (o) =>
+      (!!c.fileHash && o.fileHash === c.fileHash) ||
+      (!!c.date && o.date === c.date && norm(o.title) === norm(c.title) && norm(o.organizer) === norm(c.organizer)),
+  );
+}
+
+/**
+ * "Confirm all checked": the user confirms in one click every needs_review certificate whose date, points,
+ * title and organizer all reach AUTO_CONFIRM_CONFIDENCE. Unlike auto-confirm, OCR'd certificates qualify,
+ * because the user sees the list and confirms it. Duplicates, future dates and dates outside the cycle stay in review.
+ * Shared by the button (to list them) and the server (which decides again and never trusts the client's list).
+ */
+export function confirmCheckedEligible(
+  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash">,
+  all: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
+  window: { start: string | null; end: string | null },
+  today: string,
+): boolean {
+  if (cert.status !== "needs_review") return false;
+  if (!cert.title || !cert.organizer || !cert.date || cert.points == null) return false;
+  if (KEY_FIELDS.some((k) => (cert.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) return false;
+  if (dateBlocks(cert.date, window, today).length) return false;
+  return !isDuplicate(cert, all.filter((o) => o.id !== cert.id));
 }

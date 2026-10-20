@@ -4,11 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UploadZone from "@/components/certificates/UploadZone";
+import ConfirmChecked from "@/components/certificates/ConfirmChecked";
+import type { CmeCertificate } from "@/lib/types";
 import { t, type Locale } from "@/lib/i18n";
 import styles from "./overview.module.css";
 
 /** The main action on the dashboard: add certificates without leaving the page */
-export default function DashboardUpload({ locale, readOnly = false }: { locale: Locale; readOnly?: boolean }) {
+export default function DashboardUpload({
+  locale,
+  readOnly = false,
+  checked = [],
+}: {
+  locale: Locale;
+  readOnly?: boolean;
+  /** certificates "Confirm all checked" would take (computed on the server) */
+  checked?: CmeCertificate[];
+}) {
   const dict = t(locale);
   const d = dict.dashboard;
   const router = useRouter();
@@ -26,6 +37,7 @@ export default function DashboardUpload({ locale, readOnly = false }: { locale: 
             {d.uploadCta}
           </button>
           <span className="small muted">{readOnly ? dict.demo.uploadOff : d.uploadHint}</span>
+          {!readOnly && <ConfirmChecked items={checked} locale={locale} onConfirmed={() => router.refresh()} />}
         </div>
       ) : (
         <div className="stack" style={{ gap: 12 }}>

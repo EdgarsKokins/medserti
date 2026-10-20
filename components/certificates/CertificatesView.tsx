@@ -7,6 +7,8 @@ import { t, type Locale } from "@/lib/i18n";
 import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
+import ConfirmChecked from "./ConfirmChecked";
+import { confirmCheckedEligible } from "@/lib/parse/confidence";
 import styles from "./certificates.module.css";
 
 const sortCerts = (list: CmeCertificate[]) =>
@@ -16,11 +18,16 @@ export default function CertificatesView({
   initial,
   specialty,
   locale,
+  window,
+  today,
   readOnly = false,
 }: {
   initial: CmeCertificate[];
   specialty: string;
   locale: Locale;
+  /** the user's certificate window and today's date (server), for "Confirm all checked" */
+  window: { start: string | null; end: string | null };
+  today: string;
   /** demo account: no upload, the panel only shows the fields */
   readOnly?: boolean;
 }) {
@@ -33,6 +40,7 @@ export default function CertificatesView({
   const open = certs.find((c) => c.id === openId) ?? null;
 
   const waiting = useMemo(() => certs.filter((c) => c.status !== "confirmed").length, [certs]);
+  const checked = useMemo(() => certs.filter((c) => confirmCheckedEligible(c, certs, window, today)), [certs, window, today]);
   const confirmedPoints = useMemo(
     () => certs.filter((c) => c.status === "confirmed").reduce((s, c) => s + (c.points ?? 0), 0),
     [certs],
@@ -75,7 +83,10 @@ export default function CertificatesView({
       {readOnly ? (
         <p className="alert">{dict.demo.uploadOff}</p>
       ) : (
-        <UploadZone onUploaded={onUploaded} locale={locale} />
+        <>
+          <UploadZone onUploaded={onUploaded} locale={locale} />
+          <ConfirmChecked items={checked} locale={locale} onConfirmed={onUploaded} />
+        </>
       )}
 
       <section aria-labelledby="certs-title">
