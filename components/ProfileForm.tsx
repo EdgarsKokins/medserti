@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
-import { addYears, requiredPoints, ruleRequiredPoints, RULES } from "@/lib/rules";
+import { addYears, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { formatDate, t, type Locale } from "@/lib/i18n";
 import SpecialtyPicker from "./SpecialtyPicker";
@@ -35,12 +35,19 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
   const clearError = (k: keyof FieldErrors) => errors[k] && setErrors((e) => ({ ...e, [k]: undefined }));
 
   const specList = useMemo(() => specialtiesFor(p.profession, p.certificationKind), [p.profession, p.certificationKind]);
+  // the rule can depend on the specialty picked but not yet saved (physiotherapists, Reg. 391 point 86)
+  const ruleInput = { ...p, specialtyCode: spec.code, specialty: specialtyByCode(spec.code)?.lv ?? spec.text };
+  const ruleTarget = ruleRequiredPoints(ruleInput);
+  const basis = ruleBasis(ruleInput);
+  const nurse = p.profession === "nurse";
 
   /** Kind or profession changes the rule; an override that only repeated the old rule goes with it */
   const setRuleInput = (patch: Partial<Pick<Profile, "profession" | "certificationKind">>) => {
     setMsg(null);
     const next = { ...p, ...patch };
-    if (p.requiredPointsOverride === ruleRequiredPoints(p)) next.requiredPointsOverride = null;
+    // nurses hold no certificate, so no method certificate either
+    if (next.profession === "nurse") next.certificationKind = "specialty";
+    if (p.requiredPointsOverride === ruleTarget) next.requiredPointsOverride = null;
     setP(next);
     // a listed specialty that the new profession does not have is dropped; a single-option list is picked for the user
     const list = specialtiesFor(next.profession, next.certificationKind);
@@ -53,10 +60,10 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
   };
 
   const defaultExpiry = p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null;
-  const ruleTarget = ruleRequiredPoints(p);
+
   const override = p.requiredPointsOverride;
   const hasOverride = override != null && override !== ruleTarget;
-  const target = requiredPoints(p);
+  const target = hasOverride ? override : ruleTarget;
 
   function validate(): FieldErrors {
     const e: FieldErrors = {};
@@ -165,7 +172,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
                 }}
               />
             )}
-            <span className={s.hint}>{d.specialtyHint}</span>
+            <span className={s.hint}>{nurse ? d.specialtyHintNurse : d.specialtyHint}</span>
           </div>
           {specList.length > 0 && spec.code === OTHER_SPECIALTY && (
             <div className={`field ${s.wide}`}>
@@ -189,33 +196,35 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
 
       <section className={s.section} aria-labelledby="sec-cert">
         <div className={s.aside}>
-          <h2 id="sec-cert">{d.sectionCert}</h2>
-          <p className="small muted">{d.sectionCertNote}</p>
+          <h2 id="sec-cert">{nurse ? d.sectionRegistration : d.sectionCert}</h2>
+          <p className="small muted">{nurse ? d.sectionRegistrationNote : d.sectionCertNote}</p>
           <p className={s.summary} aria-live="polite">
             {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
           </p>
           {!p.certificateExpires && <p className="small muted">{d.summaryNoDate}</p>}
         </div>
         <div className={s.fields}>
+          {!nurse && (
+            <div className="field">
+              <label htmlFor="kind">{d.kind}</label>
+              <select
+                id="kind"
+                value={p.certificationKind}
+                aria-describedby="kind-hint"
+                onChange={(e) => setRuleInput({ certificationKind: e.target.value as Profile["certificationKind"] })}
+              >
+                <option value="specialty">{d.kindSpecialty}</option>
+                <option value="method">{d.kindMethod}</option>
+              </select>
+              <span id="kind-hint" className={s.hint}>{d.kindHint}</span>
+            </div>
+          )}
           <div className="field">
-            <label htmlFor="kind">{d.kind}</label>
-            <select
-              id="kind"
-              value={p.certificationKind}
-              aria-describedby="kind-hint"
-              onChange={(e) => setRuleInput({ certificationKind: e.target.value as Profile["certificationKind"] })}
-            >
-              <option value="specialty">{d.kindSpecialty}</option>
-              <option value="method">{d.kindMethod}</option>
-            </select>
-            <span id="kind-hint" className={s.hint}>{d.kindHint}</span>
-          </div>
-          <div className="field">
-            <label htmlFor="certNo">{d.certNo}</label>
+            <label htmlFor="certNo">{nurse ? d.regNo : d.certNo}</label>
             <input id="certNo" value={p.certificateNumber} onChange={(e) => set("certificateNumber", e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="issued">{d.issued}</label>
+            <label htmlFor="issued">{nurse ? d.issuedRegistration : d.issued}</label>
             <input
               id="issued"
               type="date"
@@ -303,6 +312,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
             ) : (
               <span className={s.hint}>{d.requiredHint(ruleTarget)}</span>
             )}
+            {basis && <span className={s.hint}>{basis === "nurse" ? d.nurseRule : d.functionalTransition}</span>}
           </div>
         </div>
       </section>

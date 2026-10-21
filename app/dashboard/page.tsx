@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} locale={locale} today={today} />
+      <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} nurse={user.profile.profession === "nurse"} locale={locale} today={today} />
 
       <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
       {certs.some((c) => c.status === "confirmed") && (

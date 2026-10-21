@@ -10,7 +10,8 @@ import styles from "./overview.module.css";
 const toneClass = { ok: styles.toneOk, warn: styles.toneWarn, bad: styles.toneBad, neutral: "" };
 
 /** Big number, time left and a single band comparing points collected with time elapsed */
-export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headline; specialty: string; locale: Locale; today: Date }) {
+/** nurse: the window is a register entry, not a certificate (Medical Treatment Law Section 26(2)) */
+export function Hero({ p, h, specialty, nurse = false, locale, today }: { p: Progress; h: Headline; specialty: string; nurse?: boolean; locale: Locale; today: Date }) {
   const d = t(locale).dashboard;
   const n = (v: number) => fmtNum(v, locale);
   const pointsPct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
@@ -31,7 +32,7 @@ export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headl
       return d.missingEmergencyHours(n(gap), Math.ceil(gap));
     });
   // listed specialties show in the UI language; unlisted free text as typed
-  const eyebrow = [specialtyLabel(specialty, locale), p.windowEnd ? d.validUntilShort(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
+  const eyebrow = [specialtyLabel(specialty, locale), p.windowEnd ? (nurse ? d.registrationUntilShort : d.validUntilShort)(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
 
   return (
     <section className={styles.hero} aria-labelledby="hero-title">
