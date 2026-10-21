@@ -55,8 +55,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {d.rules.label}: {nurse ? d.rules.sourceNurse : d.rules.source} (
       <a href={nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">likumi.lv</a>).{" "}
       {!nurse && <>{d.rules.validFor(RULES.validityYears)} </>}
-      {d.rules.checkOfficialIn}{" "}
-      <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>. {d.rules.planningAid}
+      {nurse ? d.rules.checkOfficialInNurse : d.rules.checkOfficialIn}{" "}
+      <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>. {nurse ? d.rules.planningAidNurse : d.rules.planningAid}
     </>
   ) : null;
   return (
@@ -110,7 +110,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AppFooter
             locale={locale}
             note={note}
-            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: RULES.sourceUrl, lang: d.lang.label }}
+            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl, lang: d.lang.label }}
           />
         </I18nOverrides>
       </body>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/i18n";
-import { SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
+import { LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/Overview";
@@ -29,6 +29,7 @@ export default function CoursesView({
   specialty,
   remaining,
   hoursUnit = null,
+  nurse = false,
   openId = null,
 }: {
   locale: Locale;
@@ -39,6 +40,8 @@ export default function CoursesView({
   remaining: number;
   /** nurses: the unit their remaining amount is counted in ("akad. st."), null for TIP */
   hoursUnit?: string | null;
+  /** nurses: "for me" = courses for nurses (rows' forMe), on by default, and doctor-wide "all specialties" rows left out */
+  nurse?: boolean;
   /** course to show opened and scrolled into view (/courses?open=<id>, from the dashboard picks) */
   openId?: string | null;
 }) {
@@ -46,7 +49,8 @@ export default function CoursesView({
   const target = useMemo(() => (openId ? rows.find((r) => r.id === openId) ?? null : null), [rows, openId]);
   const [kind, setKind] = useState<CourseKind>(target?.kind ?? "event");
   const [q, setQ] = useState("");
-  const [mine, setMine] = useState(!!specialty && (!target || target.forMe || target.allSpecialties));
+  const [mine, setMine] = useState(nurse ? !target || target.forMe : !!specialty && (!target || target.forMe || target.allSpecialties));
+  const fits = (r: CourseRow) => r.forMe || (!nurse && r.allSpecialties);
   const [format, setFormat] = useState<"" | "in_person" | "online">("");
   const [city, setCity] = useState("");
   const [period, setPeriod] = useState<"30" | "90" | "all">("all");
@@ -56,9 +60,9 @@ export default function CoursesView({
 
   const counts = useMemo(() => {
     const c: Record<CourseKind, number> = { event: 0, recorded: 0, ongoing: 0 };
-    for (const r of rows) if (!mine || r.forMe || r.allSpecialties) c[r.kind]++;
+    for (const r of rows) if (!mine || fits(r)) c[r.kind]++;
     return c;
-  }, [rows, mine]);
+  }, [rows, mine, nurse]);
 
   // every filter except the city one; the city list is built from these rows so no option leads to zero results
   const beforeCity = useMemo(() => {
@@ -66,7 +70,7 @@ export default function CoursesView({
     const until = period === "all" ? null : addDays(Number(period));
     return rows.filter((r) => {
       if (r.kind !== kind) return false;
-      if (mine && !(r.forMe || r.allSpecialties)) return false;
+      if (mine && !fits(r)) return false;
       if (needle && !`${r.title} ${r.organizer ?? ""} ${r.audience}`.toLowerCase().includes(needle)) return false;
       if (format === "online" && !(r.format === "online_live" || r.city === "Online")) return false;
       if (format === "in_person" && !(r.format === "in_person" || r.format === "hybrid")) return false;
@@ -75,7 +79,7 @@ export default function CoursesView({
       if (freeOnly && !r.free) return false;
       return true;
     });
-  }, [rows, kind, q, mine, format, period, minTip, freeOnly]);
+  }, [rows, kind, q, mine, format, period, minTip, freeOnly, nurse]);
 
   const cities = useMemo(() => {
     const set = new Map<string, number>();
@@ -123,7 +127,7 @@ export default function CoursesView({
       <div className="page-head">
         <div>
           <h1>{s.title}</h1>
-          <p className="muted">{s.lead}</p>
+          <p className="muted">{nurse ? s.nurseLead : s.lead}</p>
         </div>
         {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, locale, 1)), hoursUnit) : s.needLine(formatNumber(remaining, locale, 1))}</div>}
       </div>
@@ -183,17 +187,32 @@ export default function CoursesView({
           </select>
         </div>
         <div className={styles.checks}>
-          <label className={styles.check} title={specialty ? s.mySpecialtyHint(specialtyLabel(specialty, locale)) : s.noSpecialty}>
-            <input type="checkbox" checked={mine} disabled={!specialty} onChange={(e) => reset(() => setMine(e.target.checked))} />
-            {s.mySpecialty}
-          </label>
+          {nurse ? (
+            <label className={styles.check} title={s.forNursesHint}>
+              <input type="checkbox" checked={mine} onChange={(e) => reset(() => setMine(e.target.checked))} />
+              {s.forNurses}
+            </label>
+          ) : (
+            <label className={styles.check} title={specialty ? s.mySpecialtyHint(specialtyLabel(specialty, locale)) : s.noSpecialty}>
+              <input type="checkbox" checked={mine} disabled={!specialty} onChange={(e) => reset(() => setMine(e.target.checked))} />
+              {s.mySpecialty}
+            </label>
+          )}
           <label className={styles.check}>
             <input type="checkbox" checked={freeOnly} onChange={(e) => reset(() => setFreeOnly(e.target.checked))} />
             {s.freeOnly}
           </label>
         </div>
       </div>
-      {!specialty && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
+      {!specialty && !nurse && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
+      {nurse && (
+        <p className="small muted">
+          {s.nurseMore}{" "}
+          <a href={LMA_REGISTER_URL} target="_blank" rel="noreferrer">{s.lmaRegister} ↗</a>
+          {" · "}
+          <a href={SOURCE_URLS.lma} target="_blank" rel="noreferrer">{s.lmaCourses} ↗</a>
+        </p>
+      )}
 
       <div className="row small muted">{s.results(filtered.length)}</div>
 
@@ -238,6 +257,7 @@ function hoursOf(minutes: number | null, locale: Locale) {
 
 /** Audience badge: yours, all specialties, the named specialties, or honestly "not stated" */
 function audienceBadge(r: CourseRow, s: CourseStrings, locale: Locale) {
+  if (r.forMe && r.source === "lma") return <span className="tag tag-accent">{s.forNurses}</span>;
   if (r.forMe) return <span className="tag tag-accent">{s.matches}</span>;
   if (r.allSpecialties) return <span className="tag">{s.forAll}</span>;
   const named = r.audience.split(/[;,]\s*(?=\p{Lu})/u).map((a) => a.trim()).filter(Boolean);
@@ -320,7 +340,7 @@ function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Local
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
             {r.price && <Fact k={s.details.price} v={r.free ? s.free : r.price} />}
-            {r.approvalId && <Fact k={s.details.approval} v={`${r.approvalId}${r.annexItem ? `, ${s.annex(r.annexItem)}` : ""}`} />}
+            {r.approvalId && <Fact k={r.source === "lma" ? s.details.approvalLma : s.details.approval} v={`${r.approvalId}${r.annexItem ? `, ${s.annex(r.annexItem)}` : ""}`} />}
           </dl>
           {r.detailRef && <Programme detailRef={r.detailRef} locale={locale} />}
         </div>
@@ -336,7 +356,7 @@ function ApplyBox({ r, locale }: { r: CourseRow; locale: Locale }) {
   const lvDate = r.startDate
     ? `${formatDate(r.startDate, "lv")}${r.endDate ? ` - ${formatDate(r.endDate, "lv")}` : ""}`
     : null;
-  const direct = r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !r.url.endsWith("/kursi"));
+  const direct = r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !r.url.endsWith("/kursi")) || (r.source === "lma" && r.url !== SOURCE_URLS.lma);
   const c = r.contact;
   return (
     <section className={styles.apply} aria-label={a.title}>

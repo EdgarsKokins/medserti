@@ -38,6 +38,8 @@ const bodySchema = (m: Dict["api"]) => {
       inSpecialty: z.boolean(),
       emergencyCare: z.boolean(),
       practicalHours: amount.nullable(),
+      // nurses only; doctors' review panel does not send it
+      nurseTopic: z.enum(["emergency", "infection_control", "patient_safety", "nursing", "other"]).nullable().optional(),
       approvalId: z.string().trim().max(100).nullable(),
       country: z.string().trim().max(80).nullable(),
       status: z.enum(["confirmed", "needs_review"]).default("confirmed"),
@@ -77,6 +79,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const updated: CmeCertificate = {
     ...cert,
     ...fields,
+    nurseTopic: fields.nurseTopic === undefined ? (cert.nurseTopic ?? null) : fields.nurseTopic,
     approvalId: fields.approvalId || null,
     country: fields.country || null,
     endDate: fields.endDate && fields.endDate !== fields.date ? fields.endDate : null,

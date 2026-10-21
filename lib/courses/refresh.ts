@@ -4,6 +4,7 @@ import { fetchLabTip } from "./sources/labTip";
 import { fetchLabCourses } from "./sources/labCourses";
 import { fetchRss } from "./sources/rss";
 import { fetchLumpii } from "./sources/lumpii";
+import { fetchLma } from "./sources/lma";
 
 const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   lab_tip: fetchLabTip,
@@ -11,6 +12,7 @@ const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   kursiarstiem: () => fetchRss("kursiarstiem"),
   medicinaskursi: () => fetchRss("medicinaskursi"),
   lumpii: fetchLumpii,
+  lma: fetchLma,
 };
 
 /**
@@ -73,7 +75,7 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
   tip = tip.filter((c) => !replaced.has(c));
 
   const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
-  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? [])]) {
+  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? [])]) {
     const key = titleKey(c.title);
     if (seen.has(key)) continue;
     seen.add(key);

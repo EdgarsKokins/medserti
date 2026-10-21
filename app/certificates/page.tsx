@@ -23,7 +23,7 @@ export default async function CertificatesPage() {
           <p className="muted">{d.leadShort}</p>
         </div>
         {certificates.some((c) => c.status === "confirmed") && (
-          <Link href="/export" className="btn">{dict.exportDocs.cta} →</Link>
+          <Link href="/export" className="btn">{user.profile.profession === "nurse" ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →</Link>
         )}
       </div>
       <CertificatesView
@@ -33,6 +33,7 @@ export default async function CertificatesPage() {
         cycle={certificateWindow(user.profile)}
         today={new Date().toISOString().slice(0, 10)}
         readOnly={isDemoUser(user)}
+        nurse={user.profile.profession === "nurse"}
       />
     </main>
   );

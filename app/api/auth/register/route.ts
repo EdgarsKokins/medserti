@@ -13,6 +13,8 @@ const Body = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   fullName: z.string().trim().min(1).max(120),
+  // sets the program from the first visit: nurses re-register on hours (Reg. 630), everyone else recertifies on TIP
+  profession: z.enum(["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"]),
   // checkbox value; the form sends nothing when it is unticked
   consent: z.literal("on"),
 });
@@ -20,7 +22,7 @@ const Body = z.object({
 /** User-facing message for the first failing field */
 const HOUR = 60 * 60 * 1000;
 
-const FIELD_ERROR = { email: "badEmail", password: "passwordShort", fullName: "nameRequired" } as const;
+const FIELD_ERROR = { email: "badEmail", password: "passwordShort", fullName: "nameRequired", profession: "professionRequired" } as const;
 
 export async function POST(req: Request) {
   const d = t(await getLocale());
@@ -31,7 +33,7 @@ export async function POST(req: Request) {
     if (field === "consent") return NextResponse.json({ error: d.legal.consent.required }, { status: 400 });
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { email, password, fullName } = parsed.data;
+  const { email, password, fullName, profession } = parsed.data;
   if (passwordTooLong(password)) return NextResponse.json({ error: m.passwordLong }, { status: 400 });
   // 5 sign-up attempts per IP per hour, counted once the form itself is valid
   if (!(await rateLimit(`register-ip:${clientIp(req)}`, 5, HOUR)))
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
     termsVersion: LEGAL_UPDATED,
     profile: {
       fullName,
-      profession: "doctor",
+      profession,
       specialty: "",
       specialtyCode: null,
       certificationKind: "specialty",

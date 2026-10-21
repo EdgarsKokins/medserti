@@ -73,8 +73,9 @@ export interface ChartPoint {
 }
 
 /** One point per distinct date, cumulative after all certificates on that date */
-export function cumulativeSeries(p: Progress): ChartPoint[] {
-  const cap = p.required * RULES.practicalCapShare;
+export function cumulativeSeries(p: Progress, hours = false): ChartPoint[] {
+  // the 16% practical cap is Reg. 391; nurses (Reg. 630) have none
+  const cap = hours ? Infinity : p.required * RULES.practicalCapShare;
   const sorted = [...p.counted].sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
   const out: ChartPoint[] = [];
   let nonPractical = 0;

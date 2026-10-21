@@ -13,10 +13,11 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   const d = t(locale);
   const demo = isDemoUser(user);
   const onboarding = !profileComplete(user.profile);
+  const nurse = user.profile.profession === "nurse";
   return (
     <main className="container">
       <h1 className={s.head}>{d.profile.title}</h1>
-      {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{d.profile.welcome}</div>}
+      {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{nurse ? d.profile.welcomeNurse : d.profile.welcome}</div>}
       <ProfileForm initial={user.profile} locale={locale} readOnly={demo} onboarding={onboarding} />
       {/* not while signing up; the shared demo account cannot be deleted (the API refuses it too) */}
       {!demo && !onboarding && <DeleteAccount locale={locale} />}

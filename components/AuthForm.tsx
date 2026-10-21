@@ -4,10 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
+import type { Profession } from "@/lib/types";
 import DemoButton from "./DemoButton";
 import s from "./auth.module.css";
 
-type Field = "fullName" | "email" | "password" | "consent";
+type Field = "fullName" | "profession" | "email" | "password" | "consent";
+
+/** Sign-up profession list, in the order practitioners look for it; the profile can change it later */
+const PROFESSIONS: Profession[] = ["doctor", "dentist", "nurse", "physician_assistant", "midwife", "functional_specialist", "other_practitioner"];
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
@@ -25,6 +29,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   function validate(values: Record<Exclude<Field, "consent">, string> & { consent: boolean }): Partial<Record<Field, string>> {
     const errs: Partial<Record<Field, string>> = {};
     if (mode === "register" && !values.fullName.trim()) errs.fullName = m.nameRequired;
+    if (mode === "register" && !values.profession) errs.profession = m.professionRequired;
     if (!EMAIL.test(values.email.trim())) errs.email = m.badEmail;
     if (!values.password) errs.password = m.passwordRequired;
     else if (mode === "register" && values.password.length < MIN_PASSWORD) errs.password = m.passwordShort;
@@ -45,13 +50,14 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
     const form = new FormData(e.currentTarget);
     const values = {
       fullName: String(form.get("fullName") ?? ""),
+      profession: String(form.get("profession") ?? ""),
       email: String(form.get("email") ?? ""),
       password: String(form.get("password") ?? ""),
       consent: form.get("consent") === "on",
     };
     const errs = validate(values);
     setFieldErrors(errs);
-    const firstBad = (["fullName", "email", "password", "consent"] as Field[]).find((k) => errs[k]);
+    const firstBad = (["fullName", "profession", "email", "password", "consent"] as Field[]).find((k) => errs[k]);
     if (firstBad) {
       document.getElementById(firstBad)?.focus();
       return;
@@ -107,6 +113,25 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
                 aria-describedby={describedBy("fullName")}
               />
               {errorText("fullName")}
+            </div>
+          )}
+          {mode === "register" && (
+            <div className="field">
+              <label htmlFor="profession">{a.profession}</label>
+              <select
+                id="profession"
+                name="profession"
+                defaultValue=""
+                onChange={() => clearField("profession")}
+                {...invalid("profession")}
+                aria-describedby={describedBy("profession")}
+              >
+                <option value="" disabled>{a.professionPick}</option>
+                {PROFESSIONS.map((p) => (
+                  <option key={p} value={p}>{d.professions[p]}</option>
+                ))}
+              </select>
+              {errorText("profession")}
             </div>
           )}
           <div className="field">
