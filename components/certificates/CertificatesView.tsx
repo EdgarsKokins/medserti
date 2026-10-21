@@ -166,8 +166,12 @@ export default function CertificatesView({
                     {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>TIP</span></>}
                   </span>
                   <span className={styles.status}>
-                    <span className={STATUS_CLASS[c.status]}>
-                      {c.status === "confirmed" && c.autoConfirmed ? dict.review.autoConfirmed : dict.status[c.status]}
+                    <span className={c.duplicateOf && c.status !== "confirmed" ? "badge badge-bad" : STATUS_CLASS[c.status]}>
+                      {c.duplicateOf && c.status !== "confirmed"
+                        ? dict.review.duplicate
+                        : c.status === "confirmed" && c.autoConfirmed
+                          ? dict.review.autoConfirmed
+                          : dict.status[c.status]}
                     </span>
                     {undo === c.id && c.status === "confirmed" && (
                       <>

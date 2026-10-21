@@ -4,7 +4,7 @@ import { currentUser, requireWritableUser } from "@/lib/auth";
 import { listCertificates, saveCertificate } from "@/lib/db";
 import { putBytes } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
-import { autoConfirmBlocks } from "@/lib/parse/confidence";
+import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
 import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate } from "@/lib/types";
 import { t } from "@/lib/i18n";
@@ -111,12 +111,14 @@ export async function POST(req: Request) {
       today: new Date().toISOString().slice(0, 10),
     });
     const auto = blocks.length === 0;
+    const duplicateOf = findDuplicate(existing, result.fields, fileHash);
     const done: CmeCertificate = {
       ...cert,
       ...result.fields,
       status: auto ? "confirmed" : result.status,
       autoConfirmed: auto,
       fileHash,
+      duplicateOf,
       parseNotes: result.notes,
     };
     await saveCertificate(done);

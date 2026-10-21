@@ -85,8 +85,11 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
 
   const counted: CmeCertificate[] = [];
   const excluded: CmeCertificate[] = [];
+  const ids = new Set(certs.map((c) => c.id));
   for (const c of certs) {
-    const usable = (c.status === "confirmed" || c.status === "needs_review") && c.points != null && c.date;
+    // a repeat of a certificate that is still there is not counted twice
+    const repeat = !!c.duplicateOf && ids.has(c.duplicateOf);
+    const usable = !repeat && (c.status === "confirmed" || c.status === "needs_review") && c.points != null && c.date;
     const inWindow = c.date && (!start || c.date >= start) && (!end || c.date <= end);
     (usable && inWindow ? counted : excluded).push(c);
   }

@@ -52,7 +52,7 @@ export function autoConfirmBlocks(x: AutoConfirmInput): AutoConfirmBlock[] {
   if (KEY_FIELDS.some((k) => (f.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) out.push("unsure");
   if (x.pointsKind !== "printed") out.push("pointsNotPrinted");
   out.push(...dateBlocks(f.date, x.window, x.today));
-  if (isDuplicate({ ...f, fileHash: x.fileHash }, x.existing)) out.push("duplicate");
+  if (findDuplicate(x.existing, f, x.fileHash)) out.push("duplicate");
   return out;
 }
 
@@ -66,24 +66,31 @@ function dateBlocks(date: string | null, window: { start: string | null; end: st
   return out;
 }
 
-type DupFields = Pick<CmeCertificate, "title" | "organizer" | "date"> & { fileHash?: string | null };
-
-/** Same file, or same title + organizer + date as one of `others` */
-function isDuplicate(c: DupFields, others: DupFields[]): boolean {
-  return others.some(
-    (o) =>
-      (!!c.fileHash && o.fileHash === c.fileHash) ||
-      (!!c.date && o.date === c.date && norm(o.title) === norm(c.title) && norm(o.organizer) === norm(c.organizer)),
+/**
+ * The earlier certificate this upload repeats, or null: the identical file,
+ * or the same date, title and organizer (the same certificate scanned twice).
+ */
+export function findDuplicate(
+  existing: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
+  f: Pick<CmeCertificate, "title" | "organizer" | "date">,
+  fileHash: string | null,
+): string | null {
+  const hit = existing.find(
+    (c) =>
+      (fileHash && c.fileHash === fileHash) ||
+      (!!f.date && !!f.title && c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
   );
+  return hit?.id ?? null;
 }
 
 /**
  * The "Apstiprināt" button in a certificate row: the user confirms without opening the review panel.
  * Only when date and points are read and neither is marked unsure (the same isUnsure the review panel uses),
- * and never for a duplicate, a future date or a date outside the cycle. Shared by the row and the server.
+ * and never for a duplicate (a repeat of a certificate that is still there), a future date or a date outside the cycle.
+ * Shared by the row and the server.
  */
 export function rowConfirmEligible(
-  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash">,
+  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash" | "duplicateOf">,
   all: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
   window: { start: string | null; end: string | null },
   today: string,
@@ -91,5 +98,5 @@ export function rowConfirmEligible(
   if (cert.status !== "needs_review" || !cert.date || cert.points == null) return false;
   if (isUnsure(cert, "date") || isUnsure(cert, "points")) return false;
   if (dateBlocks(cert.date, window, today).length) return false;
-  return !isDuplicate(cert, all.filter((o) => o.id !== cert.id));
+  return !(cert.duplicateOf && all.some((o) => o.id === cert.duplicateOf));
 }

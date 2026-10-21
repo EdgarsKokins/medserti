@@ -63,8 +63,16 @@ export function Hero({ p, h, specialty, locale, today }: { p: Progress; h: Headl
         {p.remaining > 0
           ? d.statusRemaining(n(p.remaining), p.windowEnd && (p.daysLeft ?? 0) >= 0 ? fmtDate(p.windowEnd, locale) : null)
           : d.statusDone}{" "}
-        {missing.length > 0 && <span className={styles.toneWarn}>{d.statusMissing(missing.join(", "))}</span>}
       </p>
+      {/* one requirement per chip, so a phrase never breaks across two cramped lines */}
+      {missing.length > 0 && (
+        <p className={styles.missing}>
+          <span className={styles.missingLabel}>{d.statusMissing}</span>
+          {missing.map((m) => (
+            <span key={m} className={styles.missingItem}>{m}</span>
+          ))}
+        </p>
+      )}
 
       {timePct != null && p.windowStart && p.windowEnd ? (
         <div className={styles.band} role="img" aria-label={`${d.collected(Math.round(pointsPct))}, ${d.timeElapsed(Math.round(timePct))}`}>
@@ -160,7 +168,7 @@ export function CoursePicks({ courses, locale }: { courses: Course[]; locale: Lo
             <li key={c.id}>
               <DateBlock iso={c.startDate} locale={locale} fallback={d.recording} />
               <span className={styles.pickMain}>
-                <a href={c.url} target="_blank" rel="noreferrer" className={styles.pickTitle}>{c.title}</a>
+                <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={styles.pickTitle}>{c.title}</Link>
                 <span className="small muted">
                   {[c.city === "Online" ? cs.online : c.city === "Latvija" ? cs.wholeLatvia : c.city, c.minutes ? cs.hours(fmtNum(c.minutes / 60, locale)) : null]
                     .filter(Boolean)

@@ -1,4 +1,5 @@
 import type { Locale } from "./i18n";
+import type { CertificationKind, Profession } from "./types";
 
 /**
  * Official specialty and method list used by the Latvian Medical Association (LĀB)
@@ -145,7 +146,59 @@ export const SPECIALTIES: readonly Specialty[] = [
   { code: "131", lv: "Antroposofā medicīna", en: "Anthroposophic medicine" },
 ];
 
-const BY_CODE = new Map(SPECIALTIES.map((s) => [s.code, s]));
+/**
+ * Specialties of the other certified professions, from Cabinet Regulation No. 460 Annex 1
+ * (as worded by Reg. No. 269, 06 May 2025, likumi.lv/ta/id/137108). These are not on the LĀB list.
+ * Functional specialists: one specialty per profession, Medical Treatment Law Section 45.1(1).
+ * Nurses are not certified (Medical Treatment Law Section 26(2)); their specializations come from education.
+ */
+export const OTHER_PROFESSION_SPECIALTIES: readonly Specialty[] = [
+  { code: "pa-ems", lv: "Neatliekamās medicīnas ārsta palīgs (feldšeris)", en: "Emergency medicine physician assistant (paramedic)" },
+  { code: "pa-amb", lv: "Ambulatorā dienesta ārsta palīgs", en: "Outpatient physician assistant" },
+  { code: "midwife", lv: "Vecmāte", en: "Midwife" },
+  { code: "fs-physio", lv: "Fizioterapeits", en: "Physiotherapist" },
+  { code: "fs-ot", lv: "Ergoterapeits", en: "Occupational therapist" },
+  { code: "fs-ortho", lv: "Tehniskais ortopēds", en: "Orthotist and prosthetist" },
+  { code: "fs-slt", lv: "Audiologopēds (klīniskais logopēds)", en: "Speech and language therapist" },
+  { code: "fs-diet", lv: "Uztura speciālists", en: "Dietitian" },
+  { code: "fs-art", lv: "Mākslas terapeits", en: "Art therapist" },
+  { code: "fs-optom", lv: "Optometrists", en: "Optometrist" },
+  { code: "nu-gen", lv: "Māsa (vispārējās aprūpes māsa)", en: "General care nurse" },
+  { code: "nu-icu", lv: "Māsas specializācija anestēzijā un intensīvajā aprūpē", en: "Nurse, anaesthesia and intensive care" },
+  { code: "nu-child", lv: "Māsas specializācija bērnu aprūpē", en: "Nurse, child care" },
+  { code: "nu-psych", lv: "Māsas specializācija psihiatrijā un narkoloģijā", en: "Nurse, psychiatry and addiction" },
+  { code: "nu-periop", lv: "Māsas specializācija perioperatīvajā aprūpē", en: "Nurse, perioperative care" },
+];
+
+/** Reg. 460 Annex 1 row 20, matched to LĀB codes: Zobārsts, Bērnu zobārsts, Endodontists, Ortodonts, Paradontologs, Zobu protēzists */
+const DENTIST_CODES = ["128", "28", "43", "90", "97", "129"];
+
+const ALL = [...SPECIALTIES, ...OTHER_PROFESSION_SPECIALTIES];
+const BY_CODE = new Map(ALL.map((s) => [s.code, s]));
+const pick = (prefix: string) => OTHER_PROFESSION_SPECIALTIES.filter((s) => s.code.startsWith(prefix));
+
+/**
+ * Specialties a profession can be certified in. Empty list: no fixed list, the user types it.
+ * Method certificates use the LĀB list, which holds the methods.
+ */
+export function specialtiesFor(profession: Profession, kind: CertificationKind): readonly Specialty[] {
+  if (profession === "doctor" || (kind === "method" && profession === "dentist")) return SPECIALTIES;
+  if (kind === "method") return [];
+  switch (profession) {
+    case "dentist":
+      return DENTIST_CODES.map((c) => BY_CODE.get(c)!);
+    case "physician_assistant":
+      return pick("pa-");
+    case "midwife":
+      return pick("midwife");
+    case "functional_specialist":
+      return pick("fs-");
+    case "nurse":
+      return pick("nu-");
+    default:
+      return [];
+  }
+}
 
 const norm = (v: string) => v.toLocaleLowerCase("lv").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 
@@ -183,7 +236,7 @@ const ALIASES: Record<string, string> = {
 };
 
 const BY_NAME = new Map<string, string>();
-for (const s of SPECIALTIES) {
+for (const s of ALL) {
   BY_NAME.set(norm(s.lv), s.code);
   BY_NAME.set(norm(s.en), s.code);
 }

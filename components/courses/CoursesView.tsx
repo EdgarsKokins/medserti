@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatNumber, type Locale } from "@/lib/i18n";
 import { SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
@@ -28,6 +28,7 @@ export default function CoursesView({
   sources,
   specialty,
   remaining,
+  openId = null,
 }: {
   locale: Locale;
   rows: CourseRow[];
@@ -35,11 +36,14 @@ export default function CoursesView({
   sources: SourceStatus[];
   specialty: string;
   remaining: number;
+  /** course to show opened and scrolled into view (/courses?open=<id>, from the dashboard picks) */
+  openId?: string | null;
 }) {
   const s = courseStrings(locale);
-  const [kind, setKind] = useState<CourseKind>("event");
+  const target = useMemo(() => (openId ? rows.find((r) => r.id === openId) ?? null : null), [rows, openId]);
+  const [kind, setKind] = useState<CourseKind>(target?.kind ?? "event");
   const [q, setQ] = useState("");
-  const [mine, setMine] = useState(!!specialty);
+  const [mine, setMine] = useState(!!specialty && (!target || target.forMe || target.allSpecialties));
   const [format, setFormat] = useState<"" | "in_person" | "online">("");
   const [city, setCity] = useState("");
   const [period, setPeriod] = useState<"30" | "90" | "all">("all");
@@ -84,6 +88,15 @@ export default function CoursesView({
     if (kind === "event") return list;
     return [...list].sort((a, b) => Number(b.forMe) - Number(a.forMe) || (b.tip ?? 0) - (a.tip ?? 0));
   }, [beforeCity, city, kind]);
+
+  // the linked course may sit past the first page
+  useEffect(() => {
+    if (!target) return;
+    const i = filtered.findIndex((r) => r.id === target.id);
+    if (i >= PAGE) setShown(Math.ceil((i + 1) / PAGE) * PAGE);
+    // only on arrival; later filter changes are the user's
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
 
   const anyFilter = !!q.trim() || mine || !!format || !!city || period !== "all" || minTip > 0 || freeOnly;
   const clearFilters = () => {
@@ -189,7 +202,7 @@ export default function CoursesView({
       ) : (
         <ul className={styles.list}>
           {filtered.slice(0, shown).map((r) => (
-            <CourseCard key={r.id} r={r} locale={locale} />
+            <CourseCard key={r.id} r={r} locale={locale} linked={r.id === target?.id} />
           ))}
         </ul>
       )}
@@ -220,9 +233,30 @@ function hoursOf(minutes: number | null, locale: Locale) {
   return minutes ? formatNumber(Math.round((minutes / 60) * 10) / 10, locale, 1) : null;
 }
 
-function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
+/** Audience badge: yours, all specialties, the named specialties, or honestly "not stated" */
+function audienceBadge(r: CourseRow, s: CourseStrings, locale: Locale) {
+  if (r.forMe) return <span className="tag tag-accent">{s.matches}</span>;
+  if (r.allSpecialties) return <span className="tag">{s.forAll}</span>;
+  const named = r.audience.split(/[;,]\s*(?=\p{Lu})/u).map((a) => a.trim()).filter(Boolean);
+  if (!named.length) return <span className="tag">{s.noAudience}</span>;
+  const first = specialtyLabel(named[0], locale);
+  return (
+    <span className={`tag ${styles.audienceTag}`} title={r.audience}>
+      {named.length > 1 ? `${first} +${named.length - 1}` : first}
+    </span>
+  );
+}
+
+function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Locale; linked?: boolean }) {
   const s = courseStrings(locale);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(linked);
+  const item = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (!linked) return;
+    // after the browser's own scroll restoration on reload, which would otherwise win
+    const id = window.setTimeout(() => item.current?.scrollIntoView({ block: "start" }), 50);
+    return () => window.clearTimeout(id);
+  }, [linked]);
   const date = r.startDate
     ? r.endDate
       ? `${formatDate(r.startDate, locale)} - ${formatDate(r.endDate, locale)}`
@@ -238,7 +272,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
   return (
-    <li className={`${styles.item} ${open ? styles.itemOpen : ""}`}>
+    <li ref={item} className={`${styles.item} ${open ? styles.itemOpen : ""}`}>
       <button
         type="button"
         className={styles.summary}
@@ -261,8 +295,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
               .join("  ·  ")}
           </span>
           <span className={styles.badges}>
-            {r.forMe && <span className="tag tag-accent">{s.matches}</span>}
-            {!r.forMe && r.allSpecialties && <span className="tag">{s.forAll}</span>}
+            {audienceBadge(r, s, locale)}
             {r.free && <span className="tag">{s.free}</span>}
             {r.price && !r.free && <span className="tag">{r.price}</span>}
           </span>
@@ -280,6 +313,7 @@ function CourseCard({ r, locale }: { r: CourseRow; locale: Locale }) {
             <Fact k={s.details.format} v={s.formats[r.format]} />
             {(venue || place) && <Fact k={s.details.place} v={[venue, place && venue?.includes(place) ? null : place].filter(Boolean).join(", ")} />}
             {hours && <Fact k={s.details.duration} v={`${s.hours(hours)} (${r.minutes} min)`} />}
+            {r.kind === "ongoing" && r.tip != null && <Fact k={s.details.tip} v={s.details.tipWhole(formatNumber(r.tip, locale, 1))} />}
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
             {r.price && <Fact k={s.details.price} v={r.free ? s.free : r.price} />}
@@ -374,9 +408,11 @@ function Programme({ detailRef, locale }: { detailRef: string; locale: Locale })
   if (state.status === "error") return <p className="small muted">{s.failed}</p>;
   if (!state.lectures.length) return <p className="small muted">{s.noProgramme}</p>;
   const list = all ? state.lectures : state.lectures.slice(0, SHOW_LECTURES);
+  // the lecture total can differ from the list's own length (TIP2025/8727: 1440 min listed, 14,400 min of lectures)
+  const total = hoursOf(state.lectures.reduce((n, l) => n + (l.minutes ?? 0), 0), locale);
   return (
     <div className="stack" style={{ gap: 6 }}>
-      <h3 className={styles.progTitle}>{s.programme}</h3>
+      <h3 className={styles.progTitle}>{s.programme}{total && state.lectures.length > 1 ? ` · ${courseStrings(locale).hours(total)}` : ""}</h3>
       <ol className={styles.lectures}>
         {list.map((l, i) => (
           <li key={i}>

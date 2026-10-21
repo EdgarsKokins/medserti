@@ -14,8 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: courseStrings(await getLocale()).title };
 }
 
-export default async function CoursesPage() {
+export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ open?: string | string[] }> }) {
   const user = await requireUser();
+  const { open } = await searchParams;
   const locale = await getLocale();
   const [idx, certs] = await Promise.all([getCourseIndex(), listCertificates(user.id)]);
   const progress = computeProgress(user.profile, certs);
@@ -56,6 +57,7 @@ export default async function CoursesPage() {
       sources={idx.sources}
       specialty={specialty}
       remaining={progress.remaining}
+      openId={typeof open === "string" ? open : null}
     />
   );
 }

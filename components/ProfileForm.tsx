@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
 import { addYears, requiredPoints, ruleRequiredPoints, RULES } from "@/lib/rules";
-import { OTHER_SPECIALTY, resolveSpecialty, specialtyByCode } from "@/lib/specialties";
+import { OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { formatDate, t, type Locale } from "@/lib/i18n";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
@@ -21,6 +21,10 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
   const router = useRouter();
   const [p, setP] = useState<Profile>(initial);
   const [spec, setSpec] = useState(() => resolveSpecialty(initial));
+  // an end date that is not issue + 5 years was set by hand; keep it and show the field
+  const [customEnd, setCustomEnd] = useState(
+    () => !!initial.certificateExpires && (!initial.certificateIssued || initial.certificateExpires !== addYears(initial.certificateIssued, RULES.validityYears)),
+  );
   const [errors, setErrors] = useState<FieldErrors>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -30,14 +34,22 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
   };
   const clearError = (k: keyof FieldErrors) => errors[k] && setErrors((e) => ({ ...e, [k]: undefined }));
 
+  const specList = useMemo(() => specialtiesFor(p.profession, p.certificationKind), [p.profession, p.certificationKind]);
+
   /** Kind or profession changes the rule; an override that only repeated the old rule goes with it */
   const setRuleInput = (patch: Partial<Pick<Profile, "profession" | "certificationKind">>) => {
     setMsg(null);
-    setP((prev) => {
-      const next = { ...prev, ...patch };
-      if (prev.requiredPointsOverride === ruleRequiredPoints(prev)) next.requiredPointsOverride = null;
-      return next;
-    });
+    const next = { ...p, ...patch };
+    if (p.requiredPointsOverride === ruleRequiredPoints(p)) next.requiredPointsOverride = null;
+    setP(next);
+    // a listed specialty that the new profession does not have is dropped; a single-option list is picked for the user
+    const list = specialtiesFor(next.profession, next.certificationKind);
+    const current = specialtyByCode(spec.code);
+    if (current && !list.some((x) => x.code === current.code)) {
+      if (list.length === 1) setSpec({ code: list[0].code, text: "" });
+      else if (list.length === 0) setSpec({ code: OTHER_SPECIALTY, text: current.lv });
+      else setSpec({ code: null, text: "" });
+    } else if (!spec.code && list.length === 1) setSpec({ code: list[0].code, text: "" });
   };
 
   const defaultExpiry = p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null;
@@ -123,21 +135,39 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
             </select>
           </div>
           <div className={`field ${s.wide}`}>
-            <label htmlFor="specialty">{d.specialty}</label>
-            <SpecialtyPicker
-              id="specialty"
-              code={spec.code}
-              locale={locale}
-              labels={{ other: d.specialtyOther, placeholder: d.specialtyPlaceholder, noMatch: d.specialtyNoMatch }}
-              onChange={(code) => {
-                setMsg(null);
-                setSpec((prev) => ({ code, text: code === OTHER_SPECIALTY ? prev.text : "" }));
-                clearError("specialtyText");
-              }}
-            />
+            <label htmlFor={specList.length ? "specialty" : "specialtyText"}>{d.specialty}</label>
+            {specList.length === 0 ? (
+              <>
+                <input
+                  id="specialtyText"
+                  value={spec.code === OTHER_SPECIALTY ? spec.text : specialtyByCode(spec.code)?.[locale] ?? ""}
+                  maxLength={120}
+                  onChange={(e) => {
+                    setMsg(null);
+                    setSpec({ code: OTHER_SPECIALTY, text: e.target.value });
+                    clearError("specialtyText");
+                  }}
+                  {...errorProps("specialtyText")}
+                />
+                {errorText("specialtyText")}
+              </>
+            ) : (
+              <SpecialtyPicker
+                id="specialty"
+                code={spec.code}
+                list={specList}
+                locale={locale}
+                labels={{ other: d.specialtyOther, placeholder: d.specialtyPlaceholder, noMatch: d.specialtyNoMatch }}
+                onChange={(code) => {
+                  setMsg(null);
+                  setSpec((prev) => ({ code, text: code === OTHER_SPECIALTY ? prev.text : "" }));
+                  clearError("specialtyText");
+                }}
+              />
+            )}
             <span className={s.hint}>{d.specialtyHint}</span>
           </div>
-          {spec.code === OTHER_SPECIALTY && (
+          {specList.length > 0 && spec.code === OTHER_SPECIALTY && (
             <div className={`field ${s.wide}`}>
               <label htmlFor="specialtyText">{d.specialtyOtherLabel}</label>
               <input
@@ -178,9 +208,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
               <option value="specialty">{d.kindSpecialty}</option>
               <option value="method">{d.kindMethod}</option>
             </select>
-            <span id="kind-hint" className={s.hint}>
-              {p.certificationKind === "method" ? d.kindMethodHint : d.kindSpecialtyHint}
-            </span>
+            <span id="kind-hint" className={s.hint}>{d.kindHint}</span>
           </div>
           <div className="field">
             <label htmlFor="certNo">{d.certNo}</label>
@@ -198,18 +226,48 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
                 setP((prev) => ({
                   ...prev,
                   certificateIssued: v,
-                  certificateExpires: v ? addYears(v, RULES.validityYears) : prev.certificateExpires,
+                  // a hand-set end date stays; otherwise the end follows the rule
+                  certificateExpires: customEnd ? prev.certificateExpires : v ? addYears(v, RULES.validityYears) : null,
                 }));
               }}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="expires">{d.expires}</label>
-            <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
-            {defaultExpiry && p.certificateExpires !== defaultExpiry && (
-              <span className={s.hint}>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)}</span>
+            {!customEnd && (
+              <span className={s.hint}>
+                {defaultExpiry && <>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)} </>}
+                <button
+                  type="button"
+                  className={s.inlineBtn}
+                  aria-controls="expires"
+                  onClick={() => {
+                    setCustomEnd(true);
+                    requestAnimationFrame(() => document.getElementById("expires")?.focus());
+                  }}
+                >
+                  {d.customEnd}
+                </button>
+              </span>
             )}
           </div>
+          {customEnd && (
+            <div className="field">
+              <label htmlFor="expires">{d.expires}</label>
+              <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
+              {defaultExpiry && (
+                <span className={s.hint}>
+                  <button
+                    type="button"
+                    className={s.inlineBtn}
+                    onClick={() => {
+                      setCustomEnd(false);
+                      set("certificateExpires", defaultExpiry);
+                    }}
+                  >
+                    {d.useRuleEnd(formatDate(defaultExpiry, locale))}
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
           <div className="field">
             <label htmlFor="override">{d.required}</label>
             <input
