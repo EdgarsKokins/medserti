@@ -22,7 +22,7 @@ export default function AdminLogin() {
         body: JSON.stringify({ password }),
       });
       if (!res.ok) {
-        setError("Nepareiza parole.");
+        setError(res.status === 429 ? "Pārāk daudz mēģinājumu. Mēģiniet vēlreiz pēc 15 minūtēm." : "Nepareiza parole.");
         setPassword("");
         return;
       }

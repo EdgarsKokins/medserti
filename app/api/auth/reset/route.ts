@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getUser, saveUser } from "@/lib/db";
 import { hashPassword, startSession } from "@/lib/auth";
 import { deleteResetToken, readResetToken } from "@/lib/password-reset";
+import { passwordBreached, passwordTooLong } from "@/lib/password-policy";
 import { isDemoUserId } from "@/lib/demo/id";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
       : NextResponse.json({ error: d.reset.invalidBody, code: "invalid_token" }, { status: 400 });
   }
   const { token, password } = parsed.data;
+  if (passwordTooLong(password)) return NextResponse.json({ error: d.api.passwordLong }, { status: 400 });
   const rec = await readResetToken(token);
   const user = rec ? await getUser(rec.userId) : null;
   // A token issued before the last password change is dead even if it has not expired
@@ -27,6 +29,8 @@ export async function POST(req: Request) {
     if (rec) await deleteResetToken(token);
     return NextResponse.json({ error: d.reset.invalidBody, code: "invalid_token" }, { status: 400 });
   }
+
+  if (await passwordBreached(password)) return NextResponse.json({ error: d.api.passwordBreached }, { status: 400 });
 
   const sessionVersion = (user.sessionVersion ?? 0) + 1;
   await deleteResetToken(token);

@@ -58,3 +58,17 @@ export async function rateLimit(key: string, max: number, windowMs: number): Pro
   await putJson(path, next);
   return true;
 }
+
+/** Read-only check of a rateLimit() counter: true while fewer than max hits fall inside the window */
+export async function underLimit(key: string, max: number, windowMs: number): Promise<boolean> {
+  const rec = await getJson<{ count: number; windowStart: number }>(`rate-limits/${sha256(key)}.json`);
+  return !rec || Date.now() - rec.windowStart > windowMs || rec.count < max;
+}
+
+export async function clearLimit(key: string): Promise<void> {
+  await remove(`rate-limits/${sha256(key)}.json`);
+}
+
+/** Caller IP as Vercel reports it */
+export const clientIp = (req: Request) =>
+  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";

@@ -43,7 +43,7 @@ Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `
 
 Email (password reset) goes through Resend's REST API in `lib/email.ts`. Without `RESEND_API_KEY` the email, including the reset link, is printed to the server console. Optional: `EMAIL_FROM` (default `Medserti <noreply@medserti.lv>`), `EMAIL_REPLY_TO` (default `info@medserti.lv`), `SITE_URL` (base for links in emails; default `https://medserti.lv` in production, the request origin locally).
 
-`ADMIN_PASSWORD` is the password for the text editor at `/admin` (no user account needed). Unset, it is `1234`: set a real one before relying on it. Changing it signs every admin out.
+`ADMIN_PASSWORD` is the password for the text editor at `/admin` (no user account needed). Unset, admin login is disabled. Changing it signs every admin out.
 
 ## Editing texts
 

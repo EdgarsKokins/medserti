@@ -6,19 +6,20 @@ import { secret } from "./auth";
 
 /**
  * Admin access for /admin: one shared password, no user account needed.
- * The password comes from ADMIN_PASSWORD; unset, it is "1234" (temporary, set ADMIN_PASSWORD on Vercel to change it).
+ * The password comes from ADMIN_PASSWORD; unset or empty, every admin login fails.
  * Changing the password signs every admin out, because the cookie carries a fingerprint of it.
  */
 const COOKIE = "medserti_admin";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-const password = () => process.env.ADMIN_PASSWORD || "1234";
+const password = () => process.env.ADMIN_PASSWORD || "";
 const sha = (s: string) => createHash("sha256").update(s).digest();
 const fingerprint = () => sha(`medserti-admin:${password()}`).toString("hex").slice(0, 16);
 
 /** Constant-time password check */
 export function passwordMatches(input: unknown): boolean {
-  return typeof input === "string" && timingSafeEqual(sha(input), sha(password()));
+  const expected = password();
+  return !!expected && typeof input === "string" && timingSafeEqual(sha(input), sha(expected));
 }
 
 export async function startAdminSession() {
@@ -43,7 +44,7 @@ export async function endAdminSession() {
 /** True when this request carries a valid admin cookie for the current password */
 export async function isAdmin(): Promise<boolean> {
   const token = (await cookies()).get(COOKIE)?.value;
-  if (!token) return false;
+  if (!token || !password()) return false;
   try {
     const { payload } = await jwtVerify(token, secret());
     return payload.adm === fingerprint();
