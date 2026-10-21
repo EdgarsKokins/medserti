@@ -57,11 +57,23 @@ export function autoConfirmBlocks(x: AutoConfirmInput): AutoConfirmBlock[] {
     const earliest = start ?? `${Number(x.today.slice(0, 4)) - PLAUSIBLE_YEARS}${x.today.slice(4)}`;
     if (f.date < earliest || (end && f.date > end)) out.push("outsideWindow");
   }
-  const same = x.existing.some(
-    (c) =>
-      (x.fileHash && c.fileHash === x.fileHash) ||
-      (c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
-  );
-  if (same) out.push("duplicate");
+  if (findDuplicate(x.existing, f, x.fileHash)) out.push("duplicate");
   return out;
+}
+
+/**
+ * The earlier certificate this upload repeats, or null: the identical file,
+ * or the same date, title and organizer (the same certificate scanned twice).
+ */
+export function findDuplicate(
+  existing: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
+  f: Pick<CmeCertificate, "title" | "organizer" | "date">,
+  fileHash: string | null,
+): string | null {
+  const hit = existing.find(
+    (c) =>
+      (fileHash && c.fileHash === fileHash) ||
+      (!!f.date && !!f.title && c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
+  );
+  return hit?.id ?? null;
 }

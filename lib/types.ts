@@ -90,6 +90,8 @@ export interface CmeCertificate {
   autoConfirmed?: boolean;
   /** sha256 of the uploaded file, to spot the same file uploaded twice */
   fileHash?: string | null;
+  /** id of the earlier certificate this upload repeats (same file, or same date, title and organizer); not counted. Cleared when the user confirms it anyway. */
+  duplicateOf?: string | null;
   /** JSON array of ParseNote; older certificates hold plain English text */
   parseNotes: string | null;
 }

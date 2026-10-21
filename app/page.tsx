@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import ProductFrame from "@/components/landing/ProductFrame";
 import HowItWorks from "@/components/landing/HowItWorks";
 import ScatteredDocs from "@/components/landing/ScatteredDocs";
 import DemoButton from "@/components/DemoButton";
 import LangSwitch from "@/components/LangSwitch";
-import ThemeSwitch from "@/components/ThemeSwitch";
 import { currentUserId } from "@/lib/auth";
 import { readCourseIndex } from "@/lib/courses/store";
 import { SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types";
@@ -17,7 +15,6 @@ import { formatDate, formatNumber, t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { RULES } from "@/lib/rules";
 import { CONTACT_EMAIL } from "@/lib/site";
-import { isTheme, THEME_COOKIE } from "@/lib/theme";
 import s from "./landing.module.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -76,8 +73,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   const { deleted } = await searchParams;
   const l = d.landing;
   const a = d.landingA;
-  const saved = (await cookies()).get(THEME_COOKIE)?.value;
-  const theme = isTheme(saved) ? saved : "system";
   const { next: events, total } = await upcomingEvents();
   // only plain strings may cross into the client component (coursesBody is a function)
   const { coursesBody: _coursesBody, remaining, ...howText } = a;
@@ -272,7 +267,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </div>
           <div className={s.footerTools}>
-            <ThemeSwitch initial={theme} labels={d.theme} />
             <LangSwitch locale={locale} label={d.lang.label} />
           </div>
         </div>

@@ -81,7 +81,7 @@ const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (
 const clamp = (n: number, lo: number, hi: number) => Math.min(Math.max(n, lo), hi);
 
 function makeFmt(locale: ChartLocale) {
-  const nf = new Intl.NumberFormat(locale === "lv" ? "lv-LV" : "en-GB", { maximumFractionDigits: 1 });
+  const nf = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1, useGrouping: false });
   const mon = MONTHS[locale];
   return {
     num: (n: number) => nf.format(Math.round(n * 10) / 10),

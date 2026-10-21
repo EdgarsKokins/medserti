@@ -22,9 +22,9 @@ export function formatDate(iso: string, locale: Locale): string {
   return locale === "lv" ? `${d}.${mo}.${y}.` : `${d} ${MONTHS_EN[Number(mo) - 1] ?? mo} ${y}`;
 }
 
-/** LV uses a decimal comma, EN a decimal point */
-export function formatNumber(n: number, locale: Locale, maxDigits = 2): string {
-  return new Intl.NumberFormat(locale === "lv" ? "lv-LV" : "en-GB", { maximumFractionDigits: maxDigits }).format(n);
+/** Decimal point in both languages (1.3 TIP), no thousands separator; locale kept for call sites */
+export function formatNumber(n: number, _locale: Locale, maxDigits = 2): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxDigits, useGrouping: false }).format(n);
 }
 
 /** English: 1 day / 2 days */
@@ -49,7 +49,6 @@ const en = {
     tagline: "Your CME points (TIP) and recertification in one place",
   },
   lang: { label: "Language" },
-  theme: { label: "Theme", system: "Match system", light: "Light", dark: "Dark" },
   common: { loading: "Loading...", home: "Go to the start page", retry: "Try again" },
   notFound: { title: "Page not found", body: "This page doesn't exist or has moved." },
   error: { title: "Something went wrong", body: "This page could not be loaded. Please try again in a moment." },
@@ -470,6 +469,8 @@ const en = {
     countryNone: "Not set",
     checkField: "check",
     autoConfirmed: "Confirmed automatically",
+    duplicate: "Duplicate",
+    duplicateNote: "You already uploaded this certificate, so it is not counted twice. Delete it, or confirm it if it is a different one.",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
@@ -770,7 +771,6 @@ const lv: Dict = {
     tagline: "Jūsu tālākizglītības punkti un resertifikācija vienuviet",
   },
   lang: { label: "Valoda" },
-  theme: { label: "Krāsu režīms", system: "Kā sistēmā", light: "Gaišs", dark: "Tumšs" },
   common: { loading: "Ielādē...", home: "Uz sākumlapu", retry: "Mēģināt vēlreiz" },
   notFound: { title: "Lapa nav atrasta", body: "Šādas lapas nav vai tā ir pārvietota." },
   error: { title: "Radās kļūda", body: "Lapu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža." },
@@ -1198,6 +1198,8 @@ const lv: Dict = {
     countryNone: "Nav norādīta",
     checkField: "pārbaudiet",
     autoConfirmed: "Apstiprināts automātiski",
+    duplicate: "Dublikāts",
+    duplicateNote: "Šis sertifikāts jau ir augšupielādēts, tāpēc to neskaitām divreiz. Dzēsiet to vai apstipriniet, ja tas tomēr ir cits.",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācība",
     fPractical: "Praktiskās stundas",
@@ -1308,7 +1310,7 @@ const lv: Dict = {
     collected: (pct: number) => `savākti ${pct}%`,
     timeElapsed: (pct: number) => `pagājuši ${pct}% perioda`,
     today: "Šodien",
-    daysLeftShort: (n: number) => `${n} ${lvPl(n, "diena atlikusi", "dienas atlikušas")}`,
+    daysLeftShort: (n: number) => `${lvPl(n, "atlikusi", "atlikušas")} ${n} ${lvPl(n, "diena", "dienas")}`,
     paceShort: (n: string) => `≈ ${n} TIP mēnesī, lai paspētu`,
     validUntilShort: (date: string) => `sertifikāts derīgs līdz ${date}`,
     recording: "Ieraksts",

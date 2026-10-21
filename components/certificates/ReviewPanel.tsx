@@ -154,8 +154,12 @@ export default function ReviewPanel({
           <div>
             <h2 id="review-title" className={styles.panelTitle}>{d.title}</h2>
             <div className={styles.panelMeta}>
-              <span className={STATUS_CLASS[cert.status]}>
-                {cert.status === "confirmed" && cert.autoConfirmed ? d.autoConfirmed : dict.status[cert.status]}
+              <span className={cert.duplicateOf && !confirmed ? "badge badge-bad" : STATUS_CLASS[cert.status]}>
+                {cert.duplicateOf && !confirmed
+                  ? d.duplicate
+                  : cert.status === "confirmed" && cert.autoConfirmed
+                    ? d.autoConfirmed
+                    : dict.status[cert.status]}
               </span>
               <span>{cert.fileName}</span>
               <span>{d.uploaded(formatDate(cert.uploadedAt.slice(0, 10), locale))}</span>
@@ -166,6 +170,10 @@ export default function ReviewPanel({
             {d.viewFile}
           </a>
         </div>
+
+        {cert.duplicateOf && !confirmed && (
+          <div className={`alert small ${styles.notes}`} role="note">{d.duplicateNote}</div>
+        )}
 
         {notes.lines.length > 0 && (
           <div className={`alert small ${styles.notes}`}>
