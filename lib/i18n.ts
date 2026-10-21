@@ -719,6 +719,7 @@ const en = {
             "Vercel Inc. (USA) hosts the site. Our server and the private Vercel Blob store with your data and files are in Vercel's Frankfurt (Germany, EU) region. Vercel is a US company, so access from outside the EU (for example by its support staff) is possible; that is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
             "jsDelivr (a public file network): when you upload a photo, your browser downloads the text recognition program from cdn.jsdelivr.net. That service sees your IP address, not your files.",
             "Resend (USA) sends our emails, such as password reset links. It receives your email address and the message text.",
+            "Cloudflare (USA) stores our weekly encrypted backup copy in its EU jurisdiction (Cloudflare R2, EU).",
           ],
         },
         {
@@ -731,6 +732,7 @@ const en = {
           title: "How long we keep it",
           items: [
             "Until you delete your account. Deleting it in your profile removes your account, profile, all certificate records and all uploaded files at once.",
+            "Weekly backup copies are kept for 8 weeks, so after you delete your account, your data leaves the backups within 8 weeks. Backups are only used to restore the service after a failure.",
             "Password reset links expire after 1 hour.",
             "Vercel keeps short-lived technical logs (for example, IP addresses of requests) under its own rules.",
           ],
@@ -1470,6 +1472,7 @@ const lv: Dict = {
             "Vercel Inc. (ASV) uztur vietni. Mūsu serveris un privātā Vercel Blob krātuve ar jūsu datiem un failiem atrodas Vercel Frankfurtes (Vācija, ES) reģionā. Vercel ir ASV uzņēmums, tāpēc ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
             "jsDelivr (publisks failu tīkls): augšupielādējot foto, jūsu pārlūks lejupielādē teksta atpazīšanas programmu no cdn.jsdelivr.net. Šis pakalpojums redz jūsu IP adresi, bet ne jūsu failus.",
             "Resend (ASV) nosūta mūsu e-pastus, piemēram, paroles atjaunošanas saites. Tas saņem jūsu e-pasta adresi un vēstules tekstu.",
+            "Cloudflare (ASV) glabā mūsu iknedēļas rezerves kopiju savā ES jurisdikcijā (Cloudflare R2, ES).",
           ],
         },
         {
@@ -1482,6 +1485,7 @@ const lv: Dict = {
           title: "Cik ilgi mēs tos glabājam",
           items: [
             "Līdz brīdim, kad izdzēšat kontu. Dzēšot to profilā, uzreiz tiek izdzēsts konts, profils, visi sertifikātu ieraksti un visi augšupielādētie faili.",
+            "Iknedēļas rezerves kopijas glabājam 8 nedēļas, tāpēc pēc konta dzēšanas jūsu dati no tām pazūd 8 nedēļu laikā. Rezerves kopijas izmantojam tikai, lai atjaunotu pakalpojumu pēc kļūmes.",
             "Paroles atjaunošanas saites derīgums beidzas pēc 1 stundas.",
             "Vercel pēc saviem noteikumiem īsu laiku glabā tehniskos žurnālus (piemēram, pieprasījumu IP adreses).",
           ],
@@ -2213,6 +2217,7 @@ const ru: Dict = {
             "Vercel Inc. (США) размещает сайт. Наш сервер и закрытое хранилище Vercel Blob с вашими данными и файлами находятся в регионе Vercel во Франкфурте (Германия, ЕС). Vercel является компанией из США, поэтому доступ из-за пределов ЕС (например, сотрудников поддержки) возможен; он регулируется соглашением Vercel об обработке данных, включающим стандартные договорные положения ЕС.",
             "jsDelivr (публичная сеть файлов): при загрузке фото ваш браузер скачивает программу распознавания текста с cdn.jsdelivr.net. Этот сервис видит ваш IP-адрес, но не ваши файлы.",
             "Resend (США) отправляет наши письма, например ссылки для смены пароля. Он получает ваш адрес эл. почты и текст письма.",
+            "Cloudflare (США) хранит нашу еженедельную резервную копию в своей юрисдикции ЕС (Cloudflare R2, ЕС).",
           ],
         },
         {
@@ -2225,6 +2230,7 @@ const ru: Dict = {
           title: "Как долго мы их храним",
           items: [
             "Пока вы не удалите аккаунт. При удалении в профиле сразу удаляются аккаунт, профиль, все записи о сертификатах и все загруженные файлы.",
+            "Еженедельные резервные копии хранятся 8 недель, поэтому после удаления аккаунта ваши данные исчезают из них в течение 8 недель. Копии используются только для восстановления сервиса после сбоя.",
             "Ссылки для смены пароля действуют 1 час.",
             "Vercel недолго хранит технические журналы (например, IP-адреса запросов) по своим правилам.",
           ],
