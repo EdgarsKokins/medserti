@@ -275,13 +275,13 @@ const en = {
     people: [
       {
         name: "Matīss Kokins",
-        role: "Co-founder · Medical services consulting",
-        bio: "Matīss has worked as a professional consultant in Latvia's medical services industry, advising clinics and healthcare professionals on how they organise their work, meet regulatory requirements and grow. He knows the rules medical practitioners work under, and where they cost the most time, and makes sure Medserti follows them closely.",
+        role: "Co-founder · Customers and partnerships",
+        bio: "Matīss has worked as a consultant on public sector projects, run recruitment for consulting and finance firms, and now works in B2B sales. At Medserti he looks after doctors, associations and partners.",
       },
       {
         name: "Edgars Kokins",
-        role: "Co-founder · Healthtech",
-        bio: "Edgars is a healthtech professional with years of experience delivering top-level business solutions to professionals. He leads the product and technology behind Medserti, turning complex requirements into tools that are simple to use every day.",
+        role: "Co-founder · Product and business",
+        bio: "Edgars has spent more than 10 years building and running companies in finance and technology: regional CEO across 9 countries with 250+ people, chief revenue officer, CEO, and angel investor. At Medserti he leads the product.",
       },
     ],
   },
@@ -1064,13 +1064,13 @@ const lv: Dict = {
     people: [
       {
         name: "Matīss Kokins",
-        role: "Līdzdibinātājs · Konsultācijas medicīnas pakalpojumu nozarē",
-        bio: "Matīss ir strādājis par konsultantu Latvijas medicīnas pakalpojumu nozarē, konsultējot klīnikas un ārstniecības personas par darba organizāciju, normatīvo prasību izpildi un izaugsmi. Viņš pārzina noteikumus, pēc kuriem strādā mediķi, un zina, kur tie prasa visvairāk laika, tāpēc rūpējas, lai Medserti tiem precīzi atbilstu.",
+        role: "Līdzdibinātājs · Klienti un partnerības",
+        bio: "Matīss ir strādājis par konsultantu valsts sektora projektos, vadījis darbinieku atlasi konsultāciju un finanšu uzņēmumiem un šobrīd strādā B2B pārdošanā. Medserti viņš atbild par sadarbību ar ārstiem, biedrībām un partneriem.",
       },
       {
         name: "Edgars Kokins",
-        role: "Līdzdibinātājs · Veselības tehnoloģijas",
-        bio: "Edgars ir veselības tehnoloģiju profesionālis ar ilggadēju pieredzi augstākā līmeņa biznesa risinājumu izstrādē profesionāļiem. Viņš vada Medserti produktu un tehnoloģijas, pārvēršot sarežģītas prasības rīkos, kurus ir viegli lietot ikdienā.",
+        role: "Līdzdibinātājs · Produkts un bizness",
+        bio: "Edgars vairāk nekā 10 gadus veido un vada uzņēmumus finanšu un tehnoloģiju jomā: bijis reģionālais izpilddirektors 9 valstīs ar vairāk nekā 250 darbiniekiem, komercdirektors un izpilddirektors, kā arī ir eņģeļinvestors. Medserti viņš vada produktu.",
       },
     ],
   },
@@ -1849,13 +1849,13 @@ const ru: Dict = {
     people: [
       {
         name: "Matīss Kokins",
-        role: "Сооснователь · Консалтинг в сфере медицинских услуг",
-        bio: "Матисс работал консультантом в сфере медицинских услуг в Латвии: помогал клиникам и медицинским работникам организовать работу, выполнять нормативные требования и расти. Он знает правила, по которым работают медики, и где они отнимают больше всего времени, и следит, чтобы Medserti точно им соответствовал.",
+        role: "Сооснователь · Клиенты и партнёрства",
+        bio: "Матисс работал консультантом в проектах государственного сектора, вёл подбор персонала для консалтинговых и финансовых компаний, сейчас работает в B2B-продажах. В Medserti он отвечает за работу с врачами, ассоциациями и партнёрами.",
       },
       {
         name: "Edgars Kokins",
-        role: "Сооснователь · Медицинские технологии",
-        bio: "Эдгарс работает в сфере медицинских технологий и имеет многолетний опыт создания бизнес-решений высокого уровня для профессионалов. Он руководит продуктом и технологиями Medserti и превращает сложные требования в инструменты, которыми легко пользоваться каждый день.",
+        role: "Сооснователь · Продукт и бизнес",
+        bio: "Эдгарс более 10 лет создаёт и возглавляет компании в сфере финансов и технологий: региональный CEO в 9 странах с более чем 250 сотрудниками, директор по доходам, CEO и бизнес-ангел. В Medserti он отвечает за продукт.",
       },
     ],
   },

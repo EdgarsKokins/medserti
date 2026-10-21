@@ -218,7 +218,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={TEAM_PHOTOS[p.name]} alt={p.name} className={s.photo} width={132} height={132} loading="lazy" />
                     <span className={s.personName}>{p.name}</span>
-                    <span className={s.personRole}>{p.role.split(" · ")[1] ?? p.role}</span>
                   </li>
                 ))}
               </ul>

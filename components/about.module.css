@@ -17,6 +17,7 @@
 .photo {
   display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;
   border-radius: var(--radius); background: var(--surface-2); box-shadow: 0 0 0 1px var(--border);
+  filter: grayscale(1);
 }
 
 .name { font-size: 1.35rem; margin: 2px 0 4px; }
