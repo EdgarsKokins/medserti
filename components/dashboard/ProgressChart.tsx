@@ -76,7 +76,7 @@ const MONTHS: Record<ChartLocale, string[]> = {
 /** Latvian month names after "līdz" (dative) and "ap" (accusative): "līdz 2028. gada martam", "ap 2028. gada martu" */
 const LV_DATIVE = ["janvārim", "februārim", "martam", "aprīlim", "maijam", "jūnijam", "jūlijam", "augustam", "septembrim", "oktobrim", "novembrim", "decembrim"];
 const LV_ACCUSATIVE = ["janvāri", "februāri", "martu", "aprīli", "maiju", "jūniju", "jūliju", "augustu", "septembri", "oktobri", "novembri", "decembri"];
-/** Russian month names after "к" (dative): "к марту 2028 г." */
+/** Russian month names after "к" (dative): "к марту 2028" */
 const RU_DATIVE = ["январю", "февралю", "марту", "апрелю", "маю", "июню", "июлю", "августу", "сентябрю", "октябрю", "ноябрю", "декабрю"];
 
 const dayMs = (iso: string) => Date.parse(iso.slice(0, 10) + "T00:00:00Z");
@@ -108,7 +108,7 @@ function makeFmt(locale: ChartLocale) {
     /** month-year inside a sentence; Latvian needs the case the preposition governs */
     monthIn: (ms: number, kase: "dative" | "accusative") => {
       const d = new Date(ms);
-      if (locale === "ru") return `${RU_DATIVE[d.getUTCMonth()]} ${d.getUTCFullYear()} г.`;
+      if (locale === "ru") return `${RU_DATIVE[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
       if (locale !== "lv") return `${mon[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
       return `${d.getUTCFullYear()}. gada ${(kase === "dative" ? LV_DATIVE : LV_ACCUSATIVE)[d.getUTCMonth()]}`;
     },

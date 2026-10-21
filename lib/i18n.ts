@@ -1905,7 +1905,7 @@ const ru: Dict = {
     filePageAlt: (n: number, of: number) => `Страница ${n} из ${of}`,
     fileLoading: "Загрузка файла...",
     fileError: "Не удалось показать файл. Откройте его в новой вкладке.",
-    fileOpenNewTab: "Открыть в новой вкладке",
+    fileOpenNewTab: "В новой вкладке",
     fileClose: "Закрыть",
     fileMorePages: (n: number) => `Ещё ${n} ${ruPl(n, "страница", "страницы", "страниц")}: откройте файл в новой вкладке, чтобы их увидеть.`,
     edit: "Изменить",
