@@ -26,7 +26,7 @@ Medserti is independent. It is not affiliated with or endorsed by LĀB and must 
 
 - Rules: Cabinet Regulation No. 391 (amended 25 Nov 2025), point 51 and Annex 4: required TIP by profession, at least 60% from the specialty, 8 TIP emergency care incl. 4 practical hours, 16% cap on practical training, 5-year certificate period.
 - Documents: certificates of attendance in Latvian or English, as PDF or photo, from LĀB, specialty associations, universities and foreign events.
-- Courses list refreshed daily from public sources; facts plus a link back, no stored contact persons' personal details.
+- Courses list refreshed daily from public sources; facts plus a link back. Where LĀB publishes a registration contact (organizer's contact person, email, phone), we show it as published in "Kā pieteikties".
 - Founders: Matīss Kokins (medical services consulting) and Edgars Kokins (healthtech). Their mother is a doctor.
 
 ## Capabilities and Constraints
