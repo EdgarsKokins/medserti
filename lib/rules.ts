@@ -1,4 +1,5 @@
 import type { CmeCertificate, Profile } from "./types";
+import { findSpecialty, specialtyByCode } from "./specialties";
 
 /**
  * Recertification rules from Cabinet Regulation No. 391 "Ārstniecības personu sertifikācijas kārtība"
@@ -17,12 +18,42 @@ export const RULES = {
   emergencyMinPracticalHours: 4,
   /** Annex 4 footnote 4 (marked on item 10, practical training): max 16% of required points */
   practicalCapShare: 0.16,
+  /** point 86: functional specialists except physiotherapists may recertify on 150 TIP until this date */
+  functionalTransitionUntil: "2028-01-01",
+  functionalTransitionPoints: 150,
 } as const;
+
+/**
+ * Nurses are not certified (Medical Treatment Law Section 26(2)). They re-register with the Health Inspectorate
+ * every 5 years on at least 100 academic hours, 1 hour = 1 TIP (Cabinet Regulation No. 630, points 20, 25, 26.3, Annex 6;
+ * likumi.lv/ta/id/355331).
+ */
+export const NURSE_RULES = { sourceUrl: "https://likumi.lv/ta/id/355331", points: 100 } as const;
+
+type RuleInput = Pick<Profile, "profession" | "certificationKind" | "certificateExpires"> &
+  Partial<Pick<Profile, "specialty" | "specialtyCode">>;
+
+/** Why the rule target differs from point 51, if it does */
+export function ruleBasis(p: RuleInput): "nurse" | "functionalTransition" | null {
+  if (p.profession === "nurse") return "nurse";
+  if (
+    p.profession === "functional_specialist" &&
+    p.certificationKind === "specialty" &&
+    !!p.certificateExpires &&
+    p.certificateExpires < RULES.functionalTransitionUntil &&
+    (specialtyByCode(p.specialtyCode) ?? findSpecialty(p.specialty))?.code !== "fs-physio"
+  )
+    return "functionalTransition";
+  return null;
+}
 
 export const REGISTER_URL = "https://registri.vi.gov.lv/";
 
 /** Points the rules require for this profile, ignoring any manual override */
-export function ruleRequiredPoints(p: Pick<Profile, "profession" | "certificationKind">): number {
+export function ruleRequiredPoints(p: RuleInput): number {
+  const basis = ruleBasis(p);
+  if (basis === "nurse") return NURSE_RULES.points;
+  if (basis === "functionalTransition") return RULES.functionalTransitionPoints;
   if (p.certificationKind === "method") return RULES.points.method;
   if (p.profession === "doctor" || p.profession === "dentist" || p.profession === "functional_specialist")
     return RULES.points.doctorTier;
@@ -128,27 +159,29 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
   }
 
   const specialtyNeed = Math.ceil(required * RULES.specialtyShare);
+  // the 60% share and the practical hours come from Reg. 391 point 51; Reg. 630 asks nurses for neither
+  const nurseSkips: Check["id"][] = profile.profession === "nurse" ? ["specialty", "emergency_practical"] : [];
   const checks: Check[] = [
-    { id: "total", have: total, need: required, met: total >= required },
+    { id: "total" as const, have: total, need: required, met: total >= required },
     {
-      id: "specialty",
+      id: "specialty" as const,
       have: round1(specialty),
       need: specialtyNeed,
       met: specialty >= specialtyNeed,
     },
     {
-      id: "emergency_points",
+      id: "emergency_points" as const,
       have: round1(emergencyPoints),
       need: RULES.emergencyMinPoints,
       met: emergencyPoints >= RULES.emergencyMinPoints,
     },
     {
-      id: "emergency_practical",
+      id: "emergency_practical" as const,
       have: round1(emergencyPracticalHours),
       need: RULES.emergencyMinPracticalHours,
       met: emergencyPracticalHours >= RULES.emergencyMinPracticalHours,
     },
-  ];
+  ].filter((c) => !nurseSkips.includes(c.id));
 
   return {
     required,
