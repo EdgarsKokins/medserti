@@ -72,7 +72,8 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
       await c.aws.fetch(c.url(`${date}/${path}`), {
         method: "PUT",
         body: new Uint8Array(file.data),
-        headers: { "Content-Type": file.contentType || "application/octet-stream" },
+        // R2 rejects uploads without an explicit length
+        headers: { "Content-Type": file.contentType || "application/octet-stream", "Content-Length": String(file.data.length) },
       }),
       `put ${path}`,
     );
@@ -86,11 +87,12 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
     if (sha(back) !== m.sha256) throw new Error(`verify failed for ${m.path}`);
     verified++;
   }
+  const manifestBody = Buffer.from(JSON.stringify({ createdAt: now.toISOString(), files: manifest }, null, 1));
   await ok(
     await c.aws.fetch(c.url(`${date}/manifest.json`), {
       method: "PUT",
-      body: JSON.stringify({ createdAt: now.toISOString(), files: manifest }, null, 1),
-      headers: { "Content-Type": "application/json" },
+      body: new Uint8Array(manifestBody),
+      headers: { "Content-Type": "application/json", "Content-Length": String(manifestBody.length) },
     }),
     "put manifest",
   );
