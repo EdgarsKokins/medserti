@@ -1,6 +1,6 @@
 import { RULES, type Progress } from "@/lib/rules";
 import type { CmeCategory, CmeCertificate } from "@/lib/types";
-import { formatDate, formatNumber, t, type Locale } from "@/lib/i18n";
+import { formatDate, formatNumber, inHours, t, type Dict, type Locale } from "@/lib/i18n";
 
 /* Pure view-model helpers for the dashboard. No server-only imports, so they can be tested with tsx. */
 
@@ -34,8 +34,11 @@ export interface Headline {
 /** Lowercase only the first letter, so "(TIP)" stays intact */
 const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
-export function headline(p: Progress, locale: Locale = "en"): Headline {
-  const d = t(locale);
+/** The dictionary for this profile: nurses see academic hours where others see TIP */
+export const dictFor = (locale: Locale, hours = false): Dict => (hours ? inHours(t(locale)) : t(locale));
+
+export function headline(p: Progress, locale: Locale = "en", hours = false): Headline {
+  const d = dictFor(locale, hours);
   const pct = p.required > 0 ? Math.min(100, Math.floor((p.total / p.required) * 100)) : 0;
   const unmet = p.checks.filter((c) => !c.met && c.id !== "total").map((c) => lowerFirst(d.checks[c.id]));
 

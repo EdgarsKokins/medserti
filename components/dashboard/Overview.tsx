@@ -1,18 +1,39 @@
 import Link from "next/link";
 import type { Progress } from "@/lib/rules";
 import { t, type Locale } from "@/lib/i18n";
+import { NURSE_RULES, type RuleBasis } from "@/lib/rules";
 import type { Course } from "@/lib/courses/types";
 import { courseStrings } from "@/components/courses/strings";
 import { specialtyLabel } from "@/lib/specialties";
-import { dayMs, fmtDate, fmtNum, type Headline } from "./model";
+import { dayMs, dictFor, fmtDate, fmtNum, type Headline } from "./model";
 import styles from "./overview.module.css";
 
 const toneClass = { ok: styles.toneOk, warn: styles.toneWarn, bad: styles.toneBad, neutral: "" };
 
 /** Big number, time left and a single band comparing points collected with time elapsed */
-/** nurse: the window is a register entry, not a certificate (Medical Treatment Law Section 26(2)) */
-export function Hero({ p, h, specialty, nurse = false, locale, today }: { p: Progress; h: Headline; specialty: string; nurse?: boolean; locale: Locale; today: Date }) {
-  const d = t(locale).dashboard;
+/**
+ * nurse: the window is a register entry, not a certificate (Medical Treatment Law Section 26(2)), counted in academic hours.
+ * basis: why the target is not the point 51 number, shown as one line
+ */
+export function Hero({
+  p,
+  h,
+  specialty,
+  nurse = false,
+  basis = null,
+  locale,
+  today,
+}: {
+  p: Progress;
+  h: Headline;
+  specialty: string;
+  nurse?: boolean;
+  basis?: RuleBasis | null;
+  locale: Locale;
+  today: Date;
+}) {
+  const dict = dictFor(locale, nurse);
+  const d = dict.dashboard;
   const n = (v: number) => fmtNum(v, locale);
   const pointsPct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
   let timePct: number | null = null;
@@ -99,13 +120,15 @@ export function Hero({ p, h, specialty, nurse = false, locale, today }: { p: Pro
       )}
 
       {h.message && <p className={`${styles.message} ${toneClass[h.tone]}`}>{h.message}</p>}
+      {basis && <p className={`small muted ${styles.basis}`}>{basis === "nurse" ? dict.profile.nurseRule : dict.profile.functionalTransition}</p>}
+      {nurse && p.windowEnd && p.windowEnd >= NURSE_RULES.emergencyFrom && <p className={`small muted ${styles.basis}`}>{d.nurseExtra}</p>}
     </section>
   );
 }
 
 /** Requirement checks as a ruled checklist */
-export function Requirements({ p, locale }: { p: Progress; locale: Locale }) {
-  const dict = t(locale);
+export function Requirements({ p, locale, hours = false }: { p: Progress; locale: Locale; hours?: boolean }) {
+  const dict = dictFor(locale, hours);
   return (
     <section aria-labelledby="req-title">
       <h2 id="req-title">{dict.dashboard.requirements}</h2>

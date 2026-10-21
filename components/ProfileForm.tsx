@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
 import { addYears, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
-import { formatDate, t, type Locale } from "@/lib/i18n";
+import { formatDate, inHours, t, type Locale } from "@/lib/i18n";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
 
@@ -16,10 +16,11 @@ const MAX_REQUIRED = 5000;
 /** readOnly: the demo account, fields shown but disabled and no save button */
 export default function ProfileForm({ initial, locale, readOnly = false }: { initial: Profile; locale: Locale; readOnly?: boolean }) {
   const dict = t(locale);
-  const d = dict.profile;
   const professions = dict.professions;
   const router = useRouter();
   const [p, setP] = useState<Profile>(initial);
+  // nurses count academic hours, not TIP (Reg. 630 Annex 6)
+  const d = (p.profession === "nurse" ? inHours(dict) : dict).profile;
   const [spec, setSpec] = useState(() => resolveSpecialty(initial));
   // an end date that is not issue + 5 years was set by hand; keep it and show the field
   const [customEnd, setCustomEnd] = useState(
@@ -278,7 +279,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
             </div>
           )}
           <div className="field">
-            <label htmlFor="override">{d.required}</label>
+            <label htmlFor="override">{nurse ? d.requiredNurse : d.required}</label>
             <input
               id="override"
               type="number"
