@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isAdmin } from "@/lib/admin";
-import { BLOCKS, catalog, type StoredOverrides } from "@/lib/i18n/catalog";
+import { BLOCKS, catalog, emptyOverrides } from "@/lib/i18n/catalog";
+import { LOCALES } from "@/lib/i18n";
 import { readPreviousOverrides, readStoredOverrides } from "@/lib/i18n/overrides-server";
 import TranslationsAdmin from "@/components/admin/TranslationsAdmin";
 import AdminLogin from "@/components/admin/AdminLogin";
@@ -21,9 +22,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { entries, byKey } = catalog();
 
   // edits whose text no longer exists in code, or became code-only, are kept out of the editor and dropped on the next save
-  const saved: StoredOverrides = { lv: {}, en: {} };
+  const saved = emptyOverrides();
   const stale: string[] = [];
-  for (const l of ["lv", "en"] as const) {
+  for (const l of LOCALES) {
     for (const [k, v] of Object.entries(stored[l])) {
       const cell = byKey.get(k)?.[l];
       if (cell && cell.kind !== "code") saved[l][k] = v;

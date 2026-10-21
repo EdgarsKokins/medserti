@@ -658,6 +658,7 @@ export const LABELS: Record<string, string> = {
   "exportDocs.title": "Virsraksts",
   "exportDocs.lead": "Ievadteksts zem virsraksta",
   "exportDocs.privacy": "Piezīme par datu privātumu",
+  "exportDocs.languageNote": "Piezīme, ka dokumenti ir latviski (rāda tikai EN un RU lapā)",
   "exportDocs.contents": "Virsraksts: ZIP saturs",
   "exportDocs.contentsItems.#": "ZIP saturs, #. punkts",
   "exportDocs.included": "Cik sertifikātu tiks iekļauti",

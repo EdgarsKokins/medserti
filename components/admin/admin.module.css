@@ -49,7 +49,11 @@
 .label { margin: 0; font-family: var(--font-sans); font-size: 1.05rem; font-weight: 600; }
 .key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: var(--faint); overflow-wrap: anywhere; }
 
-.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; }
+.cols { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 20px 24px; }
+.langPick { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.langPick button { font: inherit; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; min-height: 36px; min-width: 40px; padding: 4px 10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.langPick button + button { border-left: 1px solid var(--border); }
+.langPick button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); }
 .cell { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .cellHead { display: flex; align-items: center; gap: 8px; min-height: 26px; }
 .lang { font-size: 0.85rem; font-weight: 600; color: var(--muted); }

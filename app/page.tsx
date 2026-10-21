@@ -54,16 +54,18 @@ async function upcomingEvents(): Promise<{ next: Course[]; total: number }> {
 
 /** Example rows for the "your report" visual (not real data) */
 const LEDGER = [
-  { date: "2024-03-12", lv: "Akūts koronārais sindroms", en: "Acute coronary syndrome", tip: 12 },
-  { date: "2024-09-05", lv: "BLS un AED apmācība", en: "BLS and AED training", tip: 8 },
-  { date: "2025-02-14", lv: "Kardiologu kongress", en: "Cardiology congress", tip: 16 },
-  { date: "2025-09-25", lv: "Artroskopija", en: "Arthroscopy", tip: 16 },
+  { date: "2024-03-12", lv: "Akūts koronārais sindroms", en: "Acute coronary syndrome", ru: "Острый коронарный синдром", tip: 12 },
+  { date: "2024-09-05", lv: "BLS un AED apmācība", en: "BLS and AED training", ru: "Обучение BLS и AED", tip: 8 },
+  { date: "2025-02-14", lv: "Kardiologu kongress", en: "Cardiology congress", ru: "Конгресс кардиологов", tip: 16 },
+  { date: "2025-09-25", lv: "Artroskopija", en: "Arthroscopy", ru: "Артроскопия", tip: 16 },
 ];
 /** Example certificate period end for the same sample doctor (issued Jan 2024) */
 const DEADLINE = "2029-01-15";
 const PHOTOS: Record<string, string> = { "Matīss Kokins": "/team/matiss.jpg", "Edgars Kokins": "/team/edgars.jpg" };
 const shortDate = (iso: string, locale: Locale) =>
-  locale === "lv" ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}.` : formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1");
+  locale === "en"
+    ? formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1")
+    : `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}${locale === "lv" ? "." : ""}`;
 
 /** Public landing page; signed-in users go straight to their dashboard */
 export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {

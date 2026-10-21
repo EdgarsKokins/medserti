@@ -1,4 +1,4 @@
-import { baseDict, type Locale } from "../i18n";
+import { baseDict, LOCALES, type Locale } from "../i18n";
 import { baseCourseStrings } from "@/components/courses/strings";
 import type { RuntimeOverrides } from "./overrides";
 import { GENERIC, LABELS, PARAM_NAMES, SECTION_NAMES } from "./catalog-labels";
@@ -27,8 +27,9 @@ export type Cell = {
   /** example outputs with sample values (template and code) */
   samples: string[];
 };
-export type Entry = { key: string; block: BlockId; section: string; label: string; lv: Cell; en: Cell };
-export type StoredOverrides = { lv: Record<string, string>; en: Record<string, string> };
+export type Entry = { key: string; block: BlockId; section: string; label: string } & Record<Locale, Cell>;
+export type StoredOverrides = Record<Locale, Record<string, string>>;
+export const emptyOverrides = (): StoredOverrides => ({ lv: {}, en: {}, ru: {} });
 
 export type BlockId =
   | "nav" | "landing" | "dashboard" | "certs" | "upload" | "courses" | "profile" | "auth" | "errors" | "export" | "about" | "legal" | "other";
@@ -86,20 +87,20 @@ const VARIANTS: unknown[] = [0, 1, 2, 3, 5, 11, 12, 21, 22, 100, 101, 1234.5, -1
 
 /** sample values by placeholder name, for previews */
 const SAMPLES: Record<string, Record<Locale, unknown>> = {
-  n: { lv: 12, en: 12 }, count: { lv: 7, en: 7 }, years: { lv: 5, en: 5 }, pct: { lv: 40, en: 40 },
-  date: { lv: "14.03.2028.", en: "14 Mar 2028" }, ago: { lv: 3, en: 3 }, status: { lv: 413, en: 413 },
-  points: { lv: "42,5", en: "42.5" }, mine: { lv: 200, en: 200 }, rule: { lv: 250, en: 250 },
-  counted: { lv: "50", en: "50" }, raw: { lv: "62,5", en: "62.5" }, cap: { lv: "50", en: "50" }, lost: { lv: "12,5", en: "12.5" },
-  h: { lv: "6", en: "6" }, days: { lv: 2, en: 2 }, list: { lv: "12; 16", en: "12; 16" }, academic: { lv: true, en: true },
-  name: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026" },
-  specialty: { lv: "Kardioloģija", en: "Cardiology" }, s: { lv: "Kardioloģija", en: "Cardiology" },
-  reasons: { lv: "2 ārpus sertifikāta perioda", en: "2 outside your certificate period" },
-  title: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026" },
-  done: { lv: 3, en: 3 }, total: { lv: 8, en: 8 },
-  firstName: { lv: "Anna", en: "Anna" },
-  link: { lv: "https://medserti.lv/atjaunot-paroli?token=…", en: "https://medserti.lv/atjaunot-paroli?token=…" },
+  n: { lv: 12, en: 12, ru: 12 }, count: { lv: 7, en: 7, ru: 7 }, years: { lv: 5, en: 5, ru: 5 }, pct: { lv: 40, en: 40, ru: 40 },
+  date: { lv: "14.03.2028.", en: "14 Mar 2028", ru: "14.03.2028" }, ago: { lv: 3, en: 3, ru: 3 }, status: { lv: 413, en: 413, ru: 413 },
+  points: { lv: "42.5", en: "42.5", ru: "42.5" }, mine: { lv: 200, en: 200, ru: 200 }, rule: { lv: 250, en: 250, ru: 250 },
+  counted: { lv: "50", en: "50", ru: "50" }, raw: { lv: "62.5", en: "62.5", ru: "62.5" }, cap: { lv: "50", en: "50", ru: "50" }, lost: { lv: "12.5", en: "12.5", ru: "12.5" },
+  h: { lv: "6", en: "6", ru: "6" }, days: { lv: 2, en: 2, ru: 2 }, list: { lv: "12; 16", en: "12; 16", ru: "12; 16" }, academic: { lv: true, en: true, ru: true },
+  name: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026", ru: "Конгресс кардиологов 2026" },
+  specialty: { lv: "Kardioloģija", en: "Cardiology", ru: "Кардиолог" }, s: { lv: "Kardioloģija", en: "Cardiology", ru: "Кардиолог" },
+  reasons: { lv: "2 ārpus sertifikāta perioda", en: "2 outside your certificate period", ru: "2 вне периода сертификата" },
+  title: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026", ru: "Конгресс кардиологов 2026" },
+  done: { lv: 3, en: 3, ru: 3 }, total: { lv: 8, en: 8, ru: 8 },
+  firstName: { lv: "Anna", en: "Anna", ru: "Анна" },
+  link: { lv: "https://medserti.lv/atjaunot-paroli?token=…", en: "https://medserti.lv/atjaunot-paroli?token=…", ru: "https://medserti.lv/atjaunot-paroli?token=…" },
 };
-const sample = (name: string, locale: Locale): unknown => SAMPLES[name]?.[locale] ?? (locale === "lv" ? "…" : "…");
+const sample = (name: string, locale: Locale): unknown => SAMPLES[name]?.[locale] ?? "…";
 
 function safeCall(fn: Fn, args: unknown[]): string | null {
   try {
@@ -209,20 +210,21 @@ let memo: { entries: Entry[]; byKey: Map<string, Entry> } | null = null;
 
 export function catalog(): { entries: Entry[]; byKey: Map<string, Entry> } {
   if (memo) return memo;
-  const lvL = new Map<string, unknown>();
-  const enL = new Map<string, unknown>();
-  leaves(baseDict("lv"), "", lvL);
-  leaves(baseDict("en"), "", enL);
-  leaves(baseCourseStrings("lv"), "courses", lvL);
-  leaves(baseCourseStrings("en"), "courses", enL);
+  const maps = {} as Record<Locale, Map<string, unknown>>;
+  for (const l of LOCALES) {
+    maps[l] = new Map<string, unknown>();
+    leaves(baseDict(l), "", maps[l]);
+    leaves(baseCourseStrings(l), "courses", maps[l]);
+  }
   const entries: Entry[] = [];
-  for (const [key, lvV] of lvL) {
+  for (const [key, lvV] of maps.lv) {
     if (HIDDEN(key)) continue;
     const lv = cellOf(key, lvV, "lv");
-    const en = cellOf(key, enL.get(key), "en");
-    if (!lv || !en) continue;
+    const en = cellOf(key, maps.en.get(key), "en");
+    const ru = cellOf(key, maps.ru.get(key), "ru");
+    if (!lv || !en || !ru) continue;
     const top = key.split(".")[0];
-    entries.push({ key, block: BLOCK_OF[top] ?? "other", section: sectionOf(key), label: labelOf(key), lv, en });
+    entries.push({ key, block: BLOCK_OF[top] ?? "other", section: sectionOf(key), label: labelOf(key), lv, en, ru });
   }
   memo = { entries, byKey: new Map(entries.map((e) => [e.key, e])) };
   return memo;
@@ -257,14 +259,14 @@ export function checkValue(cell: Cell, value: string): string | null {
 export function validateOverrides(input: unknown): { ok: true; value: StoredOverrides } | { ok: false; problems: Problem[] } {
   const { byKey } = catalog();
   const problems: Problem[] = [];
-  const value: StoredOverrides = { lv: {}, en: {} };
+  const value = emptyOverrides();
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return { ok: false, problems: [{ key: "", locale: "lv", message: "Nederīgs formāts." }] };
   }
   for (const k of Object.keys(input)) {
-    if (k !== "lv" && k !== "en") problems.push({ key: k, locale: "lv", message: "Nezināma valoda." });
+    if (!(LOCALES as readonly string[]).includes(k)) problems.push({ key: k, locale: "lv", message: "Nezināma valoda." });
   }
-  for (const locale of ["lv", "en"] as const) {
+  for (const locale of LOCALES) {
     const m = (input as Record<string, unknown>)[locale];
     if (m === undefined) continue;
     if (!m || typeof m !== "object" || Array.isArray(m)) {
@@ -295,7 +297,7 @@ export function validateOverrides(input: unknown): { ok: true; value: StoredOver
 export function compileOverrides(stored: Partial<StoredOverrides> | null | undefined): RuntimeOverrides {
   const { byKey } = catalog();
   const out: RuntimeOverrides = {};
-  for (const locale of ["lv", "en"] as const) {
+  for (const locale of LOCALES) {
     const m = stored?.[locale];
     if (!m || typeof m !== "object") continue;
     const flat: Record<string, string> = {};
@@ -330,4 +332,4 @@ export function previewTemplate(tpl: string, params: string[], locale: Locale): 
   return tpl.replace(NAMED, (whole, nm: string) => (params.includes(nm) ? String(sample(nm, locale)) : whole));
 }
 
-export const SAMPLE_VALUES = Object.fromEntries(Object.entries(SAMPLES).map(([k, v]) => [k, { lv: String(v.lv), en: String(v.en) }]));
+export const SAMPLE_VALUES = Object.fromEntries(Object.entries(SAMPLES).map(([k, v]) => [k, { lv: String(v.lv), en: String(v.en), ru: String(v.ru) }]));

@@ -1,4 +1,4 @@
-import type { Locale } from "@/lib/i18n";
+import { ruPl, type Locale } from "@/lib/i18n";
 import { overlay } from "@/lib/i18n/overrides";
 import type { CourseFormat, CourseKind, CourseSource } from "@/lib/courses/types";
 
@@ -7,7 +7,7 @@ const lv = {
   loading: "Ielādē kursu sarakstu...",
   recordingShort: "IERAKSTS",
   ongoingShort: "PĒC PIEPR.",
-  lead: "Gaidāmie pasākumi, par kuriem piešķir TIP, no Latvijas Ārstu biedrības un tās mācību vietnēm. Pirms pieteikšanās pārbaudiet detaļas avotā.",
+  lead: "Gaidāmie pasākumi, par kuriem piešķir TIP, no Latvijas Ārstu biedrības un tās mācību vietnēm. Pirms pieteikšanās pārbaudiet detaļas.",
   needLine: (n: string) => `Jums vēl jāsavāc ${n} TIP.`,
   tabs: { event: "Gaidāmie pasākumi", recorded: "Tālmācība un ieraksti", ongoing: "Pastāvīgās programmas" } as Record<CourseKind, string>,
   tabHint: {
@@ -39,7 +39,7 @@ const lv = {
   results: (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "pasākums" : "pasākumi"}`,
   showMore: "Rādīt vairāk",
   loadError: "Kursu sarakstu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža.",
-  none: "Nekas neatbilst filtriem.",
+  none: "Neatradām nevienu kursu pēc izvēlētajiem filtriem.",
   availableUntil: "Pieejams līdz",
   approvedUntil: "Apstiprināts līdz",
   free: "Bez maksas",
@@ -99,7 +99,7 @@ const en: typeof lv = {
   loading: "Loading the course list...",
   recordingShort: "ON DEMAND",
   ongoingShort: "ON REQUEST",
-  lead: "Upcoming TIP-approved events from the Latvian Medical Association and its learning sites. Check the details at the source before you register.",
+  lead: "Upcoming TIP-approved events from the Latvian Medical Association and its learning sites. Check the details before you register.",
   needLine: (n: string) => `You still need ${n} TIP.`,
   tabs: { event: "Upcoming events", recorded: "E-learning and recordings", ongoing: "Ongoing programmes" },
   tabHint: {
@@ -131,7 +131,7 @@ const en: typeof lv = {
   results: (n: number) => `${n} ${n === 1 ? "event" : "events"}`,
   showMore: "Show more",
   loadError: "Could not load the course list. Please try again in a moment.",
-  none: "Nothing matches the filters.",
+  none: "We found no courses matching the selected filters.",
   availableUntil: "Available until",
   approvedUntil: "Approved until",
   free: "Free",
@@ -185,6 +185,98 @@ const en: typeof lv = {
     "Collected automatically from public pages and may be incomplete. Check TIP and dates with the organiser. Contact persons' details are not stored.",
 };
 
+/** Russian. Plurals via ruPl (1 / 2-4 / 5+) */
+const ru: typeof lv = {
+  title: "Курсы и мероприятия",
+  loading: "Загрузка списка курсов...",
+  recordingShort: "ЗАПИСЬ",
+  ongoingShort: "ПО ЗАПРОСУ",
+  lead: "Ближайшие мероприятия с баллами TIP от LĀB (Латвийское общество врачей) и его учебных сайтов. Перед записью проверьте детали.",
+  needLine: (n: string) => `Вам нужно набрать ещё ${n} TIP.`,
+  tabs: { event: "Ближайшие мероприятия", recorded: "Дистанционно и в записи", ongoing: "Постоянные программы" },
+  tabHint: {
+    event: "Мероприятия с конкретной датой.",
+    recorded: "Можно смотреть в любое время до указанной даты.",
+    ongoing: "Длинные курсы, которые повторяются весь срок одобрения (часто 2 года). TIP за весь курс. Даты уточняйте у организатора.",
+  },
+  search: "Поиск по названию или организатору",
+  searchShort: "Поиск курса",
+  mySpecialty: "Для моей специальности",
+  mySpecialtyHint: (s: string) => `Показаны мероприятия для специальности «${s}» и для врачей всех специальностей.`,
+  noSpecialty: "Укажите специальность в профиле, чтобы подобрать подходящие мероприятия.",
+  format: "Формат",
+  city: "Место",
+  period: "Время",
+  minTip: "Мин. TIP",
+  freeOnly: "Только бесплатные",
+  anyFormat: "Все форматы",
+  anyCity: "Все места",
+  anyTip: "Любое число TIP",
+  wholeLatvia: "Вся Латвия",
+  clearFilters: "Сбросить фильтры",
+  tipUnknown: "TIP не указан",
+  next30: "Ближайшие 30 дней",
+  next90: "Ближайшие 90 дней",
+  allDates: "Все даты",
+  formats: { in_person: "Очно", online_live: "Онлайн", recorded: "Запись / дистанционно", hybrid: "Очно и дистанционно" },
+  online: "Онлайн",
+  results: (n: number) => `${n} ${ruPl(n, "мероприятие", "мероприятия", "мероприятий")}`,
+  showMore: "Показать ещё",
+  loadError: "Не удалось загрузить список курсов. Попробуйте ещё раз через минуту.",
+  none: "По выбранным фильтрам курсов не найдено.",
+  availableUntil: "Доступен до",
+  approvedUntil: "Одобрен до",
+  free: "Бесплатно",
+  forAll: "Все специальности",
+  matches: "Ваша специальность",
+  noAudience: "Специальность не указана",
+  open: "Открыть источник",
+  approval: "Одобрение LĀB",
+  annex: (n: number) => `прил. 4, п. ${n}`,
+  hours: (h: string) => `${h} ч`,
+  apply: {
+    title: "Как записаться",
+    online: "Записаться онлайн",
+    watch: "Открыть курс",
+    email: "Написать организатору",
+    call: "Позвонить",
+    contactNote: "Контакты для записи опубликованы LĀB (Латвийское общество врачей).",
+    noContact: "Организатор не опубликовал контакты для записи.",
+    listLink: "Открыть в списке LĀB",
+  },
+  details: {
+    date: "Дата",
+    format: "Формат",
+    place: "Место",
+    duration: "Продолжительность",
+    organizer: "Организатор",
+    audience: "Аудитория",
+    price: "Цена",
+    approval: "Одобрение LĀB",
+    programme: "Программа",
+    tip: "TIP",
+    tipWhole: (n: string) => `${n} за весь курс`,
+    loading: "Загрузка программы...",
+    noProgramme: "Программа не опубликована.",
+    failed: "Не удалось загрузить программу.",
+    more: (n: number) => `+ ещё ${n}`,
+    expand: "Показать подробности",
+    collapse: "Скрыть подробности",
+  },
+  updatedLine: (date: string) => `Список обновлён: ${date}.`,
+  sources: "Источники",
+  sourceFailed: "недоступен",
+  sourceLabels: {
+    lab_tip: "Мероприятия TIP, одобренные LĀB",
+    lab_courses: "Курсы LĀB",
+    kursiarstiem: "kursiarstiem.lv",
+    medicinaskursi: "medicinaskursi.lv",
+    lumpii: "LUMPII",
+  },
+  disclaimer:
+    "Данные собраны автоматически с открытых страниц и могут быть неполными. Число TIP и даты уточняйте у организатора. Данные контактных лиц не хранятся.",
+};
+
 /** Email to an organiser: always Latvian, whatever the UI language, since the organisers are Latvian. `date` is an LV date. */
 export const applyEmail = {
   subject: (title: string, date: string | null) => `Pieteikšanās: ${title}${date ? ` (${date})` : ""}`,
@@ -194,7 +286,11 @@ export const applyEmail = {
 
 export type CourseStrings = typeof lv;
 /** Admin text overrides live under "courses." (lib/i18n/overrides.ts) */
-export const courseStrings = (locale: Locale): CourseStrings => overlay("courses", locale === "en" ? "en" : "lv", locale === "en" ? en : lv);
+const BASE: Record<Locale, CourseStrings> = { lv, en, ru };
+export const courseStrings = (locale: Locale): CourseStrings => {
+  const l = locale in BASE ? locale : "lv";
+  return overlay("courses", l, BASE[l]);
+};
 
 /** The strings as written in code, without overrides (for /admin) */
-export const baseCourseStrings = (locale: Locale): CourseStrings => (locale === "en" ? en : lv);
+export const baseCourseStrings = (locale: Locale): CourseStrings => BASE[locale] ?? lv;

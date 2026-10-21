@@ -1,21 +1,28 @@
 "use client";
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { checkValue, previewTemplate, type BlockId, type Cell, type Entry, type StoredOverrides } from "@/lib/i18n/catalog";
+import { checkValue, emptyOverrides, previewTemplate, type BlockId, type Cell, type Entry, type StoredOverrides } from "@/lib/i18n/catalog";
+import { LOCALES, type Locale } from "@/lib/i18n";
 import s from "./admin.module.css";
 
-type Loc = "lv" | "en";
+type Loc = Locale;
 type Block = { id: BlockId; name: string; href?: string };
 type Props = { entries: Entry[]; blocks: Block[]; saved: StoredOverrides; hasPrevious: boolean; stale: string[] };
 
-const LOCS: Loc[] = ["lv", "en"];
-const LOC_NAME: Record<Loc, string> = { lv: "Latviski", en: "Angliski" };
+const LOCS: readonly Loc[] = LOCALES;
+const LOC_NAME: Record<Loc, string> = { lv: "Latviski", en: "Angliski", ru: "Krieviski" };
+const SHOWN_KEY = "medserti-admin-langs";
 const MAX_RESULTS = 150;
 
 const fold = (v: string) => v.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 const id = (loc: Loc, key: string) => `${loc}|${key}`;
-const countKeys = (o: StoredOverrides) => Object.keys(o.lv).length + Object.keys(o.en).length;
-const clone = (o: StoredOverrides): StoredOverrides => ({ lv: { ...o.lv }, en: { ...o.en } });
+const countKeys = (o: StoredOverrides) => LOCS.reduce((n, l) => n + Object.keys(o[l]).length, 0);
+const clone = (o: StoredOverrides): StoredOverrides => {
+  const out = emptyOverrides();
+  for (const l of LOCS) out[l] = { ...o[l] };
+  return out;
+};
+const isEdited = (o: StoredOverrides, key: string) => LOCS.some((l) => o[l][key] !== undefined);
 
 function timeNow() {
   const d = new Date();
@@ -30,6 +37,27 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
   const [block, setBlock] = useState<BlockId>(blocks[0]?.id ?? "nav");
   const [query, setQuery] = useState("");
   const [onlyEdited, setOnlyEdited] = useState(false);
+  // which language columns to show; all three by default, remembered per browser
+  const [locs, setLocs] = useState<readonly Loc[]>(LOCS);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(SHOWN_KEY) ?? "null");
+      if (Array.isArray(v)) {
+        const ok = LOCS.filter((l) => v.includes(l));
+        if (ok.length) setLocs(ok);
+      }
+    } catch {}
+  }, []);
+  function toggleLoc(l: Loc) {
+    setLocs((cur) => {
+      const next = cur.includes(l) ? cur.filter((x) => x !== l) : LOCS.filter((x) => x === l || cur.includes(x));
+      if (!next.length) return cur;
+      try {
+        localStorage.setItem(SHOWN_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok" | "bad" | "info"; text: string } | null>(null);
   const [serverProblems, setServerProblems] = useState<Record<string, string>>({});
@@ -63,7 +91,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
 
   const editedPerBlock = useMemo(() => {
     const out = {} as Record<BlockId, number>;
-    for (const e of entries) if (draft.lv[e.key] !== undefined || draft.en[e.key] !== undefined) out[e.block] = (out[e.block] ?? 0) + 1;
+    for (const e of entries) if (isEdited(draft, e.key)) out[e.block] = (out[e.block] ?? 0) + 1;
     return out;
   }, [entries, draft]);
   const unsavedPerBlock = useMemo(() => {
@@ -129,10 +157,10 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
   const visible = useMemo(() => {
     let list = q
       ? entries.filter((e) =>
-          [e.label, e.key, e.lv.def, e.en.def, draft.lv[e.key] ?? "", draft.en[e.key] ?? ""].some((v) => fold(v).includes(q)),
+          [e.label, e.key, ...LOCS.flatMap((l) => [e[l].def, draft[l][e.key] ?? ""])].some((v) => fold(v).includes(q)),
         )
       : entries.filter((e) => e.block === block);
-    if (onlyEdited) list = list.filter((e) => draft.lv[e.key] !== undefined || draft.en[e.key] !== undefined || unsaved.has(id("lv", e.key)) || unsaved.has(id("en", e.key)));
+    if (onlyEdited) list = list.filter((e) => isEdited(draft, e.key) || LOCS.some((l) => unsaved.has(id(l, e.key))));
     return list;
   }, [entries, q, block, onlyEdited, draft, unsaved]);
   const shown = visible.slice(0, MAX_RESULTS);
@@ -201,7 +229,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
       <header className={s.head}>
         <div>
           <h1>Tekstu redaktors</h1>
-          <p className="muted">Šeit varat labot jebkuru lapas tekstu latviski un angliski. Izmaiņas stājas spēkā pēc saglabāšanas.</p>
+          <p className="muted">Šeit varat labot jebkuru lapas tekstu latviski, angliski un krieviski. Izmaiņas stājas spēkā pēc saglabāšanas.</p>
         </div>
         <div className={s.headActions}>
         <div className={s.tabs} role="tablist" aria-label="Sadaļa">
@@ -294,7 +322,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Meklēt visos tekstos (LV un EN)"
+                  placeholder="Meklēt visos tekstos (LV, EN, RU)"
                   autoComplete="off"
                 />
               </label>
@@ -302,6 +330,13 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
                 <input type="checkbox" checked={onlyEdited} onChange={(e) => setOnlyEdited(e.target.checked)} />
                 Tikai labotie
               </label>
+              <div className={s.langPick} role="group" aria-label="Rādītās valodas">
+                {LOCS.map((l) => (
+                  <button key={l} type="button" aria-pressed={locs.includes(l)} onClick={() => toggleLoc(l)} title={LOC_NAME[l]}>
+                    {l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className={s.blockHead}>
@@ -325,12 +360,16 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
                       {heading && <h3 className={s.section}>{heading}</h3>}
                       <Row
                         entry={e}
+                        locs={locs}
                         lv={draft.lv[e.key]}
                         en={draft.en[e.key]}
+                        ru={draft.ru[e.key]}
                         lvUnsaved={unsaved.has(id("lv", e.key))}
                         enUnsaved={unsaved.has(id("en", e.key))}
+                        ruUnsaved={unsaved.has(id("ru", e.key))}
                         lvError={errors[id("lv", e.key)]}
                         enError={errors[id("en", e.key)]}
+                        ruError={errors[id("ru", e.key)]}
                         onChange={onChange}
                         onReset={onReset}
                       />
@@ -369,31 +408,40 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
   );
 }
 
-/* ---------- one text: label, LV and EN side by side ---------- */
+/* ---------- one text: label, then LV, EN and RU side by side (the columns picked in the toolbar) ---------- */
 
 type RowProps = {
   entry: Entry;
+  locs: readonly Loc[];
   lv: string | undefined;
   en: string | undefined;
+  ru: string | undefined;
   lvUnsaved: boolean;
   enUnsaved: boolean;
+  ruUnsaved: boolean;
   lvError?: string;
   enError?: string;
+  ruError?: string;
   onChange: (key: string, loc: Loc, value: string) => void;
   onReset: (key: string, loc: Loc) => void;
 };
 
-const Row = memo(function Row({ entry, lv, en, lvUnsaved, enUnsaved, lvError, enError, onChange, onReset }: RowProps) {
-  const edited = lv !== undefined || en !== undefined;
+const Row = memo(function Row(p: RowProps) {
+  const { entry, locs, onChange, onReset } = p;
+  const value = { lv: p.lv, en: p.en, ru: p.ru };
+  const unsaved = { lv: p.lvUnsaved, en: p.enUnsaved, ru: p.ruUnsaved };
+  const error = { lv: p.lvError, en: p.enError, ru: p.ruError };
+  const edited = LOCS.some((l) => value[l] !== undefined);
   return (
     <article className={`${s.row} ${edited ? s.rowEdited : ""}`}>
       <div className={s.rowHead}>
         <h4 className={s.label}>{entry.label}</h4>
         <code className={s.key} title="Teksta kods (izstrādātājam)">{entry.key}</code>
       </div>
-      <div className={s.cols}>
-        <CellEditor entry={entry} loc="lv" cell={entry.lv} value={lv} unsaved={lvUnsaved} error={lvError} onChange={onChange} onReset={onReset} />
-        <CellEditor entry={entry} loc="en" cell={entry.en} value={en} unsaved={enUnsaved} error={enError} onChange={onChange} onReset={onReset} />
+      <div className={s.cols} style={{ "--cols": locs.length } as React.CSSProperties}>
+        {locs.map((l) => (
+          <CellEditor key={l} entry={entry} loc={l} cell={entry[l]} value={value[l]} unsaved={unsaved[l]} error={error[l]} onChange={onChange} onReset={onReset} />
+        ))}
       </div>
     </article>
   );
@@ -593,7 +641,7 @@ function Backup({
   function download() {
     const d = new Date();
     const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const data = { app: "medserti", kind: "text-overrides", exportedAt: d.toISOString(), lv: saved.lv, en: saved.en };
+    const data = { app: "medserti", kind: "text-overrides", exportedAt: d.toISOString(), lv: saved.lv, en: saved.en, ru: saved.ru };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url;
@@ -610,10 +658,10 @@ function Backup({
       return onError("Failu neizdevās nolasīt. Vai tā ir Medserti rezerves kopija (.json)?");
     }
     const src = parsed as Partial<Record<Loc, unknown>> | null;
-    if (!src || typeof src !== "object" || (typeof src.lv !== "object" && typeof src.en !== "object")) {
+    if (!src || typeof src !== "object" || !LOCS.some((l) => typeof src[l] === "object")) {
       return onError("Failā nav Medserti tekstu.");
     }
-    const out: StoredOverrides = { lv: {}, en: {} };
+    const out = emptyOverrides();
     let skipped = 0;
     for (const l of LOCS) {
       const m = src[l];
@@ -655,7 +703,8 @@ function Backup({
       <section className={s.backupItem}>
         <h2>Lejupielādēt rezerves kopiju</h2>
         <p className="muted">
-          Saglabā visus labotos tekstus vienā failā (LV: {Object.keys(saved.lv).length}, EN: {Object.keys(saved.en).length}). Nesaglabātās
+          Saglabā visus labotos tekstus vienā failā (LV: {Object.keys(saved.lv).length}, EN: {Object.keys(saved.en).length}, RU:{" "}
+          {Object.keys(saved.ru).length}). Nesaglabātās
           izmaiņas failā neiekļūst.
         </p>
         <button type="button" className="btn btn-primary" onClick={download}>

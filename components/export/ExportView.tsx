@@ -194,6 +194,8 @@ export default function ExportView({
         <div>
           <h1>{d.title}</h1>
           <p className="muted">{d.lead}</p>
+          {/* the forms are official Latvian documents in every UI language (lib/export/docs.ts) */}
+          {locale !== "lv" && <p className="muted">{d.languageNote}</p>}
         </div>
       </div>
 
