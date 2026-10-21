@@ -1,4 +1,4 @@
-export type CourseSource = "lab_tip" | "lab_courses" | "kursiarstiem" | "medicinaskursi" | "lumpii";
+export type CourseSource = "lab_tip" | "lab_courses" | "kursiarstiem" | "medicinaskursi" | "lumpii" | "lma";
 
 /** in_person: live in a venue; online_live: live stream; recorded: e-learning / recording; hybrid: live + recording */
 export type CourseFormat = "in_person" | "online_live" | "recorded" | "hybrid";
@@ -84,4 +84,12 @@ export const SOURCE_URLS: Record<CourseSource, string> = {
   kursiarstiem: "https://kursiarstiem.lv/",
   medicinaskursi: "https://medicinaskursi.lv/",
   lumpii: "https://www.lumpii.lv/arstniecibas-personam/kursi",
+  lma: "https://www.masuasociacija.lv/konferences-seminari-kursi/",
 };
+
+/** LMA's approval register (208 pages, no event dates): linked for nurses, not scraped */
+export const LMA_REGISTER_URL = "https://www.masuasociacija.lv/talakizglitibas-programmu-registrs/";
+
+/** For nurses: LMA's own list, or an audience that names nurses ("Māsas", "medicīnas māsas") */
+export const isNurseCourse = (c: Pick<Course, "source" | "audience">) =>
+  c.source === "lma" || /(?<![\p{L}])(?:mās(?:a|as|ām|u)|nurses?)(?![\p{L}])/iu.test(c.audience);

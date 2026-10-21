@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { rowConfirmEligible } from "@/lib/parse/confidence";
 import { useRouter } from "next/navigation";
 import type { CmeCertificate } from "@/lib/types";
-import { t, type Locale } from "@/lib/i18n";
+import { inHours, t, type Locale } from "@/lib/i18n";
+import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
@@ -24,6 +25,7 @@ export default function CertificatesView({
   cycle,
   today,
   readOnly = false,
+  nurse = false,
 }: {
   initial: CmeCertificate[];
   specialty: string;
@@ -33,8 +35,10 @@ export default function CertificatesView({
   today: string;
   /** demo account: no upload, the panel only shows the fields */
   readOnly?: boolean;
+  /** nurses: hours instead of TIP, the Reg. 630 topic instead of the Annex 4 category, and the point 47 approval flag */
+  nurse?: boolean;
 }) {
-  const dict = t(locale);
+  const dict = nurse ? inHours(t(locale)) : t(locale);
   const d = dict.certs;
   const router = useRouter();
   const [certs, setCerts] = useState(() => sortCerts(initial));
@@ -159,11 +163,12 @@ export default function CertificatesView({
                   <span className={styles.main}>
                     <span className={styles.title}>{c.title || <span className="muted">{c.fileName}</span>}</span>
                     <span className={styles.meta}>
-                      {[org, dict.categories[c.category]].filter(Boolean).join(" · ")}
+                      {[org, nurse ? dict.review.topics[nurseTopicOf(c)] : dict.categories[c.category]].filter(Boolean).join(" · ")}
                     </span>
+                    {nurse && needsApprovalCheck(c) && <span className="badge badge-warn">{d.approvalCheckShort}</span>}
                   </span>
                   <span className={styles.points}>
-                    {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>TIP</span></>}
+                    {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>{nurse ? dict.dashboard.hoursUnit : "TIP"}</span></>}
                   </span>
                   <span className={styles.status}>
                     <span className={c.duplicateOf && c.status !== "confirmed" ? "badge badge-bad" : STATUS_CLASS[c.status]}>
@@ -222,6 +227,7 @@ export default function CertificatesView({
           onSaved={replace}
           onDeleted={removed}
           readOnly={readOnly}
+          nurse={nurse}
         />
       )}
     </>

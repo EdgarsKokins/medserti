@@ -6,6 +6,7 @@ import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKin
 import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
+import { suggestNurseTopic } from "../nurse";
 
 /*
  * Free, local certificate parsing.
@@ -34,6 +35,7 @@ export type ParsedFields = Pick<
   | "inSpecialty"
   | "emergencyCare"
   | "practicalHours"
+  | "nurseTopic"
   | "approvalId"
   | "country"
   | "confidence"
@@ -64,6 +66,7 @@ export const EMPTY_FIELDS: ParsedFields = {
   inSpecialty: false,
   emergencyCare: false,
   practicalHours: null,
+  nurseTopic: null,
   approvalId: null,
   country: null,
   confidence: null,
@@ -214,6 +217,8 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
       inSpecialty: matchesSpecialty(t.raw, profile.specialty),
       emergencyCare,
       practicalHours,
+      // kept for every profession; only nurses see and count it (Reg. 630 point 26.3)
+      nurseTopic: suggestNurseTopic(t.flat, t.raw),
       approvalId: findApprovalId(t),
       country,
       confidence: Math.round((found / 3) * 100) / 100,

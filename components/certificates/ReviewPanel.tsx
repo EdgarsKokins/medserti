@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CmeCategory, CmeCertificate, ConfidenceField } from "@/lib/types";
+import type { CmeCategory, CmeCertificate, ConfidenceField, NurseTopic } from "@/lib/types";
+import { needsApprovalCheck, NURSE_TOPICS, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
-import { t, type Locale } from "@/lib/i18n";
+import { inHours, t, type Locale } from "@/lib/i18n";
 import { COUNTRY_CODES, countryCode, countryName, formatDate, parseNoteLines, STATUS_CLASS } from "./format";
 import styles from "./certificates.module.css";
 
@@ -19,11 +20,12 @@ type Editable = Pick<
   | "inSpecialty"
   | "emergencyCare"
   | "practicalHours"
+  | "nurseTopic"
   | "approvalId"
   | "country"
 >;
 
-const pick = (c: CmeCertificate): Editable => ({
+const pick = (c: CmeCertificate, nurse: boolean): Editable => ({
   title: c.title,
   organizer: c.organizer,
   date: c.date,
@@ -34,6 +36,8 @@ const pick = (c: CmeCertificate): Editable => ({
   inSpecialty: c.inSpecialty,
   emergencyCare: c.emergencyCare,
   practicalHours: c.practicalHours,
+  // doctors never send it, so their saves leave it as the parser set it
+  ...(nurse ? { nurseTopic: nurseTopicOf(c) } : {}),
   approvalId: c.approvalId,
   // older certificates hold an English name ("Latvia"); the select works with ISO codes
   country: countryCode(c.country) ?? c.country,
@@ -49,6 +53,7 @@ export default function ReviewPanel({
   onSaved,
   onDeleted,
   readOnly = false,
+  nurse = false,
 }: {
   cert: CmeCertificate;
   specialty: string;
@@ -57,12 +62,14 @@ export default function ReviewPanel({
   onSaved: (c: CmeCertificate) => void;
   onDeleted: (id: string) => void;
   readOnly?: boolean;
+  /** nurses: a Reg. 630 topic instead of the specialty and emergency checkboxes, hours instead of TIP */
+  nurse?: boolean;
 }) {
-  const dict = t(locale);
+  const dict = nurse ? inHours(t(locale)) : t(locale);
   const d = dict.review;
   const dialog = useRef<HTMLDialogElement>(null);
   const downOnBackdrop = useRef(false);
-  const [initial] = useState<Editable>(() => pick(cert));
+  const [initial] = useState<Editable>(() => pick(cert, nurse));
   const [f, setF] = useState<Editable>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +108,8 @@ export default function ReviewPanel({
     const res = await fetch(`/api/certificates/${cert.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...f, status }),
+      // a nurse's emergency topic is the emergency-care flag too, so both views of the certificate agree
+      body: JSON.stringify({ ...f, ...(nurse ? { emergencyCare: f.nurseTopic === "emergency" } : {}), status }),
     });
     const body = await res.json().catch(() => ({}));
     setBusy(false);
@@ -175,6 +183,10 @@ export default function ReviewPanel({
           <div className={`alert small ${styles.notes}`} role="note">{d.duplicateNote}</div>
         )}
 
+        {nurse && needsApprovalCheck(f) && (
+          <div className={`alert small ${styles.notes}`} role="note">{d.approvalCheck}</div>
+        )}
+
         {notes.lines.length > 0 && (
           <div className={`alert small ${styles.notes}`}>
             {notes.legacy ? (
@@ -241,19 +253,33 @@ export default function ReviewPanel({
               ))}
             </select>
           </div>
-          <div className={styles.checkRow}>
-            <input id="c-spec" type="checkbox" checked={f.inSpecialty} onChange={(e) => set("inSpecialty", e.target.checked)} />
-            <label htmlFor="c-spec">{d.fInSpecialty(specialty)}</label>
-          </div>
-          <div className={styles.checkRow}>
-            <input id="c-emerg" type="checkbox" checked={f.emergencyCare} onChange={(e) => set("emergencyCare", e.target.checked)} />
-            <label htmlFor="c-emerg">{d.fEmergency}</label>
-          </div>
-          {f.emergencyCare && (
+          {nurse ? (
             <div className="field">
-              <label htmlFor="c-prac">{d.fPractical}</label>
-              <input id="c-prac" type="number" min={0} step="0.5" value={f.practicalHours ?? ""} onChange={(e) => set("practicalHours", toNum(e.target.value))} />
+              <label htmlFor="c-topic">{d.fTopic}</label>
+              <select id="c-topic" value={f.nurseTopic ?? "other"} aria-describedby="c-topic-hint" onChange={(e) => set("nurseTopic", e.target.value as NurseTopic)}>
+                {NURSE_TOPICS.map((k) => (
+                  <option key={k} value={k}>{d.topics[k]}</option>
+                ))}
+              </select>
+              <span id="c-topic-hint" className="small muted">{d.fTopicHint}</span>
             </div>
+          ) : (
+            <>
+            <div className={styles.checkRow}>
+              <input id="c-spec" type="checkbox" checked={f.inSpecialty} onChange={(e) => set("inSpecialty", e.target.checked)} />
+              <label htmlFor="c-spec">{d.fInSpecialty(specialty)}</label>
+            </div>
+            <div className={styles.checkRow}>
+              <input id="c-emerg" type="checkbox" checked={f.emergencyCare} onChange={(e) => set("emergencyCare", e.target.checked)} />
+              <label htmlFor="c-emerg">{d.fEmergency}</label>
+            </div>
+            {f.emergencyCare && (
+              <div className="field">
+                <label htmlFor="c-prac">{d.fPractical}</label>
+                <input id="c-prac" type="number" min={0} step="0.5" value={f.practicalHours ?? ""} onChange={(e) => set("practicalHours", toNum(e.target.value))} />
+              </div>
+            )}
+            </>
           )}
         </div>
         </fieldset>

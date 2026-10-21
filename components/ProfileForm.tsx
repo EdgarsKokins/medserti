@@ -202,7 +202,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
           <p className={s.summary} aria-live="polite">
             {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
           </p>
-          {!p.certificateExpires && <p className="small muted">{d.summaryNoDate}</p>}
+          {!p.certificateExpires && <p className="small muted">{nurse ? d.summaryNoDateNurse : d.summaryNoDate}</p>}
         </div>
         <div className={s.fields}>
           {!nurse && (
@@ -224,59 +224,70 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
             <label htmlFor="certNo">{nurse ? d.regNo : d.certNo}</label>
             <input id="certNo" value={p.certificateNumber} onChange={(e) => set("certificateNumber", e.target.value)} />
           </div>
-          <div className="field">
-            <label htmlFor="issued">{nurse ? d.issuedRegistration : d.issued}</label>
-            <input
-              id="issued"
-              type="date"
-              value={p.certificateIssued ?? ""}
-              onChange={(e) => {
-                const v = e.target.value || null;
-                setMsg(null);
-                setP((prev) => ({
-                  ...prev,
-                  certificateIssued: v,
-                  // a hand-set end date stays; otherwise the end follows the rule
-                  certificateExpires: customEnd ? prev.certificateExpires : v ? addYears(v, RULES.validityYears) : null,
-                }));
-              }}
-            />
-            {!customEnd && (
-              <span className={s.hint}>
-                {defaultExpiry && <>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)} </>}
-                <button
-                  type="button"
-                  className={s.inlineBtn}
-                  aria-controls="expires"
-                  onClick={() => {
-                    setCustomEnd(true);
-                    requestAnimationFrame(() => document.getElementById("expires")?.focus());
-                  }}
-                >
-                  {d.customEnd}
-                </button>
-              </span>
-            )}
-          </div>
-          {customEnd && (
+          {nurse ? (
+            // the register shows the date the registration runs to; the 5-year term behind it follows (Reg. 630 point 33)
             <div className="field">
-              <label htmlFor="expires">{d.expires}</label>
+              <label htmlFor="expires">{d.registrationUntil}</label>
               <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
-              {defaultExpiry && (
+              <span className={s.hint}>{d.registrationUntilHint}</span>
+            </div>
+          ) : (
+            <>
+            <div className="field">
+              <label htmlFor="issued">{d.issued}</label>
+              <input
+                id="issued"
+                type="date"
+                value={p.certificateIssued ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value || null;
+                  setMsg(null);
+                  setP((prev) => ({
+                    ...prev,
+                    certificateIssued: v,
+                    // a hand-set end date stays; otherwise the end follows the rule
+                    certificateExpires: customEnd ? prev.certificateExpires : v ? addYears(v, RULES.validityYears) : null,
+                  }));
+                }}
+              />
+              {!customEnd && (
                 <span className={s.hint}>
+                  {defaultExpiry && <>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)} </>}
                   <button
                     type="button"
                     className={s.inlineBtn}
+                    aria-controls="expires"
                     onClick={() => {
-                      setCustomEnd(false);
-                      set("certificateExpires", defaultExpiry);
+                      setCustomEnd(true);
+                      requestAnimationFrame(() => document.getElementById("expires")?.focus());
                     }}
                   >
-                    {d.useRuleEnd(formatDate(defaultExpiry, locale))}
+                    {d.customEnd}
                   </button>
                 </span>
               )}
             </div>
+            {customEnd && (
+              <div className="field">
+                <label htmlFor="expires">{d.expires}</label>
+                <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
+                {defaultExpiry && (
+                  <span className={s.hint}>
+                    <button
+                      type="button"
+                      className={s.inlineBtn}
+                      onClick={() => {
+                        setCustomEnd(false);
+                        set("certificateExpires", defaultExpiry);
+                      }}
+                    >
+                      {d.useRuleEnd(formatDate(defaultExpiry, locale))}
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
+            </>
           )}
           <div className="field">
             <label htmlFor="override">{nurse ? d.requiredNurse : d.required}</label>

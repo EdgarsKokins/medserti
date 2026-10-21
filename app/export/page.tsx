@@ -6,10 +6,12 @@ import { specialtyLabel } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import ExportView, { type ExportRow } from "@/components/export/ExportView";
+import NurseExportView, { type NurseExportRow } from "@/components/export/NurseExportView";
+import { nurseTopicOf } from "@/lib/nurse";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const d = t(await getLocale());
-  return { title: d.exportDocs.title };
+  const [d, user] = [t(await getLocale()), await requireUser()];
+  return { title: user.profile.profession === "nurse" ? d.exportDocs.nurseTitle : d.exportDocs.title };
 }
 
 /** Recertification export: the server only hands over the user's own certificates; personal details stay in the browser */
@@ -32,6 +34,33 @@ export default async function ExportPage() {
     fileName: c.fileName,
   }));
   const parts = user.profile.fullName.trim().split(/\s+/);
+  const firstName = parts.length > 1 ? parts.slice(0, -1).join(" ") : parts[0] ?? "";
+  const lastName = parts.length > 1 ? parts[parts.length - 1] : "";
+
+  // nurses re-register with the Health Inspectorate (Reg. 630 Annex 4), not LĀB
+  if (user.profile.profession === "nurse") {
+    const nurseRows: NurseExportRow[] = confirmed.map((c) => ({
+      id: c.id,
+      fileName: c.fileName,
+      organizer: c.organizer,
+      title: c.title || c.fileName,
+      date: c.date!,
+      endDate: c.endDate,
+      hours: c.points ?? 0,
+      topic: nurseTopicOf(c),
+    }));
+    return (
+      <NurseExportView
+        locale={locale}
+        rows={nurseRows}
+        unconfirmed={unconfirmed}
+        registrationUntil={p.windowEnd}
+        // re-registration is in the profession; its register name per Reg. 630 Annex 1.1
+        profession="Māsa (vispārējās aprūpes māsa)"
+        prefill={{ firstName, lastName, email: user.email, practitionerId: user.profile.certificateNumber }}
+      />
+    );
+  }
   return (
     <ExportView
       locale={locale}
@@ -44,8 +73,8 @@ export default async function ExportPage() {
         specialty: specialtyLabel(user.profile.specialty, "lv"),
       }}
       prefill={{
-        firstName: parts.length > 1 ? parts.slice(0, -1).join(" ") : parts[0] ?? "",
-        lastName: parts.length > 1 ? parts[parts.length - 1] : "",
+        firstName,
+        lastName,
         email: user.email,
       }}
     />

@@ -53,6 +53,9 @@ export type CmeCategory =
   | "degree" // items 11-13
   | "other"; // items 14-21, 28-30
 
+/** Reg. 630 point 26.3 topics a nurse's hours count toward from 01 Jan 2027; "nursing" = nurse competence topics */
+export type NurseTopic = "emergency" | "infection_control" | "patient_safety" | "nursing" | "other";
+
 export type CertStatus = "parsing" | "needs_review" | "confirmed" | "failed";
 
 export interface CmeCertificate {
@@ -78,6 +81,8 @@ export interface CmeCertificate {
   emergencyCare: boolean;
   /** practical hours within emergency care training (min 4 required) */
   practicalHours: number | null;
+  /** nurses only: Reg. 630 point 26.3 topic, suggested by the parser; missing on older certificates (see lib/nurse.ts nurseTopicOf) */
+  nurseTopic?: NurseTopic | null;
   /** approval / registration number printed on the certificate, if any */
   approvalId: string | null;
   /** ISO 3166-1 alpha-2 code ("LV", "LT"); certificates saved before Oct 2026 may hold an English name ("Latvia") */

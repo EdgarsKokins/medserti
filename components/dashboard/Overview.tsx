@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Progress } from "@/lib/rules";
 import { t, type Locale } from "@/lib/i18n";
-import { NURSE_RULES, type RuleBasis } from "@/lib/rules";
+import type { RuleBasis } from "@/lib/rules";
 import type { Course } from "@/lib/courses/types";
 import { courseStrings } from "@/components/courses/strings";
 import { specialtyLabel } from "@/lib/specialties";
@@ -50,6 +50,9 @@ export function Hero({
       const gap = Math.max(0, c.need - c.have);
       if (c.id === "specialty") return d.missingSpecialty(n(gap));
       if (c.id === "emergency_points") return d.missingEmergencyPoints(n(gap));
+      if (c.id === "infection_control") return d.missingInfection(n(gap));
+      if (c.id === "patient_safety") return d.missingPatientSafety(n(gap));
+      if (c.id === "nursing") return d.missingNursing(n(gap));
       return d.missingEmergencyHours(n(gap), Math.ceil(gap));
     });
   // listed specialties show in the UI language; unlisted free text as typed
@@ -121,7 +124,6 @@ export function Hero({
 
       {h.message && <p className={`${styles.message} ${toneClass[h.tone]}`}>{h.message}</p>}
       {basis && <p className={`small muted ${styles.basis}`}>{basis === "nurse" ? dict.profile.nurseRule : dict.profile.functionalTransition}</p>}
-      {nurse && p.windowEnd && p.windowEnd >= NURSE_RULES.emergencyFrom && <p className={`small muted ${styles.basis}`}>{d.nurseExtra}</p>}
     </section>
   );
 }
@@ -147,6 +149,8 @@ export function Requirements({ p, locale, hours = false }: { p: Progress; locale
           </li>
         ))}
       </ul>
+      {/* Reg. 630 point 26.3 topics, from 01 Jan 2027: they count by the topic set on each certificate */}
+      {hours && p.checks.some((c) => c.id === "nursing") && <p className="small muted">{dict.dashboard.nurseTopics}</p>}
     </section>
   );
 }

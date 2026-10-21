@@ -1,5 +1,5 @@
 import { RULES, type Check } from "./rules";
-import type { CertStatus, CmeCategory, Profession } from "./types";
+import type { CertStatus, CmeCategory, NurseTopic, Profession } from "./types";
 import type { ProgressChartLabels } from "@/components/dashboard/ProgressChart";
 import { overlay } from "./i18n/overrides";
 
@@ -97,6 +97,8 @@ const en = {
     login: "Log in",
     genericError: "Something went wrong. Please try again.",
     passwordHint: "At least 8 characters",
+    profession: "Profession",
+    professionPick: "Choose your profession",
     forgotLink: "Forgot your password?",
     valueTitle: "How Medserti works",
     valuePoints: [
@@ -247,6 +249,16 @@ const en = {
     done: "Downloaded. Open the checklist in the ZIP before submitting.",
     failed: "Some certificate files could not be added. The documents were still created.",
     noProfile: "Add your certificate expiry date and number in your profile first.",
+    nurseTitle: "Re-registration documents",
+    nurseLead: "We fill in the Health Inspectorate's re-registration application (Annex 4 of Regulation No. 630) with your courses and hours. Add your details, download one ZIP file, sign it and submit it to VI.",
+    nurseLanguageNote: "The application is in Latvian, as VI requires.",
+    nurseContentsItems: [
+      "Re-registration application, Annex 4 of Regulation No. 630, with your courses listed (DOCX)",
+      "Copies of your certificates",
+      "A checklist with your hours per topic",
+    ],
+    nurseNoProfile: "Add the date your registration runs to in your profile first.",
+    nurseCta: "Prepare re-registration documents",
     cta: "Prepare recertification documents",
   },
   about: {
@@ -360,6 +372,9 @@ const en = {
     total: "Total points (TIP)",
     specialty: `In your specialty (min ${specialtyPct}%)`,
     emergency_points: "Emergency care training",
+    infection_control: "Infection control",
+    patient_safety: "Patient safety",
+    nursing: "Nursing competence topics",
     emergency_practical: "Emergency care practical hours",
   } as Record<Check["id"], string>,
   rules: {
@@ -413,6 +428,9 @@ const en = {
     sectionRegistration: "Registration",
     sectionRegistrationNote: "Nurses need no certificate. They re-register with the Health Inspectorate every 5 years.",
     issuedRegistration: "Registration valid from",
+    registrationUntil: "Registration with VI valid until",
+    registrationUntilHint: "The date in the Health Inspectorate's register. Courses from the 5 years before it count.",
+    summaryNoDateNurse: "Add the date your registration runs to, to see your deadline.",
     regNo: "Register ID (optional)",
     nurseRule: "Re-registration needs 100 academic hours, 1 hour = 1 TIP (Cabinet Regulation No. 630, point 25).",
     functionalTransition: "Transition rule: until 01 Jan 2028, 150 TIP is enough (Regulation No. 391, point 86).",
@@ -426,6 +444,7 @@ const en = {
     waiting: (n: number) =>
       `${n} ${enPl(n, "certificate is", "certificates are")} waiting for review. Open each one, check the details against the file, and confirm.`,
     allTitle: "All certificates",
+    approvalCheckShort: "Check approval",
     summary: (count: number, points: string) => `${count} uploaded, ${points} TIP confirmed`,
     empty: "No certificates submitted yet. Upload them using the box above.",
     colDate: "Date",
@@ -498,6 +517,10 @@ const en = {
     duplicate: "Duplicate",
     duplicateNote: "You already uploaded this certificate, so it is not counted twice. Delete it, or confirm it if it is a different one.",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
+    fTopic: "Topic",
+    fTopicHint: "From 2027 the hours count toward this requirement.",
+    topics: { emergency: "Emergency care", infection_control: "Infection control", patient_safety: "Patient safety", nursing: "Nursing topics", other: "Other" } as Record<NurseTopic, string>,
+    approvalCheck: "Check that the course is approved by LĀB, LĀPOS or LMA. From 2027 the Health Inspectorate counts only approved courses (Regulation No. 630, point 47).",
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
     saving: "Saving...",
@@ -590,6 +613,11 @@ const en = {
     missingSpecialty: (n: string) => `${n} TIP in your specialty`,
     missingEmergencyPoints: (n: string) => `${n} TIP of emergency care training`,
     missingEmergencyHours: (n: string, h: number) => `${n} practical ${enPl(h, "hour", "hours")} of emergency care`,
+    missingInfection: (n: string) => `${n} TIP of infection control`,
+    missingPatientSafety: (n: string) => `${n} TIP of patient safety`,
+    missingNursing: (n: string) => `${n} TIP of nursing topics`,
+    profileMissingNurse: "Your profile is missing the date your registration with VI runs to.",
+    nurseTopics: "From 2027 the 100 hours must include these topics (Regulation No. 630, point 26.3). Mark the topic on each certificate.",
     statusMissing: "Still missing:",
     statusDone: "You have all the points you need.",
     uploadCta: "Add certificate",
@@ -609,7 +637,6 @@ const en = {
     paceShort: (n: string) => `≈ ${n} TIP a month to finish on time`,
     validUntilShort: (date: string) => `certificate valid until ${date}`,
     hoursUnit: "acad. h",
-    nurseExtra: "Also needed: 4 acad. h infection control, 8 acad. h patient safety and 50 acad. h of nurse competence topics (Regulation No. 630, point 26.3). Medserti does not count these yet.",
     registrationUntilShort: (date: string) => `registration valid until ${date}`,
     recording: "On demand",
     allMetMsg: "All requirements met. You can apply for recertification.",
@@ -646,6 +673,7 @@ const en = {
     passwordBreached: "This password has appeared in a known data breach. Choose a different one.",
     tooManyLogins: "Too many failed attempts. Try again in 15 minutes.",
     tooMany: "Too many requests. Please try again later.",
+    professionRequired: "Choose your profession",
     nameRequired: "Enter your full name",
     emailTaken: "An account with this email already exists",
     noFiles: "No files received",
@@ -840,6 +868,8 @@ const lv: Dict = {
     login: "Pieslēgties",
     genericError: "Radās kļūda. Mēģiniet vēlreiz.",
     passwordHint: "Vismaz 8 rakstzīmes",
+    profession: "Profesija",
+    professionPick: "Izvēlieties profesiju",
     forgotLink: "Aizmirsāt paroli?",
     valueTitle: "Kā darbojas Medserti",
     valuePoints: [
@@ -996,6 +1026,16 @@ const lv: Dict = {
     done: "Lejupielādēts. Pirms iesniegšanas atveriet ZIP failā esošo sarakstu.",
     failed: "Dažus sertifikātu failus neizdevās pievienot. Dokumenti tomēr izveidoti.",
     noProfile: "Vispirms profilā norādiet sertifikāta numuru un derīguma termiņu.",
+    nurseTitle: "Pārreģistrācijas dokumenti",
+    nurseLead: "Aizpildām VI iesniegumu pārreģistrācijai (MK noteikumu Nr. 630 4. pielikums) ar Jūsu kursiem un stundām. Ievadiet datus, lejupielādējiet vienu ZIP failu, parakstiet un iesniedziet VI.",
+    nurseLanguageNote: "Iesniegums ir latviešu valodā, kā to prasa VI.",
+    nurseContentsItems: [
+      "Iesniegums pārreģistrācijai, MK noteikumu Nr. 630 4. pielikums, ar Jūsu kursu sarakstu (DOCX)",
+      "Sertifikātu kopijas",
+      "Pārbaudes saraksts ar stundām pa tēmām",
+    ],
+    nurseNoProfile: "Vispirms profilā norādiet, līdz kuram datumam derīga reģistrācija.",
+    nurseCta: "Sagatavot pārreģistrācijas dokumentus",
     cta: "Sagatavot resertifikācijas dokumentus",
   },
   about: {
@@ -1109,6 +1149,9 @@ const lv: Dict = {
     total: "Kopā (TIP)",
     specialty: `Savā specialitātē (vismaz ${specialtyPct}%)`,
     emergency_points: "Neatliekamās medicīniskās palīdzības apmācība",
+    infection_control: "Infekciju kontrole",
+    patient_safety: "Pacientu drošība",
+    nursing: "Māsas kompetences tēmas",
     emergency_practical: "Neatliekamās medicīniskās palīdzības praktiskās stundas",
   },
   rules: {
@@ -1163,6 +1206,9 @@ const lv: Dict = {
     sectionRegistration: "Reģistrācija",
     sectionRegistrationNote: "Māsām sertifikāts nav vajadzīgs. Ik pēc 5 gadiem jāpārreģistrējas Veselības inspekcijā.",
     issuedRegistration: "Reģistrācija derīga no",
+    registrationUntil: "Reģistrācija VI derīga līdz",
+    registrationUntilHint: "Datums VI reģistrā. Skaitās kursi 5 gados pirms tā.",
+    summaryNoDateNurse: "Norādiet, līdz kuram datumam derīga reģistrācija, lai redzētu termiņu.",
     regNo: "Identifikators reģistrā (nav obligāts)",
     nurseRule: "Pārreģistrācijai vajag 100 akadēmiskās stundas, 1 stunda = 1 TIP (MK noteikumi Nr. 630, 25. punkts).",
     functionalTransition: "Pārejas noteikums: līdz 01.01.2028. pietiek ar 150 TIP (MK noteikumi Nr. 391, 86. punkts).",
@@ -1176,6 +1222,7 @@ const lv: Dict = {
     waiting: (n: number) =>
       `${n} ${lvPl(n, "sertifikāts gaida", "sertifikāti gaida")} pārbaudi. Atveriet katru, salīdziniet datus ar failu un apstipriniet.`,
     allTitle: "Visi sertifikāti",
+    approvalCheckShort: "Pārbaudiet apstiprinājumu",
     summary: (count: number, points: string) => `Augšupielādēti: ${count} · apstiprināti TIP: ${points}`,
     empty: "Neviens sertifikāts vēl nav iesniegts. Augšupielādējiet tos, izmantojot lauku augstāk.",
     colDate: "Datums",
@@ -1248,6 +1295,10 @@ const lv: Dict = {
     duplicate: "Dublikāts",
     duplicateNote: "Šis sertifikāts jau ir augšupielādēts, tāpēc to neskaitām divreiz. Dzēsiet to vai apstipriniet, ja tas tomēr ir cits.",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
+    fTopic: "Tēma",
+    fTopicHint: "No 2027. gada stundas skaitās šajā prasībā.",
+    topics: { emergency: "Neatliekamā palīdzība", infection_control: "Infekciju kontrole", patient_safety: "Pacientu drošība", nursing: "Māsas kompetences tēmas", other: "Cita" } as Record<NurseTopic, string>,
+    approvalCheck: "Pārbaudiet, vai kurss apstiprināts LĀB, LĀPOS vai LMA. No 2027. gada VI ieskaita tikai apstiprinātus kursus (MK noteikumi Nr. 630, 47. punkts).",
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācības",
     fPractical: "Praktiskās stundas",
     saving: "Saglabā...",
@@ -1342,6 +1393,11 @@ const lv: Dict = {
     missingEmergencyPoints: (n: string) => `${n} TIP neatliekamās palīdzības apmācībā`,
     missingEmergencyHours: (n: string, h: number) =>
       `${n} ${lvPl(h, "praktiskā stunda", "praktiskās stundas")} neatliekamajā palīdzībā`,
+    missingInfection: (n: string) => `${n} TIP infekciju kontrolē`,
+    missingPatientSafety: (n: string) => `${n} TIP pacientu drošībā`,
+    missingNursing: (n: string) => `${n} TIP māsas kompetences tēmās`,
+    profileMissingNurse: "Profilā nav norādīts, līdz kuram datumam derīga reģistrācija VI.",
+    nurseTopics: "No 2027. gada 100 stundās jābūt šīm tēmām (MK noteikumi Nr. 630, 26.3. punkts). Atzīmējiet tēmu katram sertifikātam.",
     statusMissing: "Vēl pietrūkst:",
     statusDone: "Jums ir visi nepieciešamie punkti.",
     uploadCta: "Pievienot sertifikātu",
@@ -1361,7 +1417,6 @@ const lv: Dict = {
     paceShort: (n: string) => `≈ ${n} TIP mēnesī, lai paspētu`,
     validUntilShort: (date: string) => `sertifikāts derīgs līdz ${date}`,
     hoursUnit: "akad. st.",
-    nurseExtra: "Vajag arī: 4 akad. st. infekciju kontrolē, 8 akad. st. pacientu drošībā un 50 akad. st. māsas kompetences tēmās (MK noteikumi Nr. 630, 26.3. punkts). Tās Medserti vēl neskaita.",
     registrationUntilShort: (date: string) => `reģistrācija derīga līdz ${date}`,
     recording: "Ieraksts",
     allMetMsg: "Visas prasības izpildītas. Varat pieteikties resertifikācijai.",
@@ -1398,6 +1453,7 @@ const lv: Dict = {
     passwordBreached: "Šī parole ir atrodama zināmā datu noplūdē. Izvēlieties citu.",
     tooManyLogins: "Pārāk daudz neveiksmīgu mēģinājumu. Mēģiniet vēlreiz pēc 15 minūtēm.",
     tooMany: "Pārāk daudz pieprasījumu. Mēģiniet vēlreiz vēlāk.",
+    professionRequired: "Izvēlieties profesiju",
     nameRequired: "Ievadiet vārdu un uzvārdu",
     emailTaken: "Konts ar šo e-pasta adresi jau ir reģistrēts",
     noFiles: "Faili netika saņemti",
@@ -1591,6 +1647,8 @@ const ru: Dict = {
     login: "Войти",
     genericError: "Произошла ошибка. Попробуйте ещё раз.",
     passwordHint: "Не менее 8 символов",
+    profession: "Профессия",
+    professionPick: "Выберите профессию",
     forgotLink: "Забыли пароль?",
     valueTitle: "Как работает Medserti",
     valuePoints: [
@@ -1741,6 +1799,16 @@ const ru: Dict = {
     done: "Скачано. Перед подачей откройте список в ZIP-файле.",
     failed: "Некоторые файлы сертификатов не удалось добавить. Документы всё равно созданы.",
     noProfile: "Сначала укажите в профиле номер и срок действия сертификата.",
+    nurseTitle: "Документы для перерегистрации",
+    nurseLead: "Заполняем заявление в VI о перерегистрации (приложение 4 к MK noteikumi Nr. 630) с вашими курсами и часами. Введите данные, скачайте один ZIP-файл, подпишите и подайте в VI.",
+    nurseLanguageNote: "Заявление на латышском языке, как требует VI.",
+    nurseContentsItems: [
+      "Заявление о перерегистрации, приложение 4 к MK noteikumi Nr. 630, со списком курсов (DOCX)",
+      "Копии сертификатов",
+      "Список для проверки с часами по темам",
+    ],
+    nurseNoProfile: "Сначала укажите в профиле, до какой даты действует регистрация.",
+    nurseCta: "Подготовить документы для перерегистрации",
     cta: "Подготовить документы для ресертификации",
   },
   about: {
@@ -1854,6 +1922,9 @@ const ru: Dict = {
     total: "Всего (TIP)",
     specialty: `По специальности (не менее ${specialtyPct}%)`,
     emergency_points: "Обучение неотложной медицинской помощи",
+    infection_control: "Инфекционный контроль",
+    patient_safety: "Безопасность пациентов",
+    nursing: "Темы компетенции медсестры",
     emergency_practical: "Практические часы неотложной медицинской помощи",
   },
   rules: {
@@ -1908,6 +1979,9 @@ const ru: Dict = {
     sectionRegistration: "Регистрация",
     sectionRegistrationNote: "Медсёстрам сертификат не нужен. Каждые 5 лет они проходят перерегистрацию в Veselības inspekcija (Инспекция здоровья).",
     issuedRegistration: "Регистрация действительна с",
+    registrationUntil: "Регистрация в VI действительна до",
+    registrationUntilHint: "Дата в регистре Инспекции здоровья. Засчитываются курсы за 5 лет до неё.",
+    summaryNoDateNurse: "Укажите, до какой даты действует регистрация, чтобы увидеть срок.",
     regNo: "Идентификатор в регистре (необязательно)",
     nurseRule: "Для перерегистрации нужно 100 академических часов, 1 час = 1 TIP (MK noteikumi Nr. 630, пункт 25).",
     functionalTransition: "Переходное правило: до 01.01.2028 достаточно 150 TIP (MK noteikumi Nr. 391, пункт 86).",
@@ -1920,6 +1994,7 @@ const ru: Dict = {
     waiting: (n: number) =>
       `${n} ${ruPl(n, "сертификат ждёт", "сертификата ждут", "сертификатов ждут")} проверки. Откройте каждый, сверьте данные с файлом и подтвердите.`,
     allTitle: "Все сертификаты",
+    approvalCheckShort: "Проверьте утверждение",
     summary: (count: number, points: string) => `Загружено: ${count} · подтверждено TIP: ${points}`,
     empty: "Сертификатов пока нет. Загрузите их через поле выше.",
     colDate: "Дата",
@@ -1992,6 +2067,10 @@ const ru: Dict = {
     duplicate: "Дубликат",
     duplicateNote: "Этот сертификат уже загружен, поэтому дважды он не засчитывается. Удалите его или подтвердите, если это другой.",
     fInSpecialty: (specialty: string) => `По моей специальности${specialty ? ` (${specialty})` : ""}`,
+    fTopic: "Тема",
+    fTopicHint: "С 2027 года часы засчитываются в это требование.",
+    topics: { emergency: "Неотложная помощь", infection_control: "Инфекционный контроль", patient_safety: "Безопасность пациентов", nursing: "Темы компетенции медсестры", other: "Другое" } as Record<NurseTopic, string>,
+    approvalCheck: "Проверьте, утверждён ли курс LĀB, LĀPOS или LMA. С 2027 года VI засчитывает только утверждённые курсы (MK noteikumi Nr. 630, пункт 47).",
     fEmergency: "Обучение неотложной медицинской помощи",
     fPractical: "Практические часы",
     saving: "Сохранение...",
@@ -2086,6 +2165,11 @@ const ru: Dict = {
     missingEmergencyPoints: (n: string) => `${n} TIP обучения неотложной помощи`,
     missingEmergencyHours: (n: string, h: number) =>
       `${n} ${ruPl(h, "практический час", "практических часа", "практических часов")} неотложной помощи`,
+    missingInfection: (n: string) => `${n} TIP по инфекционному контролю`,
+    missingPatientSafety: (n: string) => `${n} TIP по безопасности пациентов`,
+    missingNursing: (n: string) => `${n} TIP по темам компетенции медсестры`,
+    profileMissingNurse: "В профиле не указано, до какой даты действует регистрация в VI.",
+    nurseTopics: "С 2027 года в 100 часах должны быть эти темы (MK noteikumi Nr. 630, пункт 26.3). Отметьте тему у каждого сертификата.",
     statusMissing: "Ещё не хватает:",
     statusDone: "У вас есть все нужные баллы.",
     uploadCta: "Добавить сертификат",
@@ -2105,7 +2189,6 @@ const ru: Dict = {
     paceShort: (n: string) => `≈ ${n} TIP в месяц, чтобы успеть`,
     validUntilShort: (date: string) => `сертификат действителен до ${date}`,
     hoursUnit: "акад. ч",
-    nurseExtra: "Также нужно: 4 акад. ч по инфекционному контролю, 8 акад. ч по безопасности пациентов и 50 акад. ч по темам компетенции медсестры (MK noteikumi Nr. 630, пункт 26.3). Medserti пока их не считает.",
     registrationUntilShort: (date: string) => `регистрация действительна до ${date}`,
     recording: "Запись",
     allMetMsg: "Все требования выполнены. Можно подавать на ресертификацию.",
@@ -2142,6 +2225,7 @@ const ru: Dict = {
     passwordBreached: "Этот пароль есть в известной утечке данных. Выберите другой.",
     tooManyLogins: "Слишком много неудачных попыток. Попробуйте через 15 минут.",
     tooMany: "Слишком много запросов. Попробуйте позже.",
+    professionRequired: "Выберите профессию",
     nameRequired: "Введите имя и фамилию",
     emailTaken: "Аккаунт с этим адресом эл. почты уже существует",
     noFiles: "Файлы не получены",
@@ -2300,7 +2384,7 @@ export const t = (locale: Locale): Dict => {
 };
 
 // sections that show a progress unit; texts that explain the conversion keep the word TIP
-const HOURS_SECTIONS = ["dashboard", "checks", "chart", "profile"] as const;
+const HOURS_SECTIONS = ["dashboard", "checks", "chart", "profile", "certs", "review"] as const;
 const KEEP_TIP = new Set(["nurseRule", "functionalTransition"]);
 
 /** Swap the word TIP for another unit; "akad. st." already ends a sentence, so "100 TIP." becomes "100 akad. st." */

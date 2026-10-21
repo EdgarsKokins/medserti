@@ -1,5 +1,6 @@
-import type { CmeCertificate, Profile } from "./types";
+import type { CmeCertificate, NurseTopic, Profile } from "./types";
 import { findSpecialty, specialtyByCode } from "./specialties";
+import { nurseTopicOf } from "./nurse";
 
 /**
  * Recertification rules from Cabinet Regulation No. 391 "Ārstniecības personu sertifikācijas kārtība"
@@ -33,12 +34,20 @@ export const RULES = {
 export const NURSE_RULES = {
   sourceUrl: "https://likumi.lv/ta/id/355331",
   points: 100,
+  /** point 33: "Pārreģistrācijas termiņš reģistrā ir pieci gadi" */
+  validityYears: 5,
   /**
-   * point 26.3, in force from 01 Jan 2027: "neatliekamās medicīniskās palīdzības sniegšanā (8 akadēmisko stundu apjomā)".
-   * Before that, point 25 asks for emergency care training with no minimum.
+   * point 26.3, in force from 01 Jan 2027 (point 64): "neatliekamās medicīniskās palīdzības sniegšanā (8 akadēmisko stundu
+   * apjomā), infekciju kontrolē (4 akadēmisko stundu apjomā) un pacientu drošībā (8 akadēmisko stundu apjomā), kā arī vismaz
+   * 50 akadēmisko stundu apjomā no māsas (vispārējās aprūpes māsas) kompetences tēmām". Before that, point 25 asks for
+   * emergency care training with no minimum. Applies when the registration ends on or after this date.
    */
   emergencyFrom: "2027-01-01",
   emergencyMinHours: 8,
+  infectionControlMinHours: 4,
+  patientSafetyMinHours: 8,
+  /** "kā arī" = in addition: hours of the three topics above do not also count here */
+  nursingMinHours: 50,
 } as const;
 
 type RuleInput = Pick<Profile, "profession" | "certificationKind" | "certificateExpires"> &
@@ -85,13 +94,16 @@ export function addYears(isoDate: string, years: number): string {
 }
 
 export function certificateWindow(p: Profile): { start: string | null; end: string | null } {
+  // nurses enter only the date their registration runs to; the term behind it is 5 years (Reg. 630 point 33)
+  if (p.profession === "nurse" && p.certificateExpires)
+    return { start: addYears(p.certificateExpires, -NURSE_RULES.validityYears), end: p.certificateExpires };
   const start = p.certificateIssued;
   const end = p.certificateExpires ?? (start ? addYears(start, RULES.validityYears) : null);
   return { start, end };
 }
 
 export interface Check {
-  id: "total" | "specialty" | "emergency_points" | "emergency_practical";
+  id: "total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing";
   have: number;
   need: number;
   met: boolean;
@@ -112,6 +124,8 @@ export interface Progress {
   emergencyPracticalHours: number;
   practicalRaw: number;
   practicalCounted: number;
+  /** nurses: hours per Reg. 630 point 26.3 topic; zeros for everyone else */
+  topicHours: Record<NurseTopic, number>;
   remaining: number;
   /** whole days until windowEnd, null if unknown */
   daysLeft: number | null;
@@ -154,14 +168,21 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
   let specialty = 0;
   let emergencyPoints = 0;
   let emergencyPracticalHours = 0;
+  const topicHours: Record<NurseTopic, number> = { emergency: 0, infection_control: 0, patient_safety: 0, nursing: 0, other: 0 };
   for (const c of counted) {
     const pts = (c.points ?? 0) * (c.category === "practical_training" ? practicalScale : 1);
     if (c.inSpecialty) specialty += pts;
+    if (nurse) {
+      // one topic per certificate, so an hour never counts toward two point 26.3 minimums
+      topicHours[nurseTopicOf(c)] += pts;
+      continue;
+    }
     if (c.emergencyCare) {
       emergencyPoints += pts;
       emergencyPracticalHours += c.practicalHours ?? 0;
     }
   }
+  if (nurse) emergencyPoints = topicHours.emergency;
   const total = round1(nonPractical + practicalCounted);
   const remaining = Math.max(0, round1(required - total));
 
@@ -175,10 +196,14 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
 
   const specialtyNeed = Math.ceil(required * RULES.specialtyShare);
   // the 60% share and the practical hours come from Reg. 391 point 51; Reg. 630 asks nurses for neither,
-  // and sets a number for emergency care only for re-registration from 01 Jan 2027
-  const nurseEmergency = nurse && !!end && end >= NURSE_RULES.emergencyFrom;
-  const skips: Check["id"][] = nurse ? ["specialty", "emergency_practical", ...(nurseEmergency ? [] : ["emergency_points" as const])] : [];
+  // and sets topic minimums only for re-registration from 01 Jan 2027 (point 26.3)
+  const nurse2027 = nurse && !!end && end >= NURSE_RULES.emergencyFrom;
+  const nurseTopics: Check["id"][] = ["emergency_points", "infection_control", "patient_safety", "nursing"];
+  const skips: Check["id"][] = nurse
+    ? ["specialty", "emergency_practical", ...(nurse2027 ? [] : nurseTopics)]
+    : ["infection_control", "patient_safety", "nursing"];
   const emergencyNeed = nurse ? NURSE_RULES.emergencyMinHours : RULES.emergencyMinPoints;
+  const hoursCheck = (id: Check["id"], have: number, need: number): Check => ({ id, have: round1(have), need, met: have >= need });
   const checks: Check[] = [
     { id: "total" as const, have: total, need: required, met: total >= required },
     {
@@ -199,6 +224,9 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
       need: RULES.emergencyMinPracticalHours,
       met: emergencyPracticalHours >= RULES.emergencyMinPracticalHours,
     },
+    hoursCheck("infection_control", topicHours.infection_control, NURSE_RULES.infectionControlMinHours),
+    hoursCheck("patient_safety", topicHours.patient_safety, NURSE_RULES.patientSafetyMinHours),
+    hoursCheck("nursing", topicHours.nursing, NURSE_RULES.nursingMinHours),
   ].filter((c) => !skips.includes(c.id));
 
   return {
@@ -213,6 +241,7 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
     emergencyPracticalHours: round1(emergencyPracticalHours),
     practicalRaw: round1(practicalRaw),
     practicalCounted: round1(practicalCounted),
+    topicHours: Object.fromEntries(Object.entries(topicHours).map(([k, v]) => [k, round1(v)])) as Record<NurseTopic, number>,
     remaining,
     daysLeft,
     perMonthNeeded,
