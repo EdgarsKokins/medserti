@@ -51,17 +51,52 @@ export function autoConfirmBlocks(x: AutoConfirmInput): AutoConfirmBlock[] {
   if (!f.title || !f.organizer || !f.date || f.points == null) out.push("missing");
   if (KEY_FIELDS.some((k) => (f.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) out.push("unsure");
   if (x.pointsKind !== "printed") out.push("pointsNotPrinted");
-  if (f.date) {
-    if (f.date > x.today) out.push("future");
-    const { start, end } = x.window;
-    const earliest = start ?? `${Number(x.today.slice(0, 4)) - PLAUSIBLE_YEARS}${x.today.slice(4)}`;
-    if (f.date < earliest || (end && f.date > end)) out.push("outsideWindow");
-  }
-  const same = x.existing.some(
-    (c) =>
-      (x.fileHash && c.fileHash === x.fileHash) ||
-      (c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
-  );
-  if (same) out.push("duplicate");
+  out.push(...dateBlocks(f.date, x.window, x.today));
+  if (findDuplicate(x.existing, f, x.fileHash)) out.push("duplicate");
   return out;
+}
+
+/** A date in the future, or outside the certificate window (the last PLAUSIBLE_YEARS years when none is set) */
+function dateBlocks(date: string | null, window: { start: string | null; end: string | null }, today: string): AutoConfirmBlock[] {
+  if (!date) return [];
+  const out: AutoConfirmBlock[] = [];
+  if (date > today) out.push("future");
+  const earliest = window.start ?? `${Number(today.slice(0, 4)) - PLAUSIBLE_YEARS}${today.slice(4)}`;
+  if (date < earliest || (window.end && date > window.end)) out.push("outsideWindow");
+  return out;
+}
+
+/**
+ * The earlier certificate this upload repeats, or null: the identical file,
+ * or the same date, title and organizer (the same certificate scanned twice).
+ */
+export function findDuplicate(
+  existing: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
+  f: Pick<CmeCertificate, "title" | "organizer" | "date">,
+  fileHash: string | null,
+): string | null {
+  const hit = existing.find(
+    (c) =>
+      (fileHash && c.fileHash === fileHash) ||
+      (!!f.date && !!f.title && c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
+  );
+  return hit?.id ?? null;
+}
+
+/**
+ * The "Apstiprināt" button in a certificate row: the user confirms without opening the review panel.
+ * Only when date and points are read and neither is marked unsure (the same isUnsure the review panel uses),
+ * and never for a duplicate (a repeat of a certificate that is still there), a future date or a date outside the cycle.
+ * Shared by the row and the server.
+ */
+export function rowConfirmEligible(
+  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash" | "duplicateOf">,
+  all: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
+  window: { start: string | null; end: string | null },
+  today: string,
+): boolean {
+  if (cert.status !== "needs_review" || !cert.date || cert.points == null) return false;
+  if (isUnsure(cert, "date") || isUnsure(cert, "points")) return false;
+  if (dateBlocks(cert.date, window, today).length) return false;
+  return !(cert.duplicateOf && all.some((o) => o.id === cert.duplicateOf));
 }

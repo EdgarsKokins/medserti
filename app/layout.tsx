@@ -11,8 +11,6 @@ import I18nOverrides from "@/components/I18nOverrides";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
 import { RULES } from "@/lib/rules";
-import { THEME_COOKIE, type Theme } from "@/lib/theme";
-import { cookies } from "next/headers";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
 // Public Sans for text and controls: built for government services, open and plain numerals for 60+ readers
@@ -46,13 +44,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // already loaded by getLocale(); passed down once so client components get the same texts
   const overrides = await loadRuntimeOverrides();
   const d = t(locale);
-  const saved = (await cookies()).get(THEME_COOKIE)?.value;
-  const theme: Theme = saved === "light" || saved === "dark" ? saved : "system";
   return (
     <html
       lang={locale}
       className={`${body.variable} ${display.variable}`}
-      data-theme={theme === "system" ? undefined : theme}
+      data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -97,9 +93,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           )}
           {children}
           <AppFooter
-            theme={theme}
             locale={locale}
-            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: RULES.sourceUrl, theme: d.theme, lang: d.lang.label }}
+            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: RULES.sourceUrl, lang: d.lang.label }}
           />
         </I18nOverrides>
       </body>

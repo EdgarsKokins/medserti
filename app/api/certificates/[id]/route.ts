@@ -84,6 +84,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     fieldConfidence: null,
     // the user saved it themselves now
     autoConfirmed: false,
+    // confirming a flagged duplicate means the user says it is a different certificate
+    duplicateOf: status === "confirmed" ? null : (cert.duplicateOf ?? null),
     status,
   };
   await saveCertificate(updated);

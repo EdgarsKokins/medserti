@@ -22,9 +22,9 @@ export function formatDate(iso: string, locale: Locale): string {
   return locale === "lv" ? `${d}.${mo}.${y}.` : `${d} ${MONTHS_EN[Number(mo) - 1] ?? mo} ${y}`;
 }
 
-/** LV uses a decimal comma, EN a decimal point */
-export function formatNumber(n: number, locale: Locale, maxDigits = 2): string {
-  return new Intl.NumberFormat(locale === "lv" ? "lv-LV" : "en-GB", { maximumFractionDigits: maxDigits }).format(n);
+/** Decimal point in both languages (1.3 TIP), no thousands separator; locale kept for call sites */
+export function formatNumber(n: number, _locale: Locale, maxDigits = 2): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxDigits, useGrouping: false }).format(n);
 }
 
 /** English: 1 day / 2 days */
@@ -49,7 +49,6 @@ const en = {
     tagline: "Your CME points (TIP) and recertification in one place",
   },
   lang: { label: "Language" },
-  theme: { label: "Theme", system: "Match system", light: "Light", dark: "Dark" },
   common: { loading: "Loading...", home: "Go to the start page", retry: "Try again" },
   notFound: { title: "Page not found", body: "This page doesn't exist or has moved." },
   error: { title: "Something went wrong", body: "This page could not be loaded. Please try again in a moment." },
@@ -260,9 +259,9 @@ const en = {
     ],
   },
   landing: {
-    metaTitle: "Medserti: CME points and recertification in one place",
+    metaTitle: "Medserti: CME and recertification for doctors in one place",
     metaDescription:
-      "A free tool for doctors and medical practitioners in Latvia. Upload your CME certificates, see how many TIP points you still need for recertification and by when, and find approved courses.",
+      "A free tool for doctors in Latvia. Upload your CME certificates, see how many TIP points you still need for recertification and by when, and find approved courses.",
     ogLocale: "en_GB",
     eyebrow: "For medical practitioners in Latvia",
     title: "All your CME points in one place. Recertification without surprises.",
@@ -424,6 +423,11 @@ const en = {
     colStatus: "Status",
     noDate: "No date",
     file: "File",
+    rowConfirm: "Confirm",
+    rowUndo: "Undo",
+    rowConfirmed: (name: string) => `Confirmed: ${name}`,
+    rowUndone: (name: string) => `Back to review: ${name}`,
+    rowConfirmError: "Could not confirm. Open it with Review instead.",
     filePreviewAlt: (name: string) => `First page of ${name}`,
     filePageAlt: (n: number, of: number) => `Page ${n} of ${of}`,
     fileLoading: "Loading the file...",
@@ -478,6 +482,8 @@ const en = {
     countryNone: "Not set",
     checkField: "check",
     autoConfirmed: "Confirmed automatically",
+    duplicate: "Duplicate",
+    duplicateNote: "You already uploaded this certificate, so it is not counted twice. Delete it, or confirm it if it is a different one.",
     fInSpecialty: (specialty: string) => `In my specialty${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Emergency care training",
     fPractical: "Practical hours",
@@ -615,6 +621,7 @@ const en = {
     notSignedIn: "Not signed in",
     notFound: "Not found",
     invalidInput: "Invalid input",
+    notConfirmable: "This certificate cannot be confirmed in one click. Open it and check it.",
     enterEmailPassword: "Enter email and password",
     passwordRequired: "Enter your password",
     wrongCredentials: "Wrong email or password",
@@ -779,7 +786,6 @@ const lv: Dict = {
     tagline: "Jūsu tālākizglītības punkti un resertifikācija vienuviet",
   },
   lang: { label: "Valoda" },
-  theme: { label: "Krāsu režīms", system: "Kā sistēmā", light: "Gaišs", dark: "Tumšs" },
   common: { loading: "Ielādē...", home: "Uz sākumlapu", retry: "Mēģināt vēlreiz" },
   notFound: { title: "Lapa nav atrasta", body: "Šādas lapas nav vai tā ir pārvietota." },
   error: { title: "Radās kļūda", body: "Lapu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža." },
@@ -845,7 +851,7 @@ const lv: Dict = {
   },
   landingA: {
     heroTitle: "Piecu gadu sertifikāti, izkaisīti pa visām vietām.",
-    heroSub: "Daļa e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP punktu vēl trūkst.",
+    heroSub: "Daļa e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP vēl trūkst.",
     start: "Sākt bez maksas",
     seeHow: "Kā Medserti palīdz",
     how: "Kā tas strādā",
@@ -979,7 +985,7 @@ const lv: Dict = {
     storyTitle: "Kā tas sākās",
     story: [
       "Medserti izveidoja divi brāļi, Matīss un Edgars Kokini. Mūsu mamma ir ārste, un ģimenē ir daudz mediķu, tāpēc no tuvienes esam redzējuši, cik daudz ārstniecības personu laika aiziet papīru darbiem, nevis pacientiem.",
-      "Sertifikātu krāšana, TIP punktu skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nevienu neizārstē. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no jūsu pleciem un jūs varētu veltīt laiku tam, kas ir patiešām svarīgs: saviem pacientiem.",
+      "Sertifikātu krāšana, TIP skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nevienu neizārstē. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no jūsu pleciem un jūs varētu veltīt laiku tam, kas ir patiešām svarīgs: saviem pacientiem.",
     ],
     photoPending: "Foto drīzumā",
     people: [
@@ -996,13 +1002,13 @@ const lv: Dict = {
     ],
   },
   landing: {
-    metaTitle: "Medserti: TIP punkti un resertifikācija vienuviet",
+    metaTitle: "Medserti: TIP un resertifikācija ārstiem vienuviet",
     metaDescription:
-      "Bezmaksas rīks ārstiem un ārstniecības personām Latvijā. Augšupielādējiet tālākizglītības sertifikātus, redziet, cik TIP vēl jāsavāc līdz resertifikācijai un līdz kuram datumam, un atrodiet apstiprinātus kursus.",
+      "Bezmaksas rīks ārstiem Latvijā. Augšupielādējiet tālākizglītības sertifikātus, redziet, cik TIP vēl jāsavāc līdz resertifikācijai un līdz kuram datumam, un atrodiet LĀB apstiprinātus kursus.",
     ogLocale: "lv_LV",
     eyebrow: "Ārstniecības personām Latvijā",
-    title: "Visi jūsu TIP punkti vienuviet. Resertifikācija bez pārsteigumiem.",
-    lead: "Augšupielādējiet tālākizglītības sertifikātus. Medserti saskaita TIP punktus pēc MK noteikumiem Nr. 391 un parāda, cik vēl jāsavāc un līdz kuram datumam.",
+    title: "Visi jūsu TIP vienuviet. Resertifikācija bez pārsteigumiem.",
+    lead: "Augšupielādējiet tālākizglītības sertifikātus. Medserti saskaita TIP pēc MK noteikumiem Nr. 391 un parāda, cik vēl jāsavāc un līdz kuram datumam.",
     start: "Sākt bez maksas",
     login: "Pieslēgties",
     freeNote: "Bez maksas pilotprojekta laikā. Maksājumu karte nav vajadzīga.",
@@ -1013,7 +1019,7 @@ const lv: Dict = {
     stepsTitle: "Kā tas strādā",
     steps: [
       { title: "Augšupielādējiet sertifikātu", body: "PDF failu vai fotoattēlu no telefona. Var augšupielādēt vairākus uzreiz." },
-      { title: "Pārbaudiet nolasīto", body: "Mēs nolasām datumu, TIP punktus un kategoriju. Jūs salīdzināt ar failu, vajadzības gadījumā izlabojat un apstiprināt." },
+      { title: "Pārbaudiet nolasīto", body: "Mēs nolasām datumu, TIP un kategoriju. Jūs salīdzināt ar failu, vajadzības gadījumā izlabojat un apstiprināt." },
       { title: "Redziet, kas vēl trūkst", body: "Pārskatā redzams, cik TIP vēl jāsavāc, kuras prasības vēl nav izpildītas, un piemēroti apstiprināti kursi." },
     ],
     rulesTitle: "Ko mēs pārbaudām",
@@ -1161,6 +1167,11 @@ const lv: Dict = {
     colStatus: "Statuss",
     noDate: "Nav datuma",
     file: "Fails",
+    rowConfirm: "Apstiprināt",
+    rowUndo: "Atsaukt",
+    rowConfirmed: (name: string) => `Apstiprināts: ${name}`,
+    rowUndone: (name: string) => `Atsaukts, atkal jāpārbauda: ${name}`,
+    rowConfirmError: "Neizdevās apstiprināt. Atveriet to ar „Pārbaudīt”.",
     filePreviewAlt: (name: string) => `${name}: pirmā lapa`,
     filePageAlt: (n: number, of: number) => `${n}. lapa no ${of}`,
     fileLoading: "Ielādē failu...",
@@ -1215,6 +1226,8 @@ const lv: Dict = {
     countryNone: "Nav norādīta",
     checkField: "pārbaudiet",
     autoConfirmed: "Apstiprināts automātiski",
+    duplicate: "Dublikāts",
+    duplicateNote: "Šis sertifikāts jau ir augšupielādēts, tāpēc to neskaitām divreiz. Dzēsiet to vai apstipriniet, ja tas tomēr ir cits.",
     fInSpecialty: (specialty: string) => `Manā specialitātē${specialty ? ` (${specialty})` : ""}`,
     fEmergency: "Neatliekamās medicīniskās palīdzības apmācība",
     fPractical: "Praktiskās stundas",
@@ -1325,7 +1338,7 @@ const lv: Dict = {
     collected: (pct: number) => `savākti ${pct}%`,
     timeElapsed: (pct: number) => `pagājuši ${pct}% perioda`,
     today: "Šodien",
-    daysLeftShort: (n: number) => `${n} ${lvPl(n, "diena atlikusi", "dienas atlikušas")}`,
+    daysLeftShort: (n: number) => `${lvPl(n, "atlikusi", "atlikušas")} ${n} ${lvPl(n, "diena", "dienas")}`,
     paceShort: (n: string) => `≈ ${n} TIP mēnesī, lai paspētu`,
     validUntilShort: (date: string) => `sertifikāts derīgs līdz ${date}`,
     registrationUntilShort: (date: string) => `reģistrācija derīga līdz ${date}`,
@@ -1354,6 +1367,7 @@ const lv: Dict = {
     notSignedIn: "Nepieciešams pieslēgties",
     notFound: "Nav atrasts",
     invalidInput: "Nederīgi dati",
+    notConfirmable: "Šo sertifikātu nevar apstiprināt ar vienu klikšķi. Atveriet un pārbaudiet to.",
     enterEmailPassword: "Ievadiet e-pastu un paroli",
     passwordRequired: "Ievadiet paroli",
     wrongCredentials: "Nepareizs e-pasts vai parole",

@@ -2,21 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
 import type { Locale } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/site";
-import type { Theme } from "@/lib/theme";
 
-/** Small footer on every page except the landing page, which has its own. The language and theme switches live here, out of the way. */
+/** Small footer on every page except the landing page, which has its own. The language switch lives here, out of the way. */
 export default function AppFooter({
-  theme,
   locale,
   labels,
 }: {
-  theme: Theme;
   locale: Locale;
-  labels: { nav: string; about: string; rules: string; privacy: string; terms: string; rulesUrl: string; theme: Record<Theme | "label", string>; lang: string };
+  labels: { nav: string; about: string; rules: string; privacy: string; terms: string; rulesUrl: string; lang: string };
 }) {
   if (usePathname() === "/") return null;
   return (
@@ -31,7 +27,6 @@ export default function AppFooter({
         </nav>
         <div className="app-footer-tools">
           <LangSwitch locale={locale} label={labels.lang} />
-          <ThemeSwitch initial={theme} labels={labels.theme} />
         </div>
       </div>
     </footer>
