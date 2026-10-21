@@ -41,7 +41,7 @@ export interface Profile {
   requiredPointsOverride: number | null;
 }
 
-/** Annex 4 of Cabinet Regulation No. 391 grouped into the buckets that matter for counting */
+/** Annex 4 of Cabinet Regulation No. 391 (No. 487 version, 18 Aug 2026) grouped into the buckets that matter for counting */
 export type CmeCategory =
   | "professional_meeting" // Annex 4 item 1
   | "training_latvia" // item 2, 5, 6, 8
@@ -49,9 +49,9 @@ export type CmeCategory =
   | "interdisciplinary_conference" // item 4, 4.1
   | "e_learning" // item 7, 9
   | "practical_training" // item 10, capped at 16%
-  | "lecture_or_publication" // items 22-26
-  | "degree" // items 11-12
-  | "other";
+  | "lecture_or_publication" // items 22-27
+  | "degree" // items 11-13
+  | "other"; // items 14-21, 28-30
 
 export type CertStatus = "parsing" | "needs_review" | "confirmed" | "failed";
 

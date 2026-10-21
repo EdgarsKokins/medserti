@@ -316,7 +316,7 @@ const en = {
       },
       {
         q: "Which professions is it for?",
-        a: "Doctors, dentists and functional specialists (250 TIP), and physician assistants, nurses, midwives and other medical practitioners (150 TIP). For a treatment or diagnostic method certificate the requirement is 100 TIP.",
+        a: "Doctors, dentists and functional specialists (250 TIP), and physician assistants, midwives and other medical practitioners (150 TIP). For a treatment or diagnostic method certificate the requirement is 100 TIP. Nurses need no certificate: they re-register with the Health Inspectorate on 100 academic hours.",
       },
       {
         q: "What if a certificate is read wrongly?",
@@ -366,6 +366,7 @@ const en = {
   rules: {
     label: "Rules",
     source: "Cabinet Regulation No. 391 (18 Jun 2024) as amended by No. 703 (25 Nov 2025) and No. 487 (18 Aug 2026), points 6 and 51, Annex 4",
+    sourceNurse: "Cabinet Regulation No. 630 (01 Oct 2024), points 20, 25 and 26.3, Annex 6",
     validFor: (years: number) => `Every certificate, including a method certificate, is valid for ${years} years (point 6).`,
     checkDatesIn: "You can check your certificate dates in the",
     checkOfficialIn: "Check your official certificate dates in the",
@@ -381,6 +382,7 @@ const en = {
     specialty: "Specialty",
     specialtyPlaceholder: "Start typing or pick from the list",
     specialtyHint: "As on your certificate.",
+    specialtyHintNurse: "As on your diploma.",
     specialtyOther: "Other (not on the list)",
     specialtyOtherLabel: "Your specialty",
     specialtyOtherRequired: "Enter your specialty or choose one from the list",
@@ -396,6 +398,7 @@ const en = {
     customEnd: "Different end date",
     useRuleEnd: (date: string) => `Use 5 years (${date})`,
     required: "TIP required",
+    requiredNurse: "Academic hours required",
     requiredPlaceholder: (n: number) => `${n} (by rule)`,
     requiredHint: (n: number) => `Leave empty to use the rule: ${n} TIP.`,
     overrideNote: (mine: number, rule: number) => `You entered ${mine} TIP; the rules require ${rule} TIP.`,
@@ -408,6 +411,12 @@ const en = {
     sectionYouNote: "Your profession sets how many points you need.",
     sectionCert: "Certificate",
     sectionCertNote: "The dates set the window your points count toward.",
+    sectionRegistration: "Registration",
+    sectionRegistrationNote: "Nurses need no certificate. They re-register with the Health Inspectorate every 5 years.",
+    issuedRegistration: "Registration valid from",
+    regNo: "Register ID (optional)",
+    nurseRule: "Re-registration needs 100 academic hours, 1 hour = 1 TIP (Cabinet Regulation No. 630, point 25).",
+    functionalTransition: "Transition rule: until 01 Jan 2028, 150 TIP is enough (Regulation No. 391, point 86).",
     summary: (n: number, date: string | null) =>
       date ? `Collect ${n} TIP by ${date}.` : `Collect ${n} TIP.`,
     summaryNoDate: "Add the valid-from date to see your deadline.",
@@ -600,6 +609,9 @@ const en = {
     daysLeftShort: (n: number) => `${n} ${enPl(n, "day", "days")} left`,
     paceShort: (n: string) => `≈ ${n} TIP a month to finish on time`,
     validUntilShort: (date: string) => `certificate valid until ${date}`,
+    hoursUnit: "acad. h",
+    nurseExtra: "Also needed: 4 acad. h infection control, 8 acad. h patient safety and 50 acad. h of nurse competence topics (Regulation No. 630, point 26.3). Medserti does not count these yet.",
+    registrationUntilShort: (date: string) => `registration valid until ${date}`,
     recording: "On demand",
     allMetMsg: "All requirements met. You can apply for recertification.",
     lateMsg: (n: string) => `Less than 6 months left and ${n} TIP still to collect.`,
@@ -1052,7 +1064,7 @@ const lv: Dict = {
       },
       {
         q: "Kurām profesijām tas der?",
-        a: "Ārstiem, zobārstiem un funkcionālajiem speciālistiem (250 TIP), kā arī ārsta palīgiem, māsām, vecmātēm un citām ārstniecības personām (150 TIP). Ārstniecības vai diagnostikas metodes sertifikātam prasība ir 100 TIP.",
+        a: "Ārstiem, zobārstiem un funkcionālajiem speciālistiem (250 TIP), kā arī ārsta palīgiem, vecmātēm un citām ārstniecības personām (150 TIP). Ārstniecības vai diagnostikas metodes sertifikātam prasība ir 100 TIP. Māsām sertifikāts nav vajadzīgs: tās pārreģistrējas Veselības inspekcijā ar 100 akadēmiskajām stundām.",
       },
       {
         q: "Ko darīt, ja sertifikāts nolasīts nepareizi?",
@@ -1103,6 +1115,7 @@ const lv: Dict = {
     label: "Noteikumi",
     source:
       "Ministru kabineta 2024. gada 18. jūnija noteikumi Nr. 391 ar grozījumiem (MK noteikumi Nr. 703, 25.11.2025, un Nr. 487, 18.08.2026), 6. un 51. punkts, 4. pielikums",
+    sourceNurse: "Ministru kabineta 2024. gada 1. oktobra noteikumi Nr. 630, 20., 25. un 26.3. punkts, 6. pielikums",
     validFor: (years: number) => `Katrs sertifikāts, arī metodes, ir derīgs ${years} gadus (6. punkts).`,
     checkDatesIn: "Sertifikāta datumus varat pārbaudīt",
     checkOfficialIn: "Oficiālos sertifikāta datumus pārbaudiet",
@@ -1118,6 +1131,7 @@ const lv: Dict = {
     specialty: "Specialitāte",
     specialtyPlaceholder: "Sāciet rakstīt vai izvēlieties",
     specialtyHint: "Kā norādīts sertifikātā.",
+    specialtyHintNurse: "Kā norādīts diplomā.",
     specialtyOther: "Cita (nav sarakstā)",
     specialtyOtherLabel: "Jūsu specialitāte",
     specialtyOtherRequired: "Ierakstiet specialitāti vai izvēlieties to no saraksta",
@@ -1133,6 +1147,7 @@ const lv: Dict = {
     customEnd: "Cits derīguma termiņš",
     useRuleEnd: (date: string) => `Atjaunot 5 gadus (${date})`,
     required: "Nepieciešamie TIP",
+    requiredNurse: "Nepieciešamās akadēmiskās stundas",
     requiredPlaceholder: (n: number) => `${n} (pēc noteikumiem)`,
     requiredHint: (n: number) => `Atstājiet tukšu, lai izmantotu noteikumos paredzētos ${n} TIP.`,
     overrideNote: (mine: number, rule: number) => `Jūs norādījāt ${mine} TIP; noteikumi paredz ${rule} TIP.`,
@@ -1145,6 +1160,12 @@ const lv: Dict = {
     sectionYouNote: "Profesija nosaka, cik TIP jāsavāc.",
     sectionCert: "Sertifikāts",
     sectionCertNote: "Datumi nosaka periodu, kurā tiek skaitīti punkti.",
+    sectionRegistration: "Reģistrācija",
+    sectionRegistrationNote: "Māsām sertifikāts nav vajadzīgs. Ik pēc 5 gadiem jāpārreģistrējas Veselības inspekcijā.",
+    issuedRegistration: "Reģistrācija derīga no",
+    regNo: "Identifikators reģistrā (nav obligāts)",
+    nurseRule: "Pārreģistrācijai vajag 100 akadēmiskās stundas, 1 stunda = 1 TIP (MK noteikumi Nr. 630, 25. punkts).",
+    functionalTransition: "Pārejas noteikums: līdz 01.01.2028. pietiek ar 150 TIP (MK noteikumi Nr. 391, 86. punkts).",
     // LV dates already end with a dot ("14.03.2028.")
     summary: (n: number, date: string | null) => (date ? `Jāsavāc ${n} TIP līdz ${date}` : `Jāsavāc ${n} TIP.`),
     summaryNoDate: "Norādiet, no kura datuma sertifikāts derīgs, lai redzētu termiņu.",
@@ -1339,6 +1360,9 @@ const lv: Dict = {
     daysLeftShort: (n: number) => `${lvPl(n, "atlikusi", "atlikušas")} ${n} ${lvPl(n, "diena", "dienas")}`,
     paceShort: (n: string) => `≈ ${n} TIP mēnesī, lai paspētu`,
     validUntilShort: (date: string) => `sertifikāts derīgs līdz ${date}`,
+    hoursUnit: "akad. st.",
+    nurseExtra: "Vajag arī: 4 akad. st. infekciju kontrolē, 8 akad. st. pacientu drošībā un 50 akad. st. māsas kompetences tēmās (MK noteikumi Nr. 630, 26.3. punkts). Tās Medserti vēl neskaita.",
+    registrationUntilShort: (date: string) => `reģistrācija derīga līdz ${date}`,
     recording: "Ieraksts",
     allMetMsg: "Visas prasības izpildītas. Varat pieteikties resertifikācijai.",
     lateMsg: (n: string) => `Līdz termiņa beigām mazāk nekā 6 mēneši, un vēl jāsavāc ${n} TIP.`,
@@ -2259,6 +2283,34 @@ export const t = (locale: Locale): Dict => {
   const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
   return overlay("", l, DICTS[l]);
 };
+
+// sections that show a progress unit; texts that explain the conversion keep the word TIP
+const HOURS_SECTIONS = ["dashboard", "checks", "chart", "profile"] as const;
+const KEEP_TIP = new Set(["nurseRule", "functionalTransition"]);
+
+/** Swap the word TIP for another unit; "akad. st." already ends a sentence, so "100 TIP." becomes "100 akad. st." */
+export const swapUnit = (text: string, unit: string) =>
+  text.replace(/\bTIP\b(\.?)/g, (_, dot: string) => (unit.endsWith(".") ? unit : unit + dot));
+
+/**
+ * Nurses count academic hours, not TIP (Cabinet Regulation No. 630 Annex 6: "Viena akadēmiskā stunda, kuras ilgums ir
+ * 45 minūtes, atbilst vienam tālākizglītības punktam"). Same numbers, so this only swaps the unit word in progress texts.
+ */
+export function inHours(d: Dict): Dict {
+  const unit = d.dashboard.hoursUnit;
+  const swap = (v: string) => swapUnit(v, unit);
+  const map = (v: unknown, key = ""): unknown => {
+    if (KEEP_TIP.has(key)) return v;
+    if (typeof v === "string") return swap(v);
+    if (typeof v === "function") return (...a: unknown[]) => swap(String(v(...a)));
+    if (Array.isArray(v)) return v.map((x) => map(x));
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, map(x, k)]));
+    return v;
+  };
+  const out = { ...d };
+  for (const s of HOURS_SECTIONS) (out as Record<string, unknown>)[s] = map(d[s]);
+  return out;
+}
 
 /** The dictionary as written in code, without overrides (for /admin) */
 export const baseDict = (locale: Locale): Dict => DICTS[locale];

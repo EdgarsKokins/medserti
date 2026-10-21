@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { getLocale } from "@/lib/i18n/server";
+import { t } from "@/lib/i18n";
 import { listCertificates } from "@/lib/db";
 import { computeProgress } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
@@ -57,6 +58,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       sources={idx.sources}
       specialty={specialty}
       remaining={progress.remaining}
+      hoursUnit={user.profile.profession === "nurse" ? t(locale).dashboard.hoursUnit : null}
       openId={typeof open === "string" ? open : null}
     />
   );

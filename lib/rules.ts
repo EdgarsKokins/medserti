@@ -1,8 +1,11 @@
 import type { CmeCertificate, Profile } from "./types";
+import { findSpecialty, specialtyByCode } from "./specialties";
 
 /**
  * Recertification rules from Cabinet Regulation No. 391 "Ārstniecības personu sertifikācijas kārtība"
- * (18 June 2024, consolidated text as of 01 May 2026, likumi.lv/ta/id/352922).
+ * (18 June 2024, consolidated text as of 21 Aug 2026 with amendments No. 703 and No. 487, likumi.lv/ta/id/352922).
+ * Annex 4 is the No. 487 version (18 Aug 2026). It dropped the old caps on items 5-6 (20%) and 19-21 (60%),
+ * which this app never applied, and added items 4.1 (12 TIP) and 30 (10 TIP per opinion).
  */
 export const RULES = {
   sourceUrl: "https://likumi.lv/ta/id/352922",
@@ -15,14 +18,55 @@ export const RULES = {
   /** point 51: at least 8 TIP from emergency medical care training, incl. at least 4 practical hours */
   emergencyMinPoints: 8,
   emergencyMinPracticalHours: 4,
-  /** Annex 4 footnote 4 (marked on item 10, practical training): max 16% of required points */
+  /** Annex 4 footnote 3, item 10 (practical training): "nedrīkst pārsniegt 16 % no resertifikācijai specialitātē nepieciešamā tālākizglītības punktu skaita" */
   practicalCapShare: 0.16,
+  /** point 86: functional specialists except physiotherapists may recertify on 150 TIP until this date */
+  functionalTransitionUntil: "2028-01-01",
+  functionalTransitionPoints: 150,
 } as const;
+
+/**
+ * Nurses are not certified (Medical Treatment Law Section 26(2)). They re-register with the Health Inspectorate
+ * every 5 years on at least 100 academic hours, 1 hour = 1 TIP (Cabinet Regulation No. 630, points 20, 25, 26.3, Annex 6;
+ * likumi.lv/ta/id/355331).
+ */
+export const NURSE_RULES = {
+  sourceUrl: "https://likumi.lv/ta/id/355331",
+  points: 100,
+  /**
+   * point 26.3, in force from 01 Jan 2027: "neatliekamās medicīniskās palīdzības sniegšanā (8 akadēmisko stundu apjomā)".
+   * Before that, point 25 asks for emergency care training with no minimum.
+   */
+  emergencyFrom: "2027-01-01",
+  emergencyMinHours: 8,
+} as const;
+
+type RuleInput = Pick<Profile, "profession" | "certificationKind" | "certificateExpires"> &
+  Partial<Pick<Profile, "specialty" | "specialtyCode">>;
+
+export type RuleBasis = "nurse" | "functionalTransition";
+
+/** Why the rule target differs from point 51, if it does */
+export function ruleBasis(p: RuleInput): RuleBasis | null {
+  if (p.profession === "nurse") return "nurse";
+  if (
+    p.profession === "functional_specialist" &&
+    p.certificationKind === "specialty" &&
+    !!p.certificateExpires &&
+    p.certificateExpires < RULES.functionalTransitionUntil &&
+    (specialtyByCode(p.specialtyCode) ?? findSpecialty(p.specialty))?.code !== "fs-physio"
+  )
+    return "functionalTransition";
+  return null;
+}
 
 export const REGISTER_URL = "https://registri.vi.gov.lv/";
 
 /** Points the rules require for this profile, ignoring any manual override */
-export function ruleRequiredPoints(p: Pick<Profile, "profession" | "certificationKind">): number {
+export function ruleRequiredPoints(p: RuleInput): number {
+  const basis = ruleBasis(p);
+  if (basis === "nurse") return NURSE_RULES.points;
+  if (basis === "functionalTransition") return RULES.functionalTransitionPoints;
   if (p.certificationKind === "method") return RULES.points.method;
   if (p.profession === "doctor" || p.profession === "dentist" || p.profession === "functional_specialist")
     return RULES.points.doctorTier;
@@ -94,7 +138,9 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
     (usable && inWindow ? counted : excluded).push(c);
   }
 
-  const practicalCap = required * RULES.practicalCapShare;
+  const nurse = profile.profession === "nurse";
+  // the 16% cap is Reg. 391 Annex 4; Reg. 630 Annex 6 has no cap on practical training
+  const practicalCap = nurse ? Infinity : required * RULES.practicalCapShare;
   let practicalRaw = 0;
   let nonPractical = 0;
   for (const c of counted) {
@@ -128,27 +174,32 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
   }
 
   const specialtyNeed = Math.ceil(required * RULES.specialtyShare);
+  // the 60% share and the practical hours come from Reg. 391 point 51; Reg. 630 asks nurses for neither,
+  // and sets a number for emergency care only for re-registration from 01 Jan 2027
+  const nurseEmergency = nurse && !!end && end >= NURSE_RULES.emergencyFrom;
+  const skips: Check["id"][] = nurse ? ["specialty", "emergency_practical", ...(nurseEmergency ? [] : ["emergency_points" as const])] : [];
+  const emergencyNeed = nurse ? NURSE_RULES.emergencyMinHours : RULES.emergencyMinPoints;
   const checks: Check[] = [
-    { id: "total", have: total, need: required, met: total >= required },
+    { id: "total" as const, have: total, need: required, met: total >= required },
     {
-      id: "specialty",
+      id: "specialty" as const,
       have: round1(specialty),
       need: specialtyNeed,
       met: specialty >= specialtyNeed,
     },
     {
-      id: "emergency_points",
+      id: "emergency_points" as const,
       have: round1(emergencyPoints),
-      need: RULES.emergencyMinPoints,
-      met: emergencyPoints >= RULES.emergencyMinPoints,
+      need: emergencyNeed,
+      met: emergencyPoints >= emergencyNeed,
     },
     {
-      id: "emergency_practical",
+      id: "emergency_practical" as const,
       have: round1(emergencyPracticalHours),
       need: RULES.emergencyMinPracticalHours,
       met: emergencyPracticalHours >= RULES.emergencyMinPracticalHours,
     },
-  ];
+  ].filter((c) => !skips.includes(c.id));
 
   return {
     required,
