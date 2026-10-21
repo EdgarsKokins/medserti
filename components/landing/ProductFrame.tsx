@@ -2,7 +2,6 @@ import s from "./landing-visuals.module.css";
 
 interface Props {
   label: string;
-  badge: string;
   name: string;
   role: string;
   collected: string;
@@ -18,7 +17,7 @@ interface Props {
 
 /**
  * Hero visual: the dashboard of the same sample doctor the "how it works" steps follow, drawn in HTML
- * (no screenshot to go stale). It is marked as a sample both visibly and for screen readers.
+ * (no screenshot to go stale). Screen readers hear that it is an example.
  */
 export default function ProductFrame(p: Props) {
   const pct = Math.round((p.total / 250) * 100);
@@ -34,7 +33,6 @@ export default function ProductFrame(p: Props) {
             <div className={s.frameName}>{p.name}</div>
             <div className={s.frameRole}>{p.role}</div>
           </div>
-          <span className={s.frameBadge}>{p.badge}</span>
         </div>
 
         <div className={s.frameTotal}>

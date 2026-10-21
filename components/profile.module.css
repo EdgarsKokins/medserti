@@ -36,9 +36,6 @@
 .comboOther { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px; color: var(--muted); }
 .comboEmpty { padding: 10px 12px; color: var(--muted); font-size: 0.9rem; }
 .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 24px 0 0; border-top: 1px solid var(--border); }
-.footnote { margin: 40px 0 0; font-size: 0.8rem; line-height: 1.6; color: var(--muted); max-width: 680px; }
-.footnote a { color: var(--muted); }
-.footnote a:hover { color: var(--accent); }
 
 /* two columns of ~170px are too narrow for Latvian labels */
 @media (max-width: 900px) {

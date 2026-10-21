@@ -13,6 +13,8 @@ import styles from "./certificates.module.css";
 
 /** how long "Apstiprināts · Atsaukt" stays after an in-row confirm */
 const UNDO_MS = 6000;
+/** while a certificate is still being read on the server (another tab, or a page loaded mid-upload), check this often */
+const POLL_MS = 4000;
 
 const sortCerts = (list: CmeCertificate[]) =>
   [...list].sort((a, b) => (b.date ?? b.uploadedAt).localeCompare(a.date ?? a.uploadedAt));
@@ -39,7 +41,6 @@ export default function CertificatesView({
   const router = useRouter();
   const [certs, setCerts] = useState(() => sortCerts(initial));
   const [openId, setOpenId] = useState<string | null>(null);
-  const [onlyWaiting, setOnlyWaiting] = useState(false);
   const open = certs.find((c) => c.id === openId) ?? null;
 
   const waiting = useMemo(() => certs.filter((c) => c.status !== "confirmed").length, [certs]);
@@ -90,6 +91,27 @@ export default function CertificatesView({
   );
   const close = useCallback(() => setOpenId(null), []);
 
+  // a certificate listed as "parsing" was mid-upload when the page loaded: fetch until the server is done with it
+  const parsing = certs.some((c) => c.status === "parsing");
+  useEffect(() => {
+    if (!parsing) return;
+    const id = window.setInterval(async () => {
+      const res = await fetch("/api/certificates").catch(() => null);
+      const body = res?.ok ? await res.json().catch(() => null) : null;
+      if (!body?.certificates) return;
+      const fresh: CmeCertificate[] = body.certificates;
+      setCerts((prev) => sortCerts([...fresh, ...prev.filter((p) => !fresh.some((f) => f.id === p.id))]));
+      if (!fresh.some((c) => c.status === "parsing")) router.refresh();
+    }, POLL_MS);
+    return () => window.clearInterval(id);
+  }, [parsing, router]);
+
+  const waitingList = certs.filter((c) => c.status !== "confirmed");
+  const confirmedList = certs.filter((c) => c.status === "confirmed");
+  // the confirmed ones fold away while something waits for review, so the waiting ones are not lost in a long list
+  const grouped = confirmedList.length > 0 && waitingList.length > 0;
+  const [confirmedOpen, setConfirmedOpen] = useState(false);
+
   function replace(c: CmeCertificate) {
     setCerts((prev) => sortCerts(prev.map((p) => (p.id === c.id ? c : p))));
     setOpenId(null);
@@ -102,7 +124,76 @@ export default function CertificatesView({
     router.refresh();
   }
 
-  const shown = onlyWaiting && waiting > 0 ? certs.filter((c) => c.status !== "confirmed") : certs;
+  const row = (c: CmeCertificate) => {
+    const attention = c.status !== "confirmed";
+    const org = c.organizer ? displayOrganizer(c.organizer) : "";
+    return (
+      <li
+        key={c.id}
+        className={`${styles.item} ${attention ? (c.status === "failed" ? styles.itemBad : styles.itemWarn) : ""} ${!readOnly && quick.has(c.id) ? styles.itemQuick : ""}`}
+      >
+        <span className={styles.date}>
+          {c.date ? (
+            <>
+              {formatDate(c.date, locale)}
+              {c.endDate && c.endDate !== c.date && <span className={styles.dateEnd}>- {formatDate(c.endDate, locale)}</span>}
+            </>
+          ) : (
+            <span className={styles.noDate}>{d.noDate}</span>
+          )}
+        </span>
+        <span className={styles.main}>
+          <span className={styles.title}>{c.title || <span className="muted">{c.fileName}</span>}</span>
+          <span className={styles.meta}>
+            {[org, dict.categories[c.category]].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+        <span className={styles.points}>
+          {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>TIP</span></>}
+        </span>
+        <span className={styles.status}>
+          <span className={c.duplicateOf && c.status !== "confirmed" ? "badge badge-bad" : STATUS_CLASS[c.status]}>
+            {c.duplicateOf && c.status !== "confirmed"
+              ? dict.review.duplicate
+              : c.status === "confirmed" && c.autoConfirmed
+                ? dict.review.autoConfirmed
+                : dict.status[c.status]}
+          </span>
+          {undo === c.id && c.status === "confirmed" && (
+            <>
+              <span className="muted" aria-hidden> · </span>
+              <button type="button" className={styles.linkBtn} disabled={busyId === c.id} onClick={() => quickConfirm(c, "DELETE")}>
+                {d.rowUndo}
+              </button>
+            </>
+          )}
+        </span>
+        <span className={styles.actions}>
+          <FileLink id={c.id} fileName={c.fileName} locale={locale} className={styles.linkBtn} />
+          {readOnly ? (
+            <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
+              {dict.demo.view}
+            </button>
+          ) : attention ? (
+            <>
+              {quick.has(c.id) && (
+                <button type="button" className={`btn ${styles.smallBtn}`} disabled={busyId === c.id} onClick={() => quickConfirm(c, "POST")}>
+                  {d.rowConfirm}
+                </button>
+              )}
+              <button type="button" className={`btn btn-primary ${styles.smallBtn}`} onClick={() => setOpenId(c.id)}>
+                {d.review}
+              </button>
+            </>
+          ) : (
+            <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
+              {d.edit}
+            </button>
+          )}
+        </span>
+      </li>
+    );
+  };
 
   return (
     <>
@@ -110,9 +201,6 @@ export default function CertificatesView({
       {waiting > 0 && (
         <p className={styles.waiting}>
           <span className="badge badge-warn">{d.waitingShort(waiting)}</span>
-          <button type="button" className={styles.linkBtn} onClick={() => setOnlyWaiting((v) => !v)} aria-pressed={onlyWaiting}>
-            {onlyWaiting ? d.showAll : d.showWaiting}
-          </button>
         </p>
       )}
 
@@ -130,85 +218,24 @@ export default function CertificatesView({
         {certs.length === 0 ? (
           <p className="muted">{d.empty}</p>
         ) : (
-          <ul className={styles.list}>
-            <li className={styles.colHead} aria-hidden>
-              <span>{d.colDate}</span>
-              <span>{d.colTitle}</span>
-              <span className={styles.numHead}>{d.colPoints}</span>
-              <span>{d.colStatus}</span>
-              <span />
-            </li>
-            {shown.map((c) => {
-              const attention = c.status !== "confirmed";
-              const org = c.organizer ? displayOrganizer(c.organizer) : "";
-              return (
-                <li
-                  key={c.id}
-                  className={`${styles.item} ${attention ? (c.status === "failed" ? styles.itemBad : styles.itemWarn) : ""} ${!readOnly && quick.has(c.id) ? styles.itemQuick : ""}`}
-                >
-                  <span className={styles.date}>
-                    {c.date ? (
-                      <>
-                        {formatDate(c.date, locale)}
-                        {c.endDate && c.endDate !== c.date && <span className={styles.dateEnd}>- {formatDate(c.endDate, locale)}</span>}
-                      </>
-                    ) : (
-                      <span className={styles.noDate}>{d.noDate}</span>
-                    )}
-                  </span>
-                  <span className={styles.main}>
-                    <span className={styles.title}>{c.title || <span className="muted">{c.fileName}</span>}</span>
-                    <span className={styles.meta}>
-                      {[org, dict.categories[c.category]].filter(Boolean).join(" · ")}
-                    </span>
-                  </span>
-                  <span className={styles.points}>
-                    {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>TIP</span></>}
-                  </span>
-                  <span className={styles.status}>
-                    <span className={c.duplicateOf && c.status !== "confirmed" ? "badge badge-bad" : STATUS_CLASS[c.status]}>
-                      {c.duplicateOf && c.status !== "confirmed"
-                        ? dict.review.duplicate
-                        : c.status === "confirmed" && c.autoConfirmed
-                          ? dict.review.autoConfirmed
-                          : dict.status[c.status]}
-                    </span>
-                    {undo === c.id && c.status === "confirmed" && (
-                      <>
-                        <span className="muted" aria-hidden> · </span>
-                        <button type="button" className={styles.linkBtn} disabled={busyId === c.id} onClick={() => quickConfirm(c, "DELETE")}>
-                          {d.rowUndo}
-                        </button>
-                      </>
-                    )}
-                  </span>
-                  <span className={styles.actions}>
-                    <FileLink id={c.id} fileName={c.fileName} locale={locale} className={styles.linkBtn} />
-                    {readOnly ? (
-                      <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
-                        {dict.demo.view}
-                      </button>
-                    ) : attention ? (
-                      <>
-                        {quick.has(c.id) && (
-                          <button type="button" className={`btn ${styles.smallBtn}`} disabled={busyId === c.id} onClick={() => quickConfirm(c, "POST")}>
-                            {d.rowConfirm}
-                          </button>
-                        )}
-                        <button type="button" className={`btn btn-primary ${styles.smallBtn}`} onClick={() => setOpenId(c.id)}>
-                          {d.review}
-                        </button>
-                      </>
-                    ) : (
-                      <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
-                        {d.edit}
-                      </button>
-                    )}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <ul className={styles.list}>
+              <li className={styles.colHead} aria-hidden>
+                <span>{d.colDate}</span>
+                <span>{d.colTitle}</span>
+                <span className={styles.numHead}>{d.colPoints}</span>
+                <span>{d.colStatus}</span>
+                <span />
+              </li>
+              {(grouped ? waitingList : certs).map(row)}
+            </ul>
+            {grouped && (
+              <details className={styles.group} open={confirmedOpen} onToggle={(e) => setConfirmedOpen(e.currentTarget.open)}>
+                <summary>{d.confirmedGroup(confirmedList.length)}</summary>
+                <ul className={styles.list}>{confirmedList.map(row)}</ul>
+              </details>
+            )}
+          </>
         )}
       </section>
 

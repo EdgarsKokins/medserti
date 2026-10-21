@@ -77,7 +77,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   const a = d.landingA;
   const { next: events, total } = await upcomingEvents();
   // only plain strings may cross into the client component (coursesBody is a function)
-  const { coursesBody: _coursesBody, remaining, ...howText } = a;
+  const { coursesBody: _coursesBody, remaining, docsCopies: _docsCopies, ...howText } = a;
   const ledgerTotal = LEDGER.reduce((n, r) => n + r.tip, 0);
 
   return (
@@ -142,7 +142,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               </div>
               <ProductFrame
                 label={a.frameLabel}
-                badge={a.sampleBadge}
                 name={a.frameName}
                 role={a.frameRole}
                 collected={a.frameCollected}
@@ -171,6 +170,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                 remainingValue: remaining(250 - ledgerTotal),
                 deadlineValue: formatDate(DEADLINE, locale),
                 ledgerRows: LEDGER.map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip })),
+                docsCopies: a.docsCopies(LEDGER.length),
               }}
             />
           </section>

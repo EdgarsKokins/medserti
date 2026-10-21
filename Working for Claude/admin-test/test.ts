@@ -78,7 +78,7 @@ eq("nested array item", lv.landingA.steps[1].title, "Punkti krājas paši");
 eq("sibling array item untouched", lv.landingA.steps[0].title, baseDict("lv").landingA.steps[0].title);
 eq("array field next to an edited one untouched", lv.landingA.steps[1].body, baseDict("lv").landingA.steps[1].body);
 eq("array of objects", lv.about.people[0].role, "Līdzdibinātājs");
-eq("still an array", Array.isArray(lv.landingA.steps) && lv.landingA.steps.length, 3);
+eq("still an array", Array.isArray(lv.landingA.steps) && lv.landingA.steps.length, baseDict("lv").landingA.steps.length);
 eq("template, reordered placeholders", lv.profile.overrideNote(200, 250), "Noteikumi: 250 TIP, jūs: 200 TIP.");
 eq("zero-argument function", lv.parseNotes.noTitle(), "Nav nosaukuma.");
 eq("code-only function keeps code", lv.dashboard.daysLeftShort(1), baseDict("lv").dashboard.daysLeftShort(1));
