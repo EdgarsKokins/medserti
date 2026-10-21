@@ -157,7 +157,7 @@ export default function NurseExportView({
             {input("firstName", d.firstName, { auto: "given-name" })}
             {input("lastName", d.lastName, { auto: "family-name" })}
             {input("practitionerId", d.practitionerId, { hint: d.practitionerIdHint })}
-            {input("address", d.address, { auto: "street-address" })}
+            {input("address", d.nurseAddress, { auto: "street-address" })}
             {input("phone", d.phone, { auto: "tel", mode: "tel" })}
             {input("email", d.email, { auto: "email", mode: "email" })}
           </div>

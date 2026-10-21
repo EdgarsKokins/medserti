@@ -133,7 +133,7 @@ export function Requirements({ p, locale, hours = false }: { p: Progress; locale
   const dict = dictFor(locale, hours);
   return (
     <section aria-labelledby="req-title">
-      <h2 id="req-title">{dict.dashboard.requirements}</h2>
+      <h2 id="req-title">{hours ? dict.dashboard.requirementsNurse : dict.dashboard.requirements}</h2>
       <ul className={styles.checklist}>
         {p.checks.map((c) => (
           <li key={c.id} className={c.met ? styles.met : ""}>

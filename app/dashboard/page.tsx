@@ -114,11 +114,11 @@ export default async function DashboardPage() {
         <a href={hours ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">
           likumi.lv
         </a>
-        ). {dict.rules.checkOfficialIn}{" "}
+        ). {hours ? dict.rules.checkOfficialInNurse : dict.rules.checkOfficialIn}{" "}
         <a href={REGISTER_URL} target="_blank" rel="noreferrer">
           {dict.rules.register}
         </a>
-        . {dict.rules.planningAid}
+        . {hours ? dict.rules.planningAidNurse : dict.rules.planningAid}
       </p>
     </main>
   );

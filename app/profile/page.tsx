@@ -16,7 +16,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   return (
     <main className="container">
       <h1 className={s.head}>{d.profile.title}</h1>
-      {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{d.profile.welcome}</div>}
+      {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{nurse ? d.profile.welcomeNurse : d.profile.welcome}</div>}
       <ProfileForm initial={user.profile} locale={locale} readOnly={demo} />
       <p className={s.footnote}>
         {nurse ? (
@@ -29,7 +29,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
             {d.rules.validFor(RULES.validityYears)}{" "}
           </>
         )}
-        {d.rules.checkDatesIn}{" "}
+        {nurse ? d.rules.checkOfficialInNurse : d.rules.checkDatesIn}{" "}
         <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>.
       </p>
       {/* the shared demo account cannot be deleted; the API refuses it too */}
