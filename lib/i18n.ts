@@ -260,9 +260,9 @@ const en = {
     ],
   },
   landing: {
-    metaTitle: "Medserti: CME points and recertification in one place",
+    metaTitle: "Medserti: CME and recertification for doctors in one place",
     metaDescription:
-      "A free tool for doctors and medical practitioners in Latvia. Upload your CME certificates, see how many TIP points you still need for recertification and by when, and find approved courses.",
+      "A free tool for doctors in Latvia. Upload your CME certificates, see how many TIP points you still need for recertification and by when, and find approved courses.",
     ogLocale: "en_GB",
     eyebrow: "For medical practitioners in Latvia",
     title: "All your CME points in one place. Recertification without surprises.",
@@ -836,7 +836,7 @@ const lv: Dict = {
   },
   landingA: {
     heroTitle: "Piecu gadu sertifikāti, izkaisīti pa visām vietām.",
-    heroSub: "Daļa e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP punktu vēl trūkst.",
+    heroSub: "Daļa e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP vēl trūkst.",
     start: "Sākt bez maksas",
     seeHow: "Kā Medserti palīdz",
     how: "Kā tas strādā",
@@ -970,7 +970,7 @@ const lv: Dict = {
     storyTitle: "Kā tas sākās",
     story: [
       "Medserti izveidoja divi brāļi, Matīss un Edgars Kokini. Mūsu mamma ir ārste, un ģimenē ir daudz mediķu, tāpēc no tuvienes esam redzējuši, cik daudz ārstniecības personu laika aiziet papīru darbiem, nevis pacientiem.",
-      "Sertifikātu krāšana, TIP punktu skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nevienu neizārstē. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no jūsu pleciem un jūs varētu veltīt laiku tam, kas ir patiešām svarīgs: saviem pacientiem.",
+      "Sertifikātu krāšana, TIP skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nevienu neizārstē. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no jūsu pleciem un jūs varētu veltīt laiku tam, kas ir patiešām svarīgs: saviem pacientiem.",
     ],
     photoPending: "Foto drīzumā",
     people: [
@@ -987,13 +987,13 @@ const lv: Dict = {
     ],
   },
   landing: {
-    metaTitle: "Medserti: TIP punkti un resertifikācija vienuviet",
+    metaTitle: "Medserti: TIP un resertifikācija ārstiem vienuviet",
     metaDescription:
-      "Bezmaksas rīks ārstiem un ārstniecības personām Latvijā. Augšupielādējiet tālākizglītības sertifikātus, redziet, cik TIP vēl jāsavāc līdz resertifikācijai un līdz kuram datumam, un atrodiet apstiprinātus kursus.",
+      "Bezmaksas rīks ārstiem Latvijā. Augšupielādējiet tālākizglītības sertifikātus, redziet, cik TIP vēl jāsavāc līdz resertifikācijai un līdz kuram datumam, un atrodiet LĀB apstiprinātus kursus.",
     ogLocale: "lv_LV",
     eyebrow: "Ārstniecības personām Latvijā",
-    title: "Visi jūsu TIP punkti vienuviet. Resertifikācija bez pārsteigumiem.",
-    lead: "Augšupielādējiet tālākizglītības sertifikātus. Medserti saskaita TIP punktus pēc MK noteikumiem Nr. 391 un parāda, cik vēl jāsavāc un līdz kuram datumam.",
+    title: "Visi jūsu TIP vienuviet. Resertifikācija bez pārsteigumiem.",
+    lead: "Augšupielādējiet tālākizglītības sertifikātus. Medserti saskaita TIP pēc MK noteikumiem Nr. 391 un parāda, cik vēl jāsavāc un līdz kuram datumam.",
     start: "Sākt bez maksas",
     login: "Pieslēgties",
     freeNote: "Bez maksas pilotprojekta laikā. Maksājumu karte nav vajadzīga.",
@@ -1004,7 +1004,7 @@ const lv: Dict = {
     stepsTitle: "Kā tas strādā",
     steps: [
       { title: "Augšupielādējiet sertifikātu", body: "PDF failu vai fotoattēlu no telefona. Var augšupielādēt vairākus uzreiz." },
-      { title: "Pārbaudiet nolasīto", body: "Mēs nolasām datumu, TIP punktus un kategoriju. Jūs salīdzināt ar failu, vajadzības gadījumā izlabojat un apstiprināt." },
+      { title: "Pārbaudiet nolasīto", body: "Mēs nolasām datumu, TIP un kategoriju. Jūs salīdzināt ar failu, vajadzības gadījumā izlabojat un apstiprināt." },
       { title: "Redziet, kas vēl trūkst", body: "Pārskatā redzams, cik TIP vēl jāsavāc, kuras prasības vēl nav izpildītas, un piemēroti apstiprināti kursi." },
     ],
     rulesTitle: "Ko mēs pārbaudām",
