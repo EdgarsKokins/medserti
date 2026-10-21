@@ -7,6 +7,7 @@ import { t, type Locale } from "@/lib/i18n";
 import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
+import FileLink from "./FileLink";
 import styles from "./certificates.module.css";
 
 const sortCerts = (list: CmeCertificate[]) =>
@@ -124,9 +125,7 @@ export default function CertificatesView({
                     </span>
                   </span>
                   <span className={styles.actions}>
-                    <a className={styles.linkBtn} href={`/api/certificates/${c.id}/file`} target="_blank" rel="noreferrer">
-                      {d.file}
-                    </a>
+                    <FileLink id={c.id} fileName={c.fileName} locale={locale} className={styles.linkBtn} />
                     {readOnly ? (
                       <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
                         {dict.demo.view}
