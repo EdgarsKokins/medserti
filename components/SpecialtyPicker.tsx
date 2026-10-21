@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
-import { OTHER_SPECIALTY, SPECIALTIES, specialtyByCode } from "@/lib/specialties";
+import { OTHER_SPECIALTY, specialtyByCode, type Specialty } from "@/lib/specialties";
 import s from "./profile.module.css";
 
 const norm = (v: string) => v.toLocaleLowerCase("lv").normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -14,12 +14,15 @@ const norm = (v: string) => v.toLocaleLowerCase("lv").normalize("NFD").replace(/
 export default function SpecialtyPicker({
   id,
   code,
+  list,
   locale,
   labels,
   onChange,
 }: {
   id: string;
   code: string | null;
+  /** the profession's specialties (lib/specialties.ts specialtiesFor) */
+  list: readonly Specialty[];
   locale: Locale;
   labels: { other: string; placeholder: string; noMatch: string };
   onChange: (code: string | null) => void;
@@ -31,8 +34,8 @@ export default function SpecialtyPicker({
   const [active, setActive] = useState(0);
 
   const sorted = useMemo(
-    () => [...SPECIALTIES].sort((a, b) => a[locale].localeCompare(b[locale], locale)),
-    [locale],
+    () => [...list].sort((a, b) => a[locale].localeCompare(b[locale], locale)),
+    [list, locale],
   );
   const options = useMemo(() => {
     const q = norm(query ?? "").trim();

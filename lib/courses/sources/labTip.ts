@@ -54,6 +54,12 @@ export function parseLabTipPage(html: string, today = todayIso()): { courses: Co
     const contactName = smalls.find((x) => x !== email && x !== phone && /\p{L}/u.test(x)) ?? null;
     const organizer = textOf(/<strong>([\s\S]*?)<\/strong>/.exec(org)?.[1] ?? org.split(/<br\s*\/?>/)[0] ?? "");
     const annex = /(\d+)\.\s*p/.exec(basis);
+    const tipN = tip ? Number(tip.replace(",", ".")) || null : null;
+    // 1 TIP per 45-minute academic hour (Annex 4), and conferences get a flat TIP of up to ~2x their hours.
+    // Far more TIP than that means the listed minutes are wrong (TIP2025/8727: 350 TIP, 1440 min listed,
+    // 14,400 min in its lecture list), so show no length rather than a wrong one.
+    const mins = minutes ? Number(minutes) || null : null;
+    const minutesOk = !mins || !tipN || tipN <= (mins / 45) * 3;
     courses.push({
       id: `lab_tip:${nr}`,
       kind,
@@ -66,8 +72,8 @@ export function parseLabTipPage(html: string, today = todayIso()): { courses: Co
       format,
       location: place ? place.slice(0, 140) : null,
       city: city ?? (format === "recorded" ? "Online" : null),
-      tip: tip ? Number(tip.replace(",", ".")) || null : null,
-      minutes: minutes ? Number(minutes) || null : null,
+      tip: tipN,
+      minutes: minutesOk ? mins : null,
       audience,
       allSpecialties: /visu\s+specialitāšu|visām\s+specialitātēm|visi\s+ārsti/i.test(audience),
       organizer: organizer || null,

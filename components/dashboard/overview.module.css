@@ -9,6 +9,11 @@
 .pace { color: var(--warn); }
 
 .status { margin: 18px 0 0; font-size: 1.1rem; max-width: 62ch; }
+.missing { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 0.92rem; }
+.missingLabel { color: var(--warn); font-weight: 500; }
+.missingItem { padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text); }
+/* room for the "today" label above the band */
+.missing + .band { margin-top: 40px; }
 .band { margin-top: 30px; }
 .upload { padding: 4px 0; }
 .uploadRow { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; }
