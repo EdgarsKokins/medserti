@@ -31,6 +31,7 @@
 .keyTime { width: 2px; height: 12px; border-radius: 0; background: var(--ink); }
 .plainBar { margin-top: 24px; height: 12px; }
 .message { margin: 18px 0 0; font-size: 0.95rem; }
+.basis { margin: 10px 0 0; max-width: 72ch; }
 .toneOk { color: var(--ok); }
 .toneWarn { color: var(--warn); }
 .toneBad { color: var(--bad); }
