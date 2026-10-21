@@ -11,7 +11,7 @@
 .frameBadge { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; color: var(--warn); border: 1px solid currentColor; border-radius: 6px; padding: 3px 8px; }
 .frameTotal { padding: 18px 20px; border-radius: var(--radius-sm); background: var(--bg); margin-bottom: 22px; }
 .frameNum { display: flex; align-items: baseline; gap: 8px; }
-.frameBig { font-family: var(--font-serif); font-weight: 700; font-size: 3.2rem; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.frameBig { font-family: var(--font-serif); font-weight: 700; font-size: 3.2rem; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: proportional-nums; }
 .frameOf { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 600; color: var(--muted); }
 .frameLabel { font-size: 0.9rem; color: var(--muted); margin: 4px 0 12px; }
 .frameMeter { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
