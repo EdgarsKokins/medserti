@@ -136,6 +136,14 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const titleHit = findTitle(t);
   const title = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizerHit = findOrganizer(t);
+  // a line of the title read as an organizer ("... Eiropas Sirds Ritma asociācijas (EHRA)"): not the organizer
+  const foldKey = (v: string) => v.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const titleWords = new Set(foldKey(titleHit.value).split(" "));
+  const inTitle = (v: string) => foldKey(v).split(" ").filter((w) => w.length > 2).every((w) => titleWords.has(w));
+  if (organizerHit.value && titleHit.value && !organizerHit.stated && inTitle(organizerHit.value)) {
+    organizerHit.value = "";
+    organizerHit.confidence = 0;
+  }
   const organizer = organizerHit.value;
   const dates = findDates(t);
   const { date, endDate } = dates;

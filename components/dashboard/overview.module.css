@@ -2,7 +2,7 @@
 .hero { padding: 8px 0 4px; }
 .heroRow { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 32px; flex-wrap: wrap; margin-top: 8px; }
 .bigLine { display: flex; align-items: baseline; gap: 12px; margin: 0; font-weight: 400; }
-.big { font-family: var(--font-serif); font-size: 5.25rem; line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.big { font-family: var(--font-serif); font-size: 5.25rem; line-height: 0.95; letter-spacing: -0.03em; font-variant-numeric: proportional-nums; }
 .of { font-family: var(--font-serif); font-size: 1.6rem; color: var(--muted); }
 .heroSide { text-align: right; display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; }
 .daysLeft { font-family: var(--font-serif); font-size: 1.35rem; }
@@ -49,7 +49,7 @@
 .pickTip { color: var(--accent); font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 .dateBlock { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; width: 48px; }
-.dateDay { font-family: var(--font-serif); font-size: 1.55rem; font-variant-numeric: tabular-nums; }
+.dateDay { font-family: var(--font-serif); font-size: 1.55rem; font-variant-numeric: proportional-nums; }
 .dateMon { font-size: 0.66rem; letter-spacing: 0.08em; color: var(--muted); }
 
 @media (max-width: 640px) {

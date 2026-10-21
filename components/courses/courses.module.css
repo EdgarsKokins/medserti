@@ -79,7 +79,7 @@
 .org { white-space: pre-wrap; }
 .badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .badges:empty { display: none; }
-.tip { color: var(--accent); font-family: var(--font-serif); font-size: 1.35rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tip { color: var(--accent); font-family: var(--font-serif); font-size: 1.35rem; white-space: nowrap; font-variant-numeric: proportional-nums; }
 .tipUnit { font-family: var(--font-sans); font-size: 0.72rem; letter-spacing: 0.06em; }
 .chevron { color: var(--muted); font-size: 1.2rem; text-align: center; }
 

@@ -34,7 +34,8 @@
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgba(11, 27, 43, 0.06), 0 12px 32px -8px rgba(11, 27, 43, 0.14);
   --font-sans: var(--font-body), "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* named --font-serif for history; it is the display face */
+  /* named --font-serif for history; it is the display face.
+     Never use tabular-nums with it: Schibsted Grotesk's tabular comma and dot are a full digit wide ("1 , 3"). */
   --font-serif: var(--font-display-face), "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme: light;
 }
@@ -223,7 +224,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .tag-accent { background: var(--accent-soft); color: var(--accent); }
 
 /* ---------- numbers and bars ---------- */
-.stat .value { font-family: var(--font-serif); font-weight: 600; font-size: 2rem; font-variant-numeric: tabular-nums; }
+.stat .value { font-family: var(--font-serif); font-weight: 600; font-size: 2rem; font-variant-numeric: proportional-nums; }
 .stat .label { color: var(--muted); font-size: 0.85rem; }
 .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
 .bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
