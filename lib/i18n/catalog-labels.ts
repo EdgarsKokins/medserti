@@ -311,7 +311,6 @@ export const LABELS: Record<string, string> = {
   "about.title": "Virsraksts",
   "about.storyTitle": "Stāsta virsraksts",
   "about.story.#": "Stāsts, #. rindkopa",
-  "about.photoPending": "Ja foto vēl nav",
   "about.people.#.name": "#. persona: vārds",
   "about.people.#.role": "#. persona: amats",
   "about.people.#.bio": "#. persona: apraksts",

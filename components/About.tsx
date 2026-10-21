@@ -1,4 +1,5 @@
 import { t, type Locale } from "@/lib/i18n";
+import { TEAM_PHOTOS } from "@/lib/team";
 import s from "./about.module.css";
 
 /* "Who we are" on the landing page and /par-mums: founding story and the two founders */
@@ -22,11 +23,8 @@ export default function About({ locale, page = false }: { locale: Locale; page?:
       <ul className={s.people}>
         {a.people.map((person) => (
           <li key={person.name} className={s.person}>
-            {/* Photo placeholder: replace with <img> once the portraits are in /public/team/ */}
-            <div className={s.photo} role="img" aria-label={`${person.name}: ${a.photoPending}`}>
-              <span className={s.initial} aria-hidden>{person.name.charAt(0)}</span>
-              <span className={s.pending} aria-hidden>{a.photoPending}</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={TEAM_PHOTOS[person.name]} alt={person.name} className={s.photo} width={150} height={188} loading="lazy" />
             <div>
               <h3 className={s.name}>{person.name}</h3>
               <p className={s.role}>{person.role}</p>

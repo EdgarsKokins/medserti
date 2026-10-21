@@ -15,12 +15,9 @@
 .person { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 22px; align-items: start; }
 
 .photo {
-  aspect-ratio: 4 / 5; border-radius: var(--radius); background: var(--surface-2);
-  border: 1px dashed var(--border-strong);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover;
+  border-radius: var(--radius); background: var(--surface-2); box-shadow: 0 0 0 1px var(--border);
 }
-.initial { font-family: var(--font-serif); font-size: 2.6rem; line-height: 1; color: var(--faint); }
-.pending { font-size: 0.72rem; color: var(--faint); text-align: center; padding: 0 8px; }
 
 .name { font-size: 1.35rem; margin: 2px 0 4px; }
 .role { font-size: 0.88rem; color: var(--accent); margin: 0 0 10px; }

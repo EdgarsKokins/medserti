@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TEAM_PHOTOS } from "@/lib/team";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import ProductFrame from "@/components/landing/ProductFrame";
@@ -61,7 +62,6 @@ const LEDGER = [
 ];
 /** Example certificate period end for the same sample doctor (issued Jan 2024) */
 const DEADLINE = "2029-01-15";
-const PHOTOS: Record<string, string> = { "Matīss Kokins": "/team/matiss.jpg", "Edgars Kokins": "/team/edgars.jpg" };
 const shortDate = (iso: string, locale: Locale) =>
   locale === "en"
     ? formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1")
@@ -216,7 +216,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                 {d.about.people.map((p) => (
                   <li key={p.name}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={PHOTOS[p.name]} alt={p.name} className={s.photo} width={132} height={132} loading="lazy" />
+                    <img src={TEAM_PHOTOS[p.name]} alt={p.name} className={s.photo} width={132} height={132} loading="lazy" />
                     <span className={s.personName}>{p.name}</span>
                     <span className={s.personRole}>{p.role.split(" · ")[1] ?? p.role}</span>
                   </li>

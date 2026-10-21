@@ -256,7 +256,6 @@ const en = {
       "Medserti was started by two brothers, Matīss and Edgars Kokins. Our mother is a doctor, and there are several doctors in our family, so we have seen how much of a medical professional's time goes to paperwork instead of patients.",
       "Collecting certificates, counting TIP points, checking the rules, searching for approved courses: all of it is necessary, but none of it helps patients. We built Medserti to take that administration off medical practitioners' shoulders, so the time can go where it matters most: to their patients.",
     ],
-    photoPending: "Photo coming soon",
     people: [
       {
         name: "Matīss Kokins",
@@ -1006,7 +1005,6 @@ const lv: Dict = {
       "Medserti izveidoja divi brāļi, Matīss un Edgars Kokini. Mūsu mamma ir ārste, un ģimenē ir vairāki mediķi, tāpēc esam redzējuši, cik daudz ārstniecības personu laika aiziet papīru darbiem, nevis pacientiem.",
       "Sertifikātu krāšana, TIP punktu skaitīšana, noteikumu pārbaude, apstiprinātu kursu meklēšana: tas viss ir nepieciešams, bet neviens no šiem darbiem nepalīdz pacientiem. Mēs radījām Medserti, lai noņemtu šo administratīvo slogu no ārstniecības personu pleciem, lai šo laiku varētu veltīt tam, kas ir patiešām svarīgs: saviem pacientiem.",
     ],
-    photoPending: "Foto drīzumā",
     people: [
       {
         name: "Matīss Kokins",
@@ -1752,7 +1750,6 @@ const ru: Dict = {
       "Medserti создали два брата, Матисс и Эдгарс Кокинс. Наша мама врач, и в семье есть несколько медиков, поэтому мы видели, сколько времени медицинских работников уходит на бумаги, а не на пациентов.",
       "Сбор сертификатов, подсчёт баллов TIP, проверка правил, поиск одобренных курсов: всё это нужно, но ничто из этого не помогает пациентам. Мы создали Medserti, чтобы снять эту административную нагрузку с медицинских работников и это время можно было посвятить самому важному: своим пациентам.",
     ],
-    photoPending: "Фото скоро",
     people: [
       {
         name: "Matīss Kokins",
