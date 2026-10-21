@@ -256,7 +256,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             <ul className={s.footerLinks}>
               <li><Link href="/register">{d.nav.signup}</Link></li>
               <li><Link href="/login">{d.nav.login}</Link></li>
-              <li><DemoButton label={d.demo.try} className={s.footerDemo} /></li>
+              <li><DemoButton label={d.demo.try} className="" /></li>
               <li><Link href="/par-mums">{d.nav.about}</Link></li>
               <li><a href={RULES.sourceUrl} target="_blank" rel="noreferrer">{l.footerRules}</a></li>
               <li><Link href="/privatums">{d.legal.privacyLink}</Link></li>
