@@ -6,12 +6,15 @@ import LangSwitch from "@/components/LangSwitch";
 import type { Locale } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/site";
 
-/** Small footer on every page except the landing page, which has its own. The language switch lives here, out of the way. */
+/** Small footer on every page except the landing page, which has its own. The language switch and the rules source live here, out of the way. */
 export default function AppFooter({
   locale,
+  note,
   labels,
 }: {
   locale: Locale;
+  /** signed in: which regulation the numbers follow, and where to check official dates */
+  note?: React.ReactNode;
   labels: { nav: string; about: string; rules: string; privacy: string; terms: string; rulesUrl: string; lang: string };
 }) {
   if (usePathname() === "/") return null;
@@ -28,6 +31,7 @@ export default function AppFooter({
         <div className="app-footer-tools">
           <LangSwitch locale={locale} label={labels.lang} />
         </div>
+        {note && <p className="app-footer-note">{note}</p>}
       </div>
     </footer>
   );

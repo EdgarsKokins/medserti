@@ -1,45 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
-import type { Worker as OcrWorker } from "tesseract.js";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CmeCertificate } from "@/lib/types";
 import { t, type Locale } from "@/lib/i18n";
-import { ocrPdfIfScanned } from "./pdfOcr";
+import {
+  ACCEPT,
+  getServerUploadSnapshot,
+  getUploadSnapshot,
+  onCertificatesStored,
+  startUpload,
+  subscribeUploads,
+  type UploadState,
+} from "./uploadStore";
 import styles from "./certificates.module.css";
-
-/** Vercel caps request bodies at ~4.5 MB; photos are downscaled in the browser to fit */
-const MAX_BYTES = 4 * 1024 * 1024;
-const MAX_IMAGE_INPUT_BYTES = 30 * 1024 * 1024;
-
-/** Downscale a photo to max 2400px on the long side as JPEG, so it fits the upload limit */
-async function shrinkImage(file: File): Promise<File> {
-  if (file.size <= MAX_BYTES) return file;
-  const bitmap = await createImageBitmap(file);
-  for (const [side, quality] of [[2400, 0.85], [1800, 0.8], [1400, 0.75]] as const) {
-    const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", quality));
-    if (blob && blob.size <= MAX_BYTES) return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
-  }
-  return file;
-}
-const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
-const OK_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
-
-type UploadState = "queued" | "reading" | "uploading" | "done" | "failed";
-interface UploadItem {
-  key: string;
-  name: string;
-  state: UploadState;
-  message: string | null;
-  /** OCR progress 0-100 while reading an image */
-  progress?: number;
-}
-
-const isImage = (f: File) => f.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(f.name);
 
 const STATE_CLASS: Record<UploadState, string> = {
   queued: "badge",
@@ -48,6 +21,9 @@ const STATE_CLASS: Record<UploadState, string> = {
   done: "badge badge-ok",
   failed: "badge badge-bad",
 };
+
+/** More files than this collapse into one summary line while they upload */
+const GROUP_FROM = 4;
 
 export default function UploadZone({
   onUploaded,
@@ -59,98 +35,35 @@ export default function UploadZone({
   const d = t(locale).upload;
   const input = useRef<HTMLInputElement>(null);
   const camera = useRef<HTMLInputElement>(null);
-  const [items, setItems] = useState<UploadItem[]>([]);
   const [over, setOver] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  // the queue lives in uploadStore, so a batch started on the dashboard keeps running here
+  const { items, busy } = useSyncExternalStore(subscribeUploads, getUploadSnapshot, getServerUploadSnapshot);
 
-  const update = (key: string, patch: Partial<UploadItem>) =>
-    setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...patch } : it)));
+  const uploaded = useRef(onUploaded);
+  useEffect(() => {
+    uploaded.current = onUploaded;
+  }, [onUploaded]);
+  useEffect(() => {
+    // certificates stored before this page mounted (upload started elsewhere), then each new one as it lands
+    const before = getUploadSnapshot().stored;
+    if (before.length) uploaded.current(before);
+    return onCertificatesStored((certs) => uploaded.current(certs));
+  }, []);
 
-  async function handle(fileList: FileList | null) {
+  function handle(fileList: FileList | null) {
     if (!fileList?.length || busy) return;
-    const files = Array.from(fileList);
-    const batch = files.map((f, i) => ({
-      file: f,
-      item: { key: `${Date.now()}-${i}-${f.name}`, name: f.name, state: "queued" as UploadState, message: null },
-    }));
-    setItems((prev) => [...batch.map((b) => b.item), ...prev.filter((p) => p.state !== "done")]);
-    setBusy(true);
-
-    // OCR runs in the browser (free); one worker is shared by the batch and loaded only when an image is present
-    let worker: OcrWorker | null = null;
-    let currentKey = "";
-    const getWorker = async () => {
-      if (worker) return worker;
-      const { createWorker } = await import("tesseract.js");
-      worker = await createWorker("lav+eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text" && currentKey) update(currentKey, { progress: Math.round(m.progress * 100) });
-        },
-      });
-      return worker;
-    };
-
-    // One request per file: keeps each request small and shows per-file progress
-    for (const { file, item } of batch) {
-      if (file.size > (isImage(file) ? MAX_IMAGE_INPUT_BYTES : MAX_BYTES)) {
-        update(item.key, { state: "failed", message: isImage(file) ? d.imageTooBig : d.pdfTooBig });
-        continue;
-      }
-      if (file.type && !OK_TYPES.has(file.type)) {
-        update(item.key, { state: "failed", message: d.onlyTypes });
-        continue;
-      }
-      let ocrText = "";
-      const isPdf = !isImage(file) && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
-      if (isPdf) {
-        // scanned PDFs have no usable text layer: read them like photos
-        currentKey = item.key;
-        try {
-          ocrText = await ocrPdfIfScanned(file, getWorker, () => update(item.key, { state: "reading", progress: 0 }));
-        } catch (err) {
-          console.error("PDF OCR failed", err); // upload anyway; the server reads the text layer or asks for manual entry
-        }
-        currentKey = "";
-      } else if (isImage(file)) {
-        update(item.key, { state: "reading", progress: 0 });
-        currentKey = item.key;
-        try {
-          const w = await getWorker();
-          ocrText = (await w.recognize(file)).data.text;
-        } catch (err) {
-          console.error("OCR failed", err); // upload anyway; the user enters the details
-        }
-        currentKey = "";
-      }
-      update(item.key, { state: "uploading", progress: undefined });
-      try {
-        const upload = isImage(file) ? await shrinkImage(file).catch(() => file) : file;
-        if (upload.size > MAX_BYTES) {
-          update(item.key, { state: "failed", message: d.tooLargeToUpload });
-          continue;
-        }
-        const body = new FormData();
-        body.append("files", upload);
-        if (ocrText) body.append("ocrText", ocrText);
-        const res = await fetch("/api/certificates", { method: "POST", body });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          update(item.key, { state: "failed", message: data.error ?? d.uploadFailed(res.status) });
-          continue;
-        }
-        const certs: CmeCertificate[] = data.certificates ?? [];
-        onUploaded(certs);
-        const unread = certs.find((c) => !c.title && c.points == null);
-        update(item.key, { state: "done", message: unread ? d.notRead : d.checkBelow });
-      } catch {
-        update(item.key, { state: "failed", message: d.network });
-      }
-    }
-    if (worker) await (worker as OcrWorker).terminate().catch(() => {});
-    setBusy(false);
+    setExpanded(false);
+    startUpload(Array.from(fileList), d);
     if (input.current) input.current.value = "";
     if (camera.current) camera.current.value = "";
   }
+
+  const finished = items.filter((it) => it.state === "done" || it.state === "failed").length;
+  const failed = items.filter((it) => it.state === "failed").length;
+  const grouped = items.length >= GROUP_FROM;
+  // collapsed, the list still shows what needs the user: failed files
+  const listed = grouped && !expanded ? items.filter((it) => it.state === "failed") : items;
 
   return (
     <div className={styles.upload}>
@@ -203,9 +116,23 @@ export default function UploadZone({
         {d.takePhoto}
       </button>
       <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => handle(e.target.files)} />
-      {items.length > 0 && (
-        <ul className={styles.uploads}>
-          {items.map((it) => (
+      {grouped && (
+        <div className={styles.batch} role="status">
+          <span className={styles.batchText}>
+            {busy ? d.batchBusy(finished, items.length) : d.batchDone(finished - failed, items.length)}
+            {failed > 0 && <span className="badge badge-bad">{d.batchFailed(failed)}</span>}
+          </span>
+          <button type="button" className={styles.linkBtn} aria-expanded={expanded} aria-controls="upload-files" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? d.hideFiles : d.showFiles}
+          </button>
+          <span className={styles.batchBar} aria-hidden>
+            <span style={{ width: `${Math.round((finished / items.length) * 100)}%` }} />
+          </span>
+        </div>
+      )}
+      {listed.length > 0 && (
+        <ul className={styles.uploads} id="upload-files">
+          {listed.map((it) => (
             <li key={it.key}>
               <span className={styles.uploadName}>{it.name}</span>
               <span className={styles.uploadState}>

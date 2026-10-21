@@ -73,7 +73,7 @@ export default function ReviewPanel({
   const [f, setF] = useState<Editable>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ask, setAsk] = useState<"discard" | "delete" | null>(null);
+  const [ask, setAsk] = useState<"discard" | "delete" | "duplicate" | null>(null);
   const set = <K extends keyof Editable>(k: K, v: Editable[K]) => {
     setAsk(null);
     setF((prev) => ({ ...prev, [k]: v }));
@@ -136,6 +136,7 @@ export default function ReviewPanel({
   // "found 3 of 3 fields" says how much the parser filled in; for photos the OCR text itself may be wrong, so we don't show it
   const fieldsFound = cert.confidence != null && !cert.contentType.startsWith("image/") ? Math.round(cert.confidence * 3) : null;
   const confirmed = cert.status === "confirmed";
+  const duplicate = !!cert.duplicateOf && !confirmed;
   // the parser was unsure of this value and the user has not changed it yet
   const check = (k: ConfidenceField) =>
     isUnsure(cert, k) && f[k] === initial[k] ? <span className={`badge badge-warn ${styles.checkMark}`}>{d.checkField}</span> : null;
@@ -295,11 +296,13 @@ export default function ReviewPanel({
         ) : ask ? (
           <div className={styles.ask} role="alertdialog" aria-labelledby="review-ask">
             <p id="review-ask" className={styles.askText}>
-              {ask === "discard" ? d.discardQuestion : d.deleteConfirm(cert.title || cert.fileName)}
+              {ask === "discard" ? d.discardQuestion : ask === "duplicate" ? d.duplicateConfirm : d.deleteConfirm(cert.title || cert.fileName)}
             </p>
             <div className={styles.footBtns}>
               {ask === "discard" ? (
                 <button type="button" className="btn btn-primary" onClick={onClose} autoFocus>{d.discard}</button>
+              ) : ask === "duplicate" ? (
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={() => save("confirmed")} autoFocus>{d.duplicateConfirmYes}</button>
               ) : (
                 <button type="button" className="btn btn-danger" disabled={busy} onClick={remove} autoFocus>{d.delete}</button>
               )}
@@ -310,7 +313,13 @@ export default function ReviewPanel({
           </div>
         ) : (
           <div className={styles.footBtns}>
-            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => save("confirmed")}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={busy}
+              // a flagged duplicate is not counted; confirming it counts the same certificate twice, so ask once
+              onClick={() => (duplicate ? setAsk("duplicate") : save("confirmed"))}
+            >
               {busy ? d.saving : confirmed ? d.saveConfirmed : d.confirm}
             </button>
             <button type="button" className="btn" disabled={busy} onClick={() => save("needs_review")}>{d.saveDraft}</button>

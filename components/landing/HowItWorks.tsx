@@ -5,7 +5,6 @@ import { useWaitUntilSeen } from "./useWaitUntilSeen";
 
 export interface HowLabels {
   steps: { title: string; body: string }[];
-  sampleBadge: string;
   sampleTitle: string;
   sampleName: string;
   sampleCourse: string;
@@ -25,6 +24,9 @@ export interface HowLabels {
   remainingValue: string;
   deadlineValue: string;
   ledgerRows: { date: string; title: string; tip: number }[];
+  docsZip: string;
+  docsFiles: string[];
+  docsCopies: string;
 }
 
 /**
@@ -45,7 +47,7 @@ function Step({ no, title, body, children }: { no: number; title: string; body: 
   );
 }
 
-/** One example doctor across three steps: a certificate is read, it lands in the report, the report shows what is still open */
+/** One example doctor across four steps: a certificate is read, it lands in the report, the report shows what is still open, the recertification documents are ready */
 export default function HowItWorks({ l }: { l: HowLabels }) {
   const total = l.ledgerRows.reduce((a, r) => a + r.tip, 0);
   const checks = [
@@ -58,7 +60,6 @@ export default function HowItWorks({ l }: { l: HowLabels }) {
     <ol className={s.how}>
       <Step no={1} title={l.steps[0].title} body={l.steps[0].body}>
         <div className={s.cert} aria-hidden>
-          <span className={s.watermark}>{l.sampleBadge}</span>
           <div className={s.certOrg}>{l.sampleOrg}</div>
           <div className={s.certTitle}>{l.sampleTitle}</div>
           <div className={s.certName}>{l.sampleName}</div>
@@ -106,6 +107,19 @@ export default function HowItWorks({ l }: { l: HowLabels }) {
             <span>{l.deadline}</span>
             <span>{l.deadlineValue}</span>
           </div>
+        </div>
+      </Step>
+
+      <Step no={4} title={l.steps[3].title} body={l.steps[3].body}>
+        <div className={s.docs} aria-hidden>
+          <div className={s.docsZip}>{l.docsZip}</div>
+          {[...l.docsFiles, l.docsCopies].map((name, i) => (
+            <div key={name} className={s.docRow} style={{ animationDelay: `${0.2 + i * 0.2}s` }}>
+              <span className={s.docIcon} />
+              <span className={s.docName}>{name}</span>
+              <span className={s.docTick}>✓</span>
+            </div>
+          ))}
         </div>
       </Step>
     </ol>

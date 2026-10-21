@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Golos_Text, Public_Sans, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
-import { currentUserId } from "@/lib/auth";
+import { currentUser, currentUserId } from "@/lib/auth";
 import { isDemoUserId } from "@/lib/demo/id";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -10,7 +10,7 @@ import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
 import I18nOverrides from "@/components/I18nOverrides";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
-import { RULES } from "@/lib/rules";
+import { NURSE_RULES, REGISTER_URL, RULES } from "@/lib/rules";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
 // Public Sans for text and controls: built for government services, open and plain numerals for 60+ readers
@@ -47,6 +47,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // already loaded by getLocale(); passed down once so client components get the same texts
   const overrides = await loadRuntimeOverrides();
   const d = t(locale);
+  // the legal basis behind every number, for signed-in pages; nurses re-register under Reg. 630, everyone else under Reg. 391
+  const user = signedIn ? await currentUser() : null;
+  const nurse = user?.profile.profession === "nurse";
+  const note = user ? (
+    <>
+      {d.rules.label}: {nurse ? d.rules.sourceNurse : d.rules.source} (
+      <a href={nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">likumi.lv</a>).{" "}
+      {!nurse && <>{d.rules.validFor(RULES.validityYears)} </>}
+      {nurse ? d.rules.checkOfficialInNurse : d.rules.checkOfficialIn}{" "}
+      <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>. {nurse ? d.rules.planningAidNurse : d.rules.planningAid}
+    </>
+  ) : null;
   return (
     <html
       lang={locale}
@@ -97,7 +109,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           <AppFooter
             locale={locale}
-            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: RULES.sourceUrl, lang: d.lang.label }}
+            note={note}
+            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl, lang: d.lang.label }}
           />
         </I18nOverrides>
       </body>

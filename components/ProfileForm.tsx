@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
 import { addYears, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
-import { OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
+import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { formatDate, inHours, t, type Locale } from "@/lib/i18n";
+import { profileComplete } from "@/lib/profile";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
 
@@ -13,8 +14,21 @@ type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "override", str
 
 const MAX_REQUIRED = 5000;
 
-/** readOnly: the demo account, fields shown but disabled and no save button */
-export default function ProfileForm({ initial, locale, readOnly = false }: { initial: Profile; locale: Locale; readOnly?: boolean }) {
+/**
+ * readOnly: the demo account, fields shown but disabled and no save button.
+ * onboarding: the profile has never been completed; the save that completes it goes on to the dashboard.
+ */
+export default function ProfileForm({
+  initial,
+  locale,
+  readOnly = false,
+  onboarding = false,
+}: {
+  initial: Profile;
+  locale: Locale;
+  readOnly?: boolean;
+  onboarding?: boolean;
+}) {
   const dict = t(locale);
   const professions = dict.professions;
   const router = useRouter();
@@ -50,14 +64,19 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
     if (next.profession === "nurse") next.certificationKind = "specialty";
     if (p.requiredPointsOverride === ruleTarget) next.requiredPointsOverride = null;
     setP(next);
-    // a listed specialty that the new profession does not have is dropped; a single-option list is picked for the user
+    // the specialty follows the new profession's list; a value that does not fit it is dropped, so only one specialty field shows
     const list = specialtiesFor(next.profession, next.certificationKind);
     const current = specialtyByCode(spec.code);
-    if (current && !list.some((x) => x.code === current.code)) {
-      if (list.length === 1) setSpec({ code: list[0].code, text: "" });
-      else if (list.length === 0) setSpec({ code: OTHER_SPECIALTY, text: current.lv });
-      else setSpec({ code: null, text: "" });
-    } else if (!spec.code && list.length === 1) setSpec({ code: list[0].code, text: "" });
+    const only = list.length === 1 ? { code: list[0].code, text: "" } : { code: null, text: "" };
+    if (list.length === 0) {
+      // free text only: a pick from the old list does not carry over, text typed under "Cita" does
+      if (specList.length > 0) setSpec({ code: OTHER_SPECIALTY, text: spec.code === OTHER_SPECIALTY ? spec.text : "" });
+    } else if (specList.length === 0) {
+      // from free text to a list: keep the text only when it names a specialty on the new list
+      const hit = findSpecialty(spec.text);
+      setSpec(hit && list.some((x) => x.code === hit.code) ? { code: hit.code, text: "" } : only);
+    } else if (current && !list.some((x) => x.code === current.code)) setSpec(only);
+    else if (!spec.code) setSpec(only);
   };
 
   const defaultExpiry = p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null;
@@ -100,6 +119,7 @@ export default function ProfileForm({ initial, locale, readOnly = false }: { ini
     const data = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) return setMsg({ ok: false, text: data.error ?? d.saveError });
+    if (onboarding && profileComplete(data.profile)) return router.push("/dashboard");
     setP(data.profile);
     setSpec(resolveSpecialty(data.profile));
     setMsg({ ok: true, text: d.saved });

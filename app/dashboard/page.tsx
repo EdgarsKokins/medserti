@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { isDemoUser, requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
-import { computeProgress, NURSE_RULES, REGISTER_URL, ruleBasis, RULES } from "@/lib/rules";
+import { computeProgress, ruleBasis, RULES } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
 import { readCourseIndex } from "@/lib/courses/store";
 import { isNurseCourse, type Course } from "@/lib/courses/types";
@@ -108,18 +108,6 @@ export default async function DashboardPage() {
           </div>
         </details>
       )}
-
-      <p className={`small muted ${styles.footnote}`}>
-        {dict.rules.label}: {hours ? dict.rules.sourceNurse : dict.rules.source} (
-        <a href={hours ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">
-          likumi.lv
-        </a>
-        ). {hours ? dict.rules.checkOfficialInNurse : dict.rules.checkOfficialIn}{" "}
-        <a href={REGISTER_URL} target="_blank" rel="noreferrer">
-          {dict.rules.register}
-        </a>
-        . {hours ? dict.rules.planningAidNurse : dict.rules.planningAid}
-      </p>
     </main>
   );
 }
