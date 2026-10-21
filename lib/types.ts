@@ -88,6 +88,8 @@ export interface CmeCertificate {
   fieldConfidence?: FieldConfidence | null;
   /** confirmed by the parser without the user (lib/parse/confidence.ts autoConfirm); cleared when the user saves */
   autoConfirmed?: boolean;
+  /** where the parser read the text: a real PDF text layer, OCR (photos, scans), or nothing; missing on older certificates */
+  parsedFrom?: "text" | "ocr" | "none";
   /** sha256 of the uploaded file, to spot the same file uploaded twice */
   fileHash?: string | null;
   /** JSON array of ParseNote; older certificates hold plain English text */

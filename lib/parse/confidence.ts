@@ -4,6 +4,12 @@ import type { CmeCertificate, ConfidenceField } from "../types";
 export const LOW_CONFIDENCE = 0.7;
 /** Every key field must reach this for a certificate to be confirmed without the user */
 export const AUTO_CONFIRM_CONFIDENCE = 0.9;
+/**
+ * "Confirm all checked" bar for OCR'd certificates (auto-confirm never takes OCR). Swept from 0.86 down to 0.60
+ * on 41 real scans with ground truth (Oct 2026): the first wrong certificate (organizer, title) appears at 0.80,
+ * so this is one 0.02 step above it. At 0.82 none of those scans qualifies: OCR'd organizers are the weak field.
+ */
+export const OCR_CONFIRM_CHECKED_CONFIDENCE = 0.82;
 /** With no certificate window in the profile, a date this many years back is still plausible */
 const PLAUSIBLE_YEARS = 5;
 
@@ -79,19 +85,21 @@ function isDuplicate(c: DupFields, others: DupFields[]): boolean {
 
 /**
  * "Confirm all checked": the user confirms in one click every needs_review certificate whose date, points,
- * title and organizer all reach AUTO_CONFIRM_CONFIDENCE. Unlike auto-confirm, OCR'd certificates qualify,
- * because the user sees the list and confirms it. Duplicates, future dates and dates outside the cycle stay in review.
+ * title and organizer all reach AUTO_CONFIRM_CONFIDENCE (OCR_CONFIRM_CHECKED_CONFIDENCE when read by OCR).
+ * Unlike auto-confirm, OCR'd certificates qualify, because the user sees the list and confirms it. Duplicates, future dates and dates outside the cycle stay in review.
  * Shared by the button (to list them) and the server (which decides again and never trusts the client's list).
  */
 export function confirmCheckedEligible(
-  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash">,
+  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash" | "parsedFrom">,
   all: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
   window: { start: string | null; end: string | null },
   today: string,
 ): boolean {
   if (cert.status !== "needs_review") return false;
   if (!cert.title || !cert.organizer || !cert.date || cert.points == null) return false;
-  if (KEY_FIELDS.some((k) => (cert.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) return false;
+  // older certificates do not say where their text came from: hold them to the stricter text-layer bar
+  const bar = cert.parsedFrom === "ocr" ? OCR_CONFIRM_CHECKED_CONFIDENCE : AUTO_CONFIRM_CONFIDENCE;
+  if (KEY_FIELDS.some((k) => (cert.fieldConfidence?.[k] ?? 0) < bar)) return false;
   if (dateBlocks(cert.date, window, today).length) return false;
   return !isDuplicate(cert, all.filter((o) => o.id !== cert.id));
 }

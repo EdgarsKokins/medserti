@@ -116,6 +116,7 @@ export async function POST(req: Request) {
       ...result.fields,
       status: auto ? "confirmed" : result.status,
       autoConfirmed: auto,
+      parsedFrom: result.source,
       fileHash,
       parseNotes: result.notes,
     };
