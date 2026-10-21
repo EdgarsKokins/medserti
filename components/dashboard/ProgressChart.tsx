@@ -8,7 +8,7 @@ import styles from "./ProgressChart.module.css";
    today marker, forecast at the average pace so far, and an HTML tooltip per date.
    Renders at the measured container width so text stays at its real pixel size. */
 
-export type ChartLocale = "lv" | "en";
+export type ChartLocale = "lv" | "en" | "ru";
 
 /** Every visible string. {placeholders} are filled in by the chart. */
 export interface ProgressChartLabels {
@@ -70,11 +70,14 @@ const MIN_FORECAST_DAYS = 90;
 const MONTHS: Record<ChartLocale, string[]> = {
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   lv: ["janv.", "febr.", "marts", "apr.", "maijs", "jūn.", "jūl.", "aug.", "sept.", "okt.", "nov.", "dec."],
+  ru: ["янв.", "февр.", "март", "апр.", "май", "июнь", "июль", "авг.", "сент.", "окт.", "нояб.", "дек."],
 };
 
 /** Latvian month names after "līdz" (dative) and "ap" (accusative): "līdz 2028. gada martam", "ap 2028. gada martu" */
 const LV_DATIVE = ["janvārim", "februārim", "martam", "aprīlim", "maijam", "jūnijam", "jūlijam", "augustam", "septembrim", "oktobrim", "novembrim", "decembrim"];
 const LV_ACCUSATIVE = ["janvāri", "februāri", "martu", "aprīli", "maiju", "jūniju", "jūliju", "augustu", "septembri", "oktobri", "novembri", "decembri"];
+/** Russian month names after "к" (dative): "к марту 2028 г." */
+const RU_DATIVE = ["январю", "февралю", "марту", "апрелю", "маю", "июню", "июлю", "августу", "сентябрю", "октябрю", "ноябрю", "декабрю"];
 
 const dayMs = (iso: string) => Date.parse(iso.slice(0, 10) + "T00:00:00Z");
 const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m);
@@ -85,15 +88,16 @@ function makeFmt(locale: ChartLocale) {
   const mon = MONTHS[locale];
   return {
     num: (n: number) => nf.format(Math.round(n * 10) / 10),
-    /** en "14 Mar 2028", lv "14.03.2028." */
+    /** en "14 Mar 2028", lv "14.03.2028.", ru "14.03.2028" */
     date: (ms: number) => {
       const d = new Date(ms);
       const [y, m, day] = [d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()];
-      return locale === "lv"
-        ? `${String(day).padStart(2, "0")}.${String(m + 1).padStart(2, "0")}.${y}.`
-        : `${String(day).padStart(2, "0")} ${mon[m]} ${y}`;
+      const dm = `${String(day).padStart(2, "0")}.${String(m + 1).padStart(2, "0")}`;
+      if (locale === "lv") return `${dm}.${y}.`;
+      if (locale === "ru") return `${dm}.${y}`;
+      return `${String(day).padStart(2, "0")} ${mon[m]} ${y}`;
     },
-    /** en "Mar 2028", lv "2028. g. marts" */
+    /** en "Mar 2028", lv "2028. g. marts", ru "март 2028" */
     month: (ms: number) => {
       const d = new Date(ms);
       return locale === "lv"
@@ -104,6 +108,7 @@ function makeFmt(locale: ChartLocale) {
     /** month-year inside a sentence; Latvian needs the case the preposition governs */
     monthIn: (ms: number, kase: "dative" | "accusative") => {
       const d = new Date(ms);
+      if (locale === "ru") return `${RU_DATIVE[d.getUTCMonth()]} ${d.getUTCFullYear()} г.`;
       if (locale !== "lv") return `${mon[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
       return `${d.getUTCFullYear()}. gada ${(kase === "dative" ? LV_DATIVE : LV_ACCUSATIVE)[d.getUTCMonth()]}`;
     },

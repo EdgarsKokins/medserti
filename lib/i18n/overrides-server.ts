@@ -1,6 +1,7 @@
 import "server-only";
 import { getJson, putJson } from "../storage";
-import { compileOverrides, type StoredOverrides } from "./catalog";
+import { compileOverrides, emptyOverrides, type StoredOverrides } from "./catalog";
+import { LOCALES } from "../i18n";
 import { setI18nOverrides, type RuntimeOverrides } from "./overrides";
 
 /** Overrides edited at /admin, in the private Blob store. The previous version is kept for undo. */
@@ -8,12 +9,12 @@ const CURRENT = "i18n/overrides.json";
 const PREVIOUS = "i18n/overrides.prev.json";
 const TTL_MS = 60_000;
 
-const empty = (): StoredOverrides => ({ lv: {}, en: {} });
+const empty = emptyOverrides;
 
 function normalize(v: unknown): StoredOverrides {
   const out = empty();
   if (!v || typeof v !== "object") return out;
-  for (const l of ["lv", "en"] as const) {
+  for (const l of LOCALES) {
     const m = (v as Record<string, unknown>)[l];
     if (m && typeof m === "object" && !Array.isArray(m))
       for (const [k, s] of Object.entries(m)) if (typeof s === "string") out[l][k] = s;

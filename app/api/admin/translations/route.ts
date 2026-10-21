@@ -19,7 +19,7 @@ export async function GET() {
   return NextResponse.json({ overrides, hasPrevious: !!prev }, { headers: { "Cache-Control": "no-store" } });
 }
 
-/** Save the full set of overrides. Body: { lv: { key: text }, en: { key: text } } */
+/** Save the full set of overrides. Body: { lv: { key: text }, en: { key: text }, ru: { key: text } } */
 export async function PUT(req: Request) {
   if (!(await isAdmin())) return adminNotFound();
   // JSON only: a cross-site form cannot send this content type without a CORS preflight

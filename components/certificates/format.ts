@@ -78,10 +78,10 @@ export function countryCode(value: string | null): string | null {
   return LEGACY_COUNTRY[v.toLowerCase()] ?? null;
 }
 
-/** ISO code -> "Latvija" / "Latvia" in the UI language */
+/** ISO code -> "Latvija" / "Latvia" / "Латвия" in the UI language */
 export function countryName(code: string, locale: Locale): string {
   try {
-    return new Intl.DisplayNames([locale === "lv" ? "lv" : "en-GB"], { type: "region" }).of(code) ?? code;
+    return new Intl.DisplayNames([locale === "en" ? "en-GB" : locale], { type: "region" }).of(code) ?? code;
   } catch {
     return code;
   }

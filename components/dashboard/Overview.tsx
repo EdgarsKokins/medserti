@@ -130,6 +130,7 @@ export function Requirements({ p, locale }: { p: Progress; locale: Locale }) {
 export const MONTHS_SHORT: Record<Locale, string[]> = {
   lv: ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"],
   en: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+  ru: ["ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН", "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК"],
 };
 
 /** Calendar-style date block used by course rows */

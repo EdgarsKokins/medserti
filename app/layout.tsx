@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Public_Sans, Schibsted_Grotesk } from "next/font/google";
+import { Golos_Text, Public_Sans, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { currentUserId } from "@/lib/auth";
 import { isDemoUserId } from "@/lib/demo/id";
@@ -17,6 +17,9 @@ import { RULES } from "@/lib/rules";
 const body = Public_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
 // Schibsted Grotesk for headings and the numbers that matter
 const display = Schibsted_Grotesk({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "700"], variable: "--font-display-face", display: "swap" });
+// neither face has Cyrillic: Golos Text (made for Russian government services) covers Russian only, via unicode-range.
+// It comes first in the font stacks; no fallback face, so Latin letters skip it. Downloaded only on pages with Cyrillic text.
+const cyrillic = Golos_Text({ subsets: ["cyrillic"], weight: ["400", "500", "600", "700"], variable: "--font-cyrillic", display: "swap", preload: false, adjustFontFallback: false });
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
@@ -47,7 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={locale}
-      className={`${body.variable} ${display.variable}`}
+      className={`${body.variable} ${display.variable} ${cyrillic.variable}`}
       data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
