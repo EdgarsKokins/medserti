@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatDate, formatNumber, type Locale } from "@/lib/i18n";
+import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/i18n";
 import { SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
@@ -28,6 +28,7 @@ export default function CoursesView({
   sources,
   specialty,
   remaining,
+  hoursUnit = null,
   openId = null,
 }: {
   locale: Locale;
@@ -36,6 +37,8 @@ export default function CoursesView({
   sources: SourceStatus[];
   specialty: string;
   remaining: number;
+  /** nurses: the unit their remaining amount is counted in ("akad. st."), null for TIP */
+  hoursUnit?: string | null;
   /** course to show opened and scrolled into view (/courses?open=<id>, from the dashboard picks) */
   openId?: string | null;
 }) {
@@ -122,7 +125,7 @@ export default function CoursesView({
           <h1>{s.title}</h1>
           <p className="muted">{s.lead}</p>
         </div>
-        {remaining > 0 && <div className={styles.need}>{s.needLine(formatNumber(remaining, locale, 1))}</div>}
+        {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, locale, 1)), hoursUnit) : s.needLine(formatNumber(remaining, locale, 1))}</div>}
       </div>
 
       <div className={styles.tabs} role="tablist">

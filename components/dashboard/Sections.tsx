@@ -2,10 +2,11 @@ import Link from "next/link";
 import { RULES, type Progress } from "@/lib/rules";
 import { t, type Locale } from "@/lib/i18n";
 import styles from "./dashboard.module.css";
-import { certTitle, exclusions, fmtDate, fmtNum, needsReviewCount, recent, type CategoryRow } from "./model";
+import { certTitle, dictFor, exclusions, fmtDate, fmtNum, needsReviewCount, recent, type CategoryRow } from "./model";
 
-export function CategoryBars({ p, rows, locale }: { p: Progress; rows: CategoryRow[]; locale: Locale }) {
-  const d = t(locale).dashboard;
+/** hours: nurses, who count academic hours and have no 16% cap on practical training (Reg. 630 Annex 6) */
+export function CategoryBars({ p, rows, locale, hours = false }: { p: Progress; rows: CategoryRow[]; locale: Locale; hours?: boolean }) {
+  const d = dictFor(locale, hours).dashboard;
   const n = (v: number) => fmtNum(v, locale);
   const max = Math.max(...rows.map((r) => r.points), 1);
   const cap = p.required * RULES.practicalCapShare;
@@ -27,7 +28,7 @@ export function CategoryBars({ p, rows, locale }: { p: Progress; rows: CategoryR
                 </span>
                 <div className={`bar ${isPractical ? styles.barCapped : ""} ${isPractical && capped ? styles.barWarn : ""}`}>
                   <span style={{ width: `${(r.points / max) * 100}%` }} />
-                  {isPractical && (
+                  {isPractical && !hours && (
                     <i
                       className={styles.capMark}
                       style={{ left: `${Math.min(100, (cap / max) * 100)}%` }}

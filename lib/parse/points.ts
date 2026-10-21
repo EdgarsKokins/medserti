@@ -209,10 +209,10 @@ export function findPracticalHours(t: Text): number | null {
 }
 
 /**
- * Points from hours when the certificate prints none (Annex 4, Regulation No. 391 as amended 25 Nov 2025):
+ * Points from hours when the certificate prints none (Annex 4, Regulation No. 391 as worded by No. 487, 18 Aug 2026):
  *  item 1, 2, 8 (events in Latvia): 1 TIP per academic hour, max 8 TIP per day
  *  item 3 (abroad): as set by the organizer; with no number printed we use 1 TIP per hour (footnote 1 baseline)
- *  item 4 (certification body's interdisciplinary conference): 12 TIP each
+ *  item 4 and 4.1 (interdisciplinary conference of the certification body, a university or a clinical university hospital): 12 TIP each
  *  item 7, 9 (distance learning): 1 TIP per academic hour, no daily cap
  *  item 10 (practical training): 8 TIP per day
  */

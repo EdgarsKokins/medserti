@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { isDemoUser, requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
-import { computeProgress, REGISTER_URL, RULES } from "@/lib/rules";
+import { computeProgress, NURSE_RULES, REGISTER_URL, ruleBasis, RULES } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
 import { readCourseIndex } from "@/lib/courses/store";
 import type { Course } from "@/lib/courses/types";
@@ -13,7 +13,7 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
 import DashboardUpload from "@/components/dashboard/DashboardUpload";
-import { categoryBreakdown, cumulativeSeries, headline, isoDay } from "@/components/dashboard/model";
+import { categoryBreakdown, cumulativeSeries, dictFor, headline, isoDay } from "@/components/dashboard/model";
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
@@ -36,10 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function DashboardPage() {
   const user = await requireUser();
   const [certs, courseIdx, locale] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null), getLocale()]);
-  const dict = t(locale);
+  // nurses re-register on academic hours (Reg. 630), everyone else recertifies on TIP (Reg. 391)
+  const hours = user.profile.profession === "nurse";
+  const dict = dictFor(locale, hours);
   const d = dict.dashboard;
   const today = new Date();
   const p = computeProgress(user.profile, certs, today);
+  // a hand-set target replaces the rule, so its reason is not shown
+  const basis = user.profile.requiredPointsOverride ? null : ruleBasis(user.profile);
   const profileIncomplete = !user.profile.certificateIssued;
   const picks = pickCourses(courseIdx?.courses ?? [], user.profile.specialty.trim(), isoDay(today));
 
@@ -52,7 +56,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <Hero p={p} h={headline(p, locale)} specialty={user.profile.specialty} nurse={user.profile.profession === "nurse"} locale={locale} today={today} />
+      <Hero p={p} h={headline(p, locale, hours)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
 
       <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
       {certs.some((c) => c.status === "confirmed") && (
@@ -62,7 +66,7 @@ export default async function DashboardPage() {
       )}
 
       <div className={styles.twoCol}>
-        <Requirements p={p} locale={locale} />
+        <Requirements p={p} locale={locale} hours={hours} />
         <CoursePicks courses={picks} locale={locale} />
       </div>
 
@@ -85,7 +89,7 @@ export default async function DashboardPage() {
               </div>
             </section>
             <div className={styles.twoCol}>
-              <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} />
+              <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} hours={hours} />
               <RecentActivity p={p} locale={locale} />
             </div>
           </div>
@@ -93,8 +97,8 @@ export default async function DashboardPage() {
       )}
 
       <p className={`small muted ${styles.footnote}`}>
-        {dict.rules.label}: {dict.rules.source} (
-        <a href={RULES.sourceUrl} target="_blank" rel="noreferrer">
+        {dict.rules.label}: {hours ? dict.rules.sourceNurse : dict.rules.source} (
+        <a href={hours ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">
           likumi.lv
         </a>
         ). {dict.rules.checkOfficialIn}{" "}
