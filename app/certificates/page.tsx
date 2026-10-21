@@ -5,6 +5,7 @@ import CertificatesView from "@/components/certificates/CertificatesView";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { specialtyLabel } from "@/lib/specialties";
+import { certificateWindow } from "@/lib/rules";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,14 @@ export default async function CertificatesPage() {
           <Link href="/export" className="btn">{dict.exportDocs.cta} →</Link>
         )}
       </div>
-      <CertificatesView initial={certificates} specialty={specialtyLabel(user.profile.specialty, locale)} locale={locale} readOnly={isDemoUser(user)} />
+      <CertificatesView
+        initial={certificates}
+        specialty={specialtyLabel(user.profile.specialty, locale)}
+        locale={locale}
+        cycle={certificateWindow(user.profile)}
+        today={new Date().toISOString().slice(0, 10)}
+        readOnly={isDemoUser(user)}
+      />
     </main>
   );
 }
