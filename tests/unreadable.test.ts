@@ -227,3 +227,45 @@ test("parseRegistryRows: reads a register row, drops contact details", () => {
   const [row] = parseRegistryRows(html);
   assert.deepEqual(row, { approvalId: "TIP2025/1001", title: '2.konference "Demo jaunumi"', start: "2025-10-10", end: null, days: ["2025-10-10"], organizer: "Demo Partneri SIA", tip: 4, detailRef: "application:1001" });
 });
+
+// ---------- course abroad: how many TIP (lib/abroad.ts, conservative reading chosen 22 Oct 2026) ----------
+
+import { daysBetween, estimateAbroad } from "../lib/abroad";
+
+test("abroad: stated credits count 1:1; with hours known, the recalculated maximum is a note", () => {
+  // 6 ECMEC for a 6-hour day: 6 TIP, a recalculation at 45 minutes could give 8
+  assert.deepEqual(estimateAbroad({ credits: 6, hours: 6, days: 1 }), { tip: 6, basis: "credits", capped: false, recalculatedMax: 8 });
+  // without hours there is no recalculation: one credit is not always an hour (ECTS)
+  assert.equal(estimateAbroad({ credits: 16, hours: null, days: 2 }).recalculatedMax, null);
+  // credits already above the recalculation: no note
+  assert.equal(estimateAbroad({ credits: 24, hours: 12, days: 3 }).recalculatedMax, null);
+});
+
+test("abroad: no credits -> programme hours / 45 minutes, max 8 TIP a day", () => {
+  assert.deepEqual(estimateAbroad({ credits: null, hours: 6, days: 1 }), { tip: 8, basis: "hours", capped: false, recalculatedMax: null });
+  // a 9-hour live-surgery day: 12 academic hours, capped at 8
+  assert.deepEqual(estimateAbroad({ credits: null, hours: 9, days: 1 }), { tip: 8, basis: "hours", capped: true, recalculatedMax: null });
+  assert.equal(estimateAbroad({ credits: null, hours: 12, days: 2 }).tip, 16);
+  // hours already in academic hours count as they are
+  assert.equal(estimateAbroad({ credits: null, hours: 6, academic: true, days: 1 }).tip, 6);
+});
+
+test("abroad: dates only -> no number", () => {
+  assert.deepEqual(estimateAbroad({ credits: null, hours: null, days: daysBetween("2024-10-17", "2024-10-18") }), { tip: null, basis: "none", capped: false, recalculatedMax: null });
+  assert.equal(daysBetween("2024-10-17", "2024-10-18"), 2);
+});
+
+test("parser: a certificate abroad with hours and no credits uses the same estimate", () => {
+  const r = parseCertificateText("CERTIFICATE OF ATTENDANCE\nThis is to certify that Dr Demo Person attended the course\nDemo Shoulder Course\nVilnius, Lithuania, 12 March 2025\nDuration: 6 hours", profile);
+  assert.equal(r.fields.country, "LT");
+  assert.equal(r.fields.points, 8);
+  const n = JSON.parse(r.notes!).find((x: { code: string }) => x.code === "derivedAbroad");
+  assert.deepEqual([n.p.h, n.p.points, n.p.academic], [6, 8, false]);
+});
+
+test("parser: organizer credits abroad stay 1:1 with a recalculation note", () => {
+  const r = parseCertificateText("CERTIFICATE OF ATTENDANCE\nThis is to certify that Dr Demo Person attended the course\nDemo Knee Course\nBerlin, Germany, 5 June 2025\n6 hours\n6 CME credits", profile);
+  assert.equal(r.fields.points, 6);
+  const n = JSON.parse(r.notes!).find((x: { code: string }) => x.code === "abroadRecalc");
+  assert.deepEqual([n.p.points, n.p.max], [6, 8]);
+});

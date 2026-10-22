@@ -1,5 +1,6 @@
 import type { CmeCategory, ParseNote } from "../types";
 import { eventDays } from "./dates";
+import { estimateAbroad } from "../abroad";
 import { lineAt, NA, NB, rx, toNum, type Text } from "./text";
 
 /*
@@ -212,7 +213,7 @@ export function findPracticalHours(t: Text): number | null {
 /**
  * Points from hours when the certificate prints none (Annex 4, Regulation No. 391 as worded by No. 487, 18 Aug 2026):
  *  item 1, 2, 8 (events in Latvia): 1 TIP per academic hour, max 8 TIP per day
- *  item 3 (abroad): as set by the organizer; with no number printed we use 1 TIP per hour (footnote 1 baseline)
+ *  item 3 (abroad): as set by the organizer; with no number printed, hours / 45 minutes, max 8 TIP a day (lib/abroad.ts)
  *  item 4 and 4.1 (interdisciplinary conference of the certification body, a university or a clinical university hospital): 12 TIP each
  *  item 7, 9 (distance learning): 1 TIP per academic hour, no daily cap
  *  item 10 (practical training): 8 TIP per day
@@ -233,7 +234,10 @@ export function derivePoints(
   const h = hours.value;
   const academic = hours.academic;
   const plain: ParseNote[] = academic ? [] : [{ code: "plainHours" }];
-  if (category === "training_abroad") return { points: h, notes: [{ code: "derivedAbroad", p: { h, academic } }, ...plain, check] };
+  if (category === "training_abroad") {
+    const e = estimateAbroad({ credits: null, hours: h, academic, days });
+    return { points: e.tip!, notes: [{ code: "derivedAbroad", p: { h, academic, points: e.tip!, ...(e.capped ? { days: days! } : {}) } }, check] };
+  }
   if (category === "e_learning") return { points: h, notes: [{ code: "derivedElearning", p: { h, academic } }, ...plain, check] };
 
   const cap = days ? days * 8 : null;

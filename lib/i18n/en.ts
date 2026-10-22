@@ -1,3 +1,4 @@
+import type { AbroadKind } from "../abroad";
 import type { Check } from "../rules";
 import { RULES } from "../rule-constants";
 import type { CertStatus, CmeCategory, NurseTopic, Profession } from "../types";
@@ -594,7 +595,9 @@ export const en = {
       `Points not printed; calculated as ${p.days} ${enPl(Number(p.days), "day", "days")} x 8 TIP for practical training (Annex 4 item 10).`,
     derivedInterdisciplinary: () => "Points not printed; an interdisciplinary conference of a certifying body counts 12 TIP (Annex 4 item 4 of Regulation No. 391).",
     derivedAbroad: (p: NoteP) =>
-      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h). Abroad, the organiser sets the points (Annex 4 item 3).`,
+      `Points not printed; estimated as 1 TIP per 45 minutes: ${fmtN(p.h)} ${p.academic ? "academic hours" : "h"} = ${fmtN(p.points)} TIP${p.days ? `, max 8 TIP a day (${p.days} ${enPl(Number(p.days), "day", "days")})` : ""}. Abroad, the organiser sets the points (Annex 4 item 3): this is an estimate, not an LĀB decision.`,
+    abroadRecalc: (p: NoteP) =>
+      `The organiser's points (${fmtN(p.points)}) count 1:1. Recalculated at 1 TIP per 45 minutes, this could be up to ${fmtN(p.max)} TIP: then attach a justified recalculation (Annex 4 footnote 1).`,
     derivedElearning: (p: NoteP) =>
       `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h), no daily cap for distance learning (Annex 4 items 7 and 9).`,
     derivedLatvia: (p: NoteP) =>
@@ -988,6 +991,31 @@ export const en = {
       lumpii: "LUMPII",
       lma: "Latvian Nurses Association",
     } as Record<CourseSource, string>,
+    abroad: {
+      title: "Course abroad: how many TIP?",
+      lead: "Check before you go. Abroad, the organiser sets the points and no LĀB approval is needed (Regulation No. 391, Annex 4 item 3).",
+      country: "Country",
+      kind: "Type",
+      kinds: { conference: "Congress or conference", course: "Course", live_surgery: "Live surgery", workshop: "Hands-on workshop" } as Record<AbroadKind, string>,
+      from: "From",
+      to: "To",
+      hours: "Programme hours",
+      hoursHint: "Hours you will attend (60 min)",
+      credits: "Credits",
+      creditsHint: "ECMEC, CME or ECTS, if the organiser states them",
+      estimate: "Estimate",
+      fromCredits: (n: string) => `${n} TIP: the organiser's credits, counted 1:1.`,
+      recalc: (n: string) => `Recalculated at 1 TIP per 45 minutes, this could be up to ${n} TIP: then attach a justified recalculation (Annex 4 footnote 1).`,
+      fromHours: (n: string) => `${n} TIP: programme hours, 1 TIP per 45 minutes.`,
+      capped: "Limited to 8 TIP a day.",
+      none: "Dates alone are not enough for an estimate. Ask the organiser for the programme with times, or the credits.",
+      latvia: "For events in Latvia, LĀB approves the points: look the event up in the list above.",
+      bring: "What to bring home:",
+      proofCertificate: "A certificate of attendance with hours or credits",
+      proofProgramme: "The programme with times, if the certificate shows no hours",
+      proofHandsOn: "For hands-on parts: proof of how many hours you took part",
+      note: "This is an estimate, not an LĀB decision. The certification commission counts the points.",
+    },
     disclaimer:
       "Collected automatically from public pages and may be incomplete. Check TIP and dates with the organiser. Contact persons' details are not stored.",
   },

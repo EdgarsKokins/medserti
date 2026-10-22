@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { swapUnit, type Locale } from "@/lib/locale";
 import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { useDict } from "@/components/i18n/DictProvider";
+import AbroadEstimator from "./AbroadEstimate";
 import type { Dict } from "@/lib/i18n/en";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/DateBlock";
@@ -160,6 +161,9 @@ export default function CoursesView({
         </div>
         {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, 1)), hoursUnit) : s.needLine(formatNumber(remaining, 1))}</div>}
       </div>
+
+      {/* collapsed until opened; nurses re-register on hours with the Health Inspectorate (Reg. 630), not on LĀB TIP */}
+      {!nurse && <AbroadEstimator locale={locale} />}
 
       <div className={styles.tabs} role="tablist">
         {KINDS.map((k) => (

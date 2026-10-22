@@ -3,6 +3,7 @@ import { LOW_CONFIDENCE } from "./confidence";
 import { eventDays, findDates } from "./dates";
 import { findCategory, findCountry, isEmergencyCare, isLecturer, isMasterClassTeacher } from "./place";
 import { docLanguage, needsTranslation } from "./language";
+import { estimateAbroad } from "../abroad";
 import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
@@ -167,8 +168,12 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   let pointsKind = pts.kind;
   const days = eventDays(date, endDate);
   if (points != null && /(?<![\p{L}])(?:ECTS|ECMEC)/iu.test(t.raw)) notes.push({ code: "ects" });
-  if (points != null && category === "training_abroad" && academicHours && academicHours.value !== points)
-    notes.push({ code: "foreignRatio", p: { points, h: academicHours.value } });
+  if (points != null && category === "training_abroad" && academicHours) {
+    // the organizer's credits count 1:1; a recalculation at 1 TIP per 45 minutes may give more (lib/abroad.ts)
+    const e = estimateAbroad({ credits: points, hours: academicHours.value, academic: academicHours.academic, days });
+    if (e.recalculatedMax) notes.push({ code: "abroadRecalc", p: { points, max: e.recalculatedMax, academic: academicHours.academic } });
+    else if (academicHours.value !== points) notes.push({ code: "foreignRatio", p: { points, h: academicHours.value } });
+  }
   if (points != null && (category === "training_latvia" || category === "professional_meeting") && days && points > days * 8)
     notes.push({ code: "dailyCap", p: { points, days } });
   if (points == null && masterClass) {

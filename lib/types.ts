@@ -139,7 +139,8 @@ export type ParseNoteCode =
   | "foreignLanguage"
   | "tipRegistry"
   | "tipCandidates"
-  | "tipNoMatch";
+  | "tipNoMatch"
+  | "abroadRecalc";
 
 /** One event in the LĀB approved-TIP register (is.arstubiedriba.lv/tip_list_approved) */
 export interface RegistryEvent {

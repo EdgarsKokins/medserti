@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NURSE_TOPICS, type CmeCategory, type CmeCertificate, type ConfidenceField, type NurseTopic, type TipCandidate } from "@/lib/types";
+import { NURSE_TOPICS, type CmeCategory, type CmeCertificate, type ConfidenceField, type NurseTopic, type ParseNote, type TipCandidate } from "@/lib/types";
 import { registryUrl } from "@/lib/parse/tipMatch";
+import { daysBetween, estimateAbroad } from "@/lib/abroad";
+import { AbroadResult } from "@/components/courses/AbroadEstimate";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
 import { inHours, type Locale } from "@/lib/locale";
@@ -176,6 +178,24 @@ export default function ReviewPanel({
     }));
   };
   const lookup = cert.tipLookup?.candidates.length ? cert.tipLookup : null;
+  // a course abroad: the same estimate the /courses estimator gives, from what is in the form now (lib/abroad.ts)
+  const notesByCode = useMemo(() => {
+    try {
+      return new Map((JSON.parse(cert.parseNotes ?? "[]") as ParseNote[]).map((n) => [n.code, n]));
+    } catch {
+      return new Map<string, ParseNote>(); // older certificates hold plain text notes
+    }
+  }, [cert.parseNotes]);
+  const abroad = !nurse && f.category === "training_abroad" && !!f.country && countryCode(f.country) !== "LV"
+    ? estimateAbroad({
+        // points the parser estimated from hours are not the organizer's credits
+        credits: notesByCode.has("derivedAbroad") && f.points === initial.points ? null : f.points,
+        hours: f.academicHours,
+        // the parser notes whether the certificate said academic hours; unknown counts as academic (the smaller estimate)
+        academic: (notesByCode.get("derivedAbroad") ?? notesByCode.get("abroadRecalc"))?.p?.academic !== false,
+        days: daysBetween(f.date, f.endDate),
+      })
+    : null;
 
   const notes = useMemo(() => parseNoteLines(cert.parseNotes, dict), [cert.parseNotes, dict]);
   const countries = useMemo(() => {
@@ -304,6 +324,12 @@ export default function ReviewPanel({
                 );
               })}
             </ul>
+          </div>
+        )}
+
+        {abroad && (
+          <div className={`alert small ${styles.notes}`} role="note">
+            <AbroadResult estimate={abroad} />
           </div>
         )}
 

@@ -1,3 +1,4 @@
+import type { AbroadKind } from "../abroad";
 import { RULES } from "../rule-constants";
 import type { NurseTopic } from "../types";
 import { capPct, fieldList, fmtList, fmtN, lvPl, specialtyPct, langName, type NoteP } from "./shared";
@@ -597,7 +598,9 @@ export const lv: Dict = {
       `Punkti nav norādīti; aprēķināti kā ${p.days} ${lvPl(Number(p.days), "diena", "dienas")} x 8 TIP par praktisko apmācību (4. pielikuma 10. punkts).`,
     derivedInterdisciplinary: () => "Punkti nav norādīti; sertifikācijas institūcijas starpdisciplīnu konference dod 12 TIP (MK noteikumu 4. pielikuma 4. punkts).",
     derivedAbroad: (p: NoteP) =>
-      `Punkti nav norādīti; aprēķināti kā 1 TIP par ${p.academic ? "akadēmisko stundu" : "stundu"} (${fmtN(p.h)} st.). Ārvalstīs punktus nosaka organizators (4. pielikuma 3. punkts).`,
+      `Punkti nav norādīti; novērtēti kā 1 TIP par 45 minūtēm: ${fmtN(p.h)} ${p.academic ? "akadēmiskās stundas" : "st."} = ${fmtN(p.points)} TIP${p.days ? `, ne vairāk kā 8 TIP dienā (${p.days} ${lvPl(Number(p.days), "diena", "dienas")})` : ""}. Ārvalstīs punktus nosaka organizators (4. pielikuma 3. punkts): tas ir novērtējums, ne LĀB lēmums.`,
+    abroadRecalc: (p: NoteP) =>
+      `Organizatora punkti (${fmtN(p.points)}) ieskaitīti 1:1. Pārrēķinot 1 TIP par 45 minūtēm, tas var būt līdz ${fmtN(p.max)} TIP: tad pievienojiet pamatotu pārrēķinu (4. pielikuma 1. piezīme).`,
     derivedElearning: (p: NoteP) =>
       `Punkti nav norādīti; aprēķināti kā 1 TIP par ${p.academic ? "akadēmisko stundu" : "stundu"} (${fmtN(p.h)} st.), tālmācībai dienas ierobežojuma nav (4. pielikuma 7. un 9. punkts).`,
     derivedLatvia: (p: NoteP) =>
@@ -993,6 +996,31 @@ export const lv: Dict = {
       medicinaskursi: "medicinaskursi.lv",
       lumpii: "LUMPII",
       lma: "Latvijas Māsu asociācija",
+    },
+    abroad: {
+      title: "Kurss ārzemēs: cik TIP?",
+      lead: "Novērtējiet pirms brauciena. Ārvalstīs punktus nosaka organizators, LĀB iepriekšējs apstiprinājums nav vajadzīgs (MK noteikumu Nr. 391 4. pielikuma 3. punkts).",
+      country: "Valsts",
+      kind: "Veids",
+      kinds: { conference: "Kongress vai konference", course: "Kurss", live_surgery: "Tiešraides operācijas", workshop: "Praktiskā darbnīca" } as Record<AbroadKind, string>,
+      from: "No",
+      to: "Līdz",
+      hours: "Programmas stundas",
+      hoursHint: "Stundas, kurās piedalīsieties (60 min)",
+      credits: "Kredītpunkti",
+      creditsHint: "ECMEC, CME vai ECTS, ja organizators tos norāda",
+      estimate: "Novērtējums",
+      fromCredits: (n: string) => `${n} TIP: organizatora kredītpunkti, ieskaitīti 1:1.`,
+      recalc: (n: string) => `Pārrēķinot 1 TIP par 45 minūtēm, var būt līdz ${n} TIP: tad pievienojiet pamatotu pārrēķinu (4. pielikuma 1. piezīme).`,
+      fromHours: (n: string) => `${n} TIP: programmas stundas, 1 TIP par 45 minūtēm.`,
+      capped: "Ierobežots līdz 8 TIP dienā.",
+      none: "Tikai ar datumiem punktus novērtēt nevar. Paprasiet organizatoram programmu ar laikiem vai kredītpunktus.",
+      latvia: "Pasākumiem Latvijā punktus apstiprina LĀB: meklējiet pasākumu sarakstā augstāk.",
+      bring: "Ko atvest mājās:",
+      proofCertificate: "Dalības sertifikātu ar stundām vai kredītpunktiem",
+      proofProgramme: "Programmu ar laikiem, ja sertifikātā stundu nav",
+      proofHandsOn: "Praktiskajām daļām: apliecinājumu, cik stundas piedalījāties",
+      note: "Tas ir novērtējums, nevis LĀB lēmums. Punktus ieskaita sertifikācijas komisija.",
     },
     disclaimer:
       "Dati automātiski apkopoti no publiskām lapām un var būt nepilnīgi. TIP skaitu un datumus pārbaudiet pie organizatora. Kontaktpersonu dati netiek glabāti.",
