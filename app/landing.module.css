@@ -7,14 +7,6 @@
 
 /* ---------- hero ---------- */
 .hero { border-bottom: 1px solid var(--border); }
-.scrollCue {
-  display: none; align-items: center; justify-content: center; gap: 8px;
-  max-width: 1120px; margin: -16px auto 0; padding: 8px 20px 20px;
-  color: var(--muted); font-weight: 600; text-decoration: none;
-}
-.scrollCue:hover, .scrollCue:focus-visible { color: var(--accent); }
-/* only on short desktop screens, where the next section may not peek above the fold; elsewhere its top edge is the cue */
-@media (min-width: 961px) and (max-height: 820px) { .scrollCue { display: flex; } }
 .heroInner { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px 64px; align-items: center; padding: 44px 20px 40px; max-width: 1120px; margin: 0 auto; }
 .heroCopy { max-width: 32rem; }
 .heroTitle { font-size: clamp(2.2rem, 3.6vw, 3rem); line-height: 1.06; letter-spacing: -0.03em; font-weight: 700; margin: 0 0 20px; text-wrap: balance; }

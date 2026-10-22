@@ -282,7 +282,6 @@ export const LABELS: Record<string, string> = {
   "landingA.heroTitle": "Lielais virsraksts",
   "landingA.heroSub": "Teksts zem lielā virsraksta",
   "landingA.start": "Galvenā poga",
-  "landingA.seeHow": "Otrā poga: kā Medserti palīdz",
   "landingA.how": "Bloka virsraksts: kā tas strādā",
   "landingA.scatterLabel": "Izkaisīto sertifikātu attēla apraksts (ekrāna lasītājiem)",
   "landingA.scatterEmail": "Izkaisītie sertifikāti: e-pasta zīme",

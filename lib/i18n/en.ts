@@ -83,7 +83,6 @@ export const en = {
     heroTitle: "Always know how many TIP you still need, and where to get them.",
     heroSub: "Can you find all your certificates? And how many TIP are they worth? Some are in your email, some on paper, some on each organizer's website. Come recertification, you have to find them all and work out how many TIP points are still missing.",
     start: "Start for free",
-    seeHow: "How Medserti helps",
     how: "How it works",
     scatterLabel: "Certificates kept in different places, with no clear view of what is still missing, or how much",
     scatterEmail: "Email",

@@ -115,11 +115,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               deadline={a.scatterDeadline}
             />
           </div>
-          {/* scroll cue at the foot of the hero: centred, quiet, the arrows bob unless motion is reduced */}
-          <a href="#answer" className={s.scrollCue}>
-            <span>{a.seeHow}</span>
-            <span aria-hidden>↓</span>
-          </a>
         </section>
 
         <div className={s.wrap}>

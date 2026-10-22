@@ -79,7 +79,6 @@ export const lv: Dict = {
     heroTitle: "Vienmēr ziniet, cik TIP jums trūkst un kur tos iegūt!",
     heroSub: "Vai varat atrast visus savus sertifikātus? Un cik TIP tie dod? Daļa ir e-pastā, daļa uz papīra, daļa katra kursu rīkotāja mājaslapā. Kad pienāk resertifikācija, tie visi jāsameklē un jāsaprot, cik TIP punktu vēl trūkst.",
     start: "Sākt bez maksas",
-    seeHow: "Kā Medserti palīdz",
     how: "Kā tas strādā",
     scatterLabel: "Sertifikāti glabājas dažādās vietās, un nav skaidrs, kas un cik daudz vēl trūkst",
     scatterEmail: "E-pasts",
