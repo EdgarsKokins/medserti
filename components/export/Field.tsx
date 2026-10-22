@@ -7,7 +7,7 @@ export type FormProblem = Problem | "file" | "fileSize" | "declarations";
 
 type Strings = Dict["exportDocs"];
 
-export function problemText(p: FormProblem | undefined, d: Strings): string | null {
+function problemText(p: FormProblem | undefined, d: Strings): string | null {
   switch (p) {
     case "required": return d.required;
     case "letters": return d.errLetters;

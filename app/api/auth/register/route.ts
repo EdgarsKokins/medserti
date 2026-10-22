@@ -6,6 +6,7 @@ import { hashPassword, startSession } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { LEGAL_UPDATED } from "@/lib/legal";
+import { PROFESSIONS } from "@/lib/types";
 import { clientIp, rateLimit } from "@/lib/password-reset";
 import { passwordBreached, passwordTooLong } from "@/lib/password-policy";
 import { EMAIL_MAX, tidyName, validEmail, validName, validPassword } from "@/lib/validation";
@@ -15,7 +16,7 @@ const Body = z.object({
   password: z.string().refine(validPassword),
   fullName: z.string().trim().min(1).refine(validName).transform(tidyName),
   // sets the program from the first visit: nurses re-register on hours (Reg. 630), everyone else recertifies on TIP
-  profession: z.enum(["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"]),
+  profession: z.enum(PROFESSIONS),
   // checkbox value; the form sends nothing when it is unticked
   consent: z.literal("on"),
 });
@@ -60,7 +61,6 @@ export async function POST(req: Request) {
       certificateNumber: "",
       certificateIssued: null,
       certificateExpires: null,
-      requiredPointsOverride: null,
     },
   });
   await startSession(id);

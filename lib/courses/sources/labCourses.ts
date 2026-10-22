@@ -1,11 +1,12 @@
 import type { Course } from "../types";
-import { cityOf, dmy, fetchText, textOf, tipIn, todayIso } from "../util";
+import { cityOf, dmy, fetchText, textOf, tipIn } from "../util";
+import { todayLv } from "../../format";
 
 /** LĀB's own course catalogue: price, date and a registration link. TIP is merged in from the approved TIP list. */
 const ORIGIN = "https://is.arstubiedriba.lv";
 const LIST = `${ORIGIN}/events/kursi/list`;
 
-export function parseLabCourses(html: string, today = todayIso()): Course[] {
+export function parseLabCourses(html: string, today = todayLv()): Course[] {
   const body = html.slice(html.indexOf("<tbody"), html.lastIndexOf("</tbody>"));
   const out: Course[] = [];
   for (const tr of body.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) ?? []) {

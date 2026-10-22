@@ -13,7 +13,8 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
 import DashboardUpload from "@/components/dashboard/DashboardUpload";
-import { categoryBreakdown, cumulativeSeries, dictFor, headline, isoDay } from "@/components/dashboard/model";
+import { categoryBreakdown, cumulativeSeries, dictFor, headline } from "@/components/dashboard/model";
+import { todayLv } from "@/lib/format";
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
@@ -58,8 +59,8 @@ export default async function DashboardPage() {
   // nurses give only the date their registration runs to (Reg. 630 point 33)
   const profileIncomplete = hours ? !user.profile.certificateExpires : !user.profile.certificateIssued;
   const picks = hours
-    ? pickNurseCourses(courseIdx?.courses ?? [], isoDay(today))
-    : pickCourses(courseIdx?.courses ?? [], user.profile.specialty.trim(), isoDay(today));
+    ? pickNurseCourses(courseIdx?.courses ?? [], todayLv(today))
+    : pickCourses(courseIdx?.courses ?? [], user.profile.specialty.trim(), todayLv(today));
 
   return (
     <main className="container stack" style={{ gap: 40 }}>
@@ -70,7 +71,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <Hero p={p} h={headline(p, locale, hours)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
+      <Hero p={p} h={headline(p, dict, locale)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
 
       <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
       {certs.some((c) => c.status === "confirmed") && (
@@ -96,7 +97,7 @@ export default async function DashboardPage() {
                   required={p.required}
                   windowStart={p.windowStart}
                   windowEnd={p.windowEnd}
-                  today={isoDay(today)}
+                  today={todayLv(today)}
                   labels={dict.chart}
                   locale={locale}
                 />

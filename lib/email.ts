@@ -6,7 +6,7 @@ import { CONTACT_EMAIL } from "./site";
  * Without RESEND_API_KEY (local dev) the email is printed to the server console instead of sent.
  */
 /** replyTo: where a reply goes (the visitor, for contact form messages); default the public address */
-export type Email = { to: string; subject: string; text: string; replyTo?: string };
+type Email = { to: string; subject: string; text: string; replyTo?: string };
 
 const DEFAULT_FROM = "Medserti <noreply@medserti.lv>";
 

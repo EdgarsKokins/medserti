@@ -1,4 +1,5 @@
 import type { CmeCertificate, ConfidenceField } from "../types";
+import { foldKey } from "../text";
 
 /** A parsed field with lower confidence is named in a "lowConfidence" note and marked in the review panel */
 export const LOW_CONFIDENCE = 0.7;
@@ -36,7 +37,6 @@ export interface AutoConfirmInput {
 }
 
 const KEY_FIELDS = ["date", "points", "title", "organizer"] as const;
-const norm = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 
 /**
  * Confirm a certificate without the user only when nothing about it is a guess.
@@ -78,7 +78,7 @@ export function findDuplicate(
   const hit = existing.find(
     (c) =>
       (fileHash && c.fileHash === fileHash) ||
-      (!!f.date && !!f.title && c.date === f.date && norm(c.title) === norm(f.title) && norm(c.organizer) === norm(f.organizer)),
+      (!!f.date && !!f.title && c.date === f.date && foldKey(c.title) === foldKey(f.title) && foldKey(c.organizer) === foldKey(f.organizer)),
   );
   return hit?.id ?? null;
 }

@@ -10,7 +10,7 @@ export type FieldSpec = { kind: Kind; required: boolean; max: number };
 type Progress = { busy: boolean; done: number; total: number; msg: string | null; warn: boolean };
 type Row = { id: string; date: string; title: string; fileName: string };
 /** lib/export/docs.ts, loaded with docx only when the user downloads */
-export type Docs = typeof import("@/lib/export/docs");
+type Docs = typeof import("@/lib/export/docs");
 
 const IDLE: Progress = { busy: false, done: 0, total: 0, msg: null, warn: false };
 

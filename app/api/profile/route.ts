@@ -2,19 +2,21 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
 import { getUser, saveUser } from "@/lib/db";
-import { addYears, certificateWindow, RULES, todayLv } from "@/lib/rules";
+import { addYears, certificateWindow, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { CERTIFICATION_KINDS, PROFESSIONS } from "@/lib/types";
 import { CERT_NO_MAX, SPECIALTY_MAX, tidyName, validCertNo, validName, validPlainText } from "@/lib/validation";
+import { todayLv } from "@/lib/format";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Body = z.object({
   fullName: z.string().trim().min(1).refine(validName).transform(tidyName),
-  profession: z.enum(["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"]),
+  profession: z.enum(PROFESSIONS),
   specialty: z.string().trim().refine((v) => validPlainText(v, SPECIALTY_MAX)),
   specialtyCode: z.string().trim().max(10).nullable().optional(),
-  certificationKind: z.enum(["specialty", "method"]),
+  certificationKind: z.enum(CERTIFICATION_KINDS),
   certificateNumber: z.string().trim().max(CERT_NO_MAX).refine(validCertNo),
   certificateIssued: isoDate.nullable(),
   certificateExpires: isoDate.nullable(),
@@ -35,8 +37,7 @@ export async function PUT(req: Request) {
     const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { requiredPointsOverride: _ignored, ...rest } = parsed.data;
-  const p = { ...rest, requiredPointsOverride: null };
+  const { requiredPointsOverride: _ignored, ...p } = parsed.data;
   if (p.certificateIssued && !p.certificateExpires) p.certificateExpires = addYears(p.certificateIssued, RULES.validityYears);
   const today = todayLv();
   if (p.profession !== "nurse" && p.certificateIssued && p.certificateIssued > today) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });

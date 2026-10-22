@@ -7,12 +7,14 @@ next-env.d.ts
 *.tsbuildinfo
 .env*
 
-# Claude Code / impeccable local state
-.claude/worktrees/
-.claude/settings.local.json
-.impeccable/config.local.json
-.claude/skills/impeccable/scripts/bin/
-
 # local Claude Code state: worktree copies (may contain .env.local) and personal settings
 .claude/worktrees/
 .claude/settings.local.json
+
+# design tooling (impeccable skill and agents), kept locally, not part of the app
+.claude/skills/impeccable/
+.claude/agents/impeccable-*.md
+.impeccable/
+
+# Claude's own working files
+Working for Claude/

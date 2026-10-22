@@ -37,7 +37,7 @@ type Cache = { mem: { at: number; runtime: RuntimeOverrides } | null; inflight: 
 const cache: Cache = ((globalThis as { __medsertiI18n?: Cache }).__medsertiI18n ??= { mem: null, inflight: null });
 
 /**
- * Overrides in runtime form, cached for 60 s per server instance, and applied to t() / courseStrings() on the server.
+ * Overrides in runtime form, cached for TTL_MS (5 min) per server instance, and applied to t() on the server.
  * Never throws: if the store is unreachable the site shows the code texts (or the last good overrides).
  */
 export async function loadRuntimeOverrides(): Promise<RuntimeOverrides> {

@@ -5,10 +5,12 @@ import { listCertificates, saveCertificate, unreadableNote } from "@/lib/db";
 import { putBytes, remove } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
-import { certificateWindow, todayLv } from "@/lib/rules";
+import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate, ParseNote } from "@/lib/types";
+import { stripMarks } from "@/lib/text";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { todayLv } from "@/lib/format";
 
 export const maxDuration = 60;
 
@@ -27,10 +29,7 @@ function sniffType(b: Buffer): string | null {
 
 function sanitizeName(name: string, type: string): string {
   const base = name.split(/[\\/]/).pop() ?? "";
-  const stem = base
-    .replace(/\.[^.]*$/, "")
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+  const stem = stripMarks(base.replace(/\.[^.]*$/, ""))
     .replace(/[^A-Za-z0-9._-]+/g, "_")
     .replace(/^[._]+|_+$/g, "")
     .slice(0, 80);

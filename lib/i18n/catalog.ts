@@ -1,5 +1,4 @@
 import { baseDict, LOCALES, type Locale } from "../i18n";
-import { baseCourseStrings } from "@/components/courses/strings";
 import type { RuntimeOverrides } from "./overrides";
 import { GENERIC, LABELS, PARAM_NAMES, SECTION_NAMES } from "./catalog-labels";
 
@@ -73,9 +72,9 @@ const HIDDEN = (key: string) =>
   (key.startsWith("landing.") &&
     !["metaTitle", "metaDescription", "faqTitle", "footerContact", "footerNav", "footerRules", "online"].includes(key.slice(8)));
 
-export const MAX_LEN = 4000;
+const MAX_LEN = 4000;
 const NAMED = /\{([A-Za-z_]\w*)\}/g;
-export const placeholdersIn = (s: string) => [...new Set([...s.matchAll(NAMED)].map((m) => m[1]))];
+const placeholdersIn = (s: string) => [...new Set([...s.matchAll(NAMED)].map((m) => m[1]))];
 
 /* ---------- template detection ---------- */
 
@@ -214,7 +213,6 @@ export function catalog(): { entries: Entry[]; byKey: Map<string, Entry> } {
   for (const l of LOCALES) {
     maps[l] = new Map<string, unknown>();
     leaves(baseDict(l), "", maps[l]);
-    leaves(baseCourseStrings(l), "courses", maps[l]);
   }
   const entries: Entry[] = [];
   for (const [key, lvV] of maps.lv) {
@@ -232,7 +230,7 @@ export function catalog(): { entries: Entry[]; byKey: Map<string, Entry> } {
 
 /* ---------- validation ---------- */
 
-export type Problem = { key: string; locale: Locale; message: string };
+type Problem = { key: string; locale: Locale; message: string };
 
 /** Problem with one value, or null. Messages are shown to the admin in Latvian. */
 export function checkValue(cell: Cell, value: string): string | null {
@@ -323,8 +321,7 @@ export function compileOverrides(stored: Partial<StoredOverrides> | null | undef
 }
 
 function lookup(key: string, locale: Locale): unknown {
-  const [root, rest] = key.startsWith("courses.") ? [baseCourseStrings(locale), key.slice(8)] : [baseDict(locale), key];
-  return rest.split(".").reduce<unknown>((node, p) => (node && typeof node === "object" ? (node as Record<string, unknown>)[p] : undefined), root);
+  return key.split(".").reduce<unknown>((node, p) => (node && typeof node === "object" ? (node as Record<string, unknown>)[p] : undefined), baseDict(locale));
 }
 
 /** Fill a {named} template with sample values, for the editor preview */
@@ -332,4 +329,3 @@ export function previewTemplate(tpl: string, params: string[], locale: Locale): 
   return tpl.replace(NAMED, (whole, nm: string) => (params.includes(nm) ? String(sample(nm, locale)) : whole));
 }
 
-export const SAMPLE_VALUES = Object.fromEntries(Object.entries(SAMPLES).map(([k, v]) => [k, { lv: String(v.lv), en: String(v.en), ru: String(v.ru) }]));

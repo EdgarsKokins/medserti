@@ -4,6 +4,7 @@ import { getJson, putBytes, putJson, remove } from "../storage";
 import { getUser, saveCertificates, saveUser } from "../db";
 import bcrypt from "bcryptjs";
 import { addYears, RULES } from "../rules";
+import { formatDate } from "../format";
 import type { CmeCategory, CmeCertificate, UserRecord } from "../types";
 import { certificatePdf, wrap, type PdfLine } from "./pdf";
 import { DEMO_USER_ID } from "./id";
@@ -20,7 +21,7 @@ import { DEMO_USER_ID } from "./id";
  * resetDemo() wipes the account and seeds it again (POST /api/admin/demo-reset, from /admin).
  */
 
-export { DEMO_USER_ID, isDemoUserId } from "./id";
+export { DEMO_USER_ID } from "./id";
 
 /** Bump when the canonical data below changes: the next demo login re-seeds */
 const DEMO_VERSION = 1;
@@ -77,10 +78,9 @@ function plusMonths(isoDate: string, months: number, day: number): string {
   return iso(d);
 }
 const plusDays = (isoDate: string, n: number) => iso(new Date(new Date(isoDate + "T00:00:00Z").getTime() + n * 86_400_000));
-const lvDate = (s: string) => s.split("-").reverse().join(".") + ".";
 
 function pdfFor(c: DemoCert, start: string, end: string | null, n: number): Buffer {
-  const when = end ? `${lvDate(start)} - ${lvDate(end)}` : lvDate(start);
+  const when = end ? `${formatDate(start, "lv")} - ${formatDate(end, "lv")}` : formatDate(start, "lv");
   const reg = `PARAUGS-${start.slice(0, 4)}-${String(n).padStart(3, "0")}`;
   const titleLines = (t: string): PdfLine[] => wrap(t, 62).map((text, i) => ({ text, size: 17, bold: true, gap: i ? 0 : 6 }));
   const lines: PdfLine[] = c.ects
@@ -127,7 +127,6 @@ function buildUser(issued: string, seededAt: string, passwordHash: string): User
       certificateNumber: "PARAUGS-00000",
       certificateIssued: issued,
       certificateExpires: addYears(issued, RULES.validityYears),
-      requiredPointsOverride: null,
     },
   };
 }

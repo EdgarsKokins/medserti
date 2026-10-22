@@ -7,6 +7,7 @@ import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
 import { suggestNurseTopic } from "../nurse";
+import { foldKey } from "../text";
 
 /*
  * Free, local certificate parsing.
@@ -15,12 +16,11 @@ import { suggestNurseTopic } from "../nurse";
  *   Images: OCR'd in the browser with tesseract.js, text sent with the upload.
  * parseCertificateText() is a pure heuristic extractor for Latvian, English, Lithuanian and other certificates.
  * Every key field gets a confidence; fields below LOW_CONFIDENCE are named in a note so the user checks them.
- * Results are always "needs_review": the user confirms every certificate.
+ * Results are "needs_review" unless autoConfirmBlocks() (./confidence.ts) finds nothing to check: then the upload route confirms them.
  */
 
 export { matchesSpecialty, LOW_CONFIDENCE };
 
-export const PARSEABLE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
 
 /** Fields the parser fills in on a CmeCertificate */
 export type ParsedFields = Pick<
@@ -73,10 +73,8 @@ export const EMPTY_FIELDS: ParsedFields = {
   fieldConfidence: null,
 };
 
-export { OCR_PDF_BELOW } from "./ocr";
-
 /** Fewer non-space characters than this in a PDF text layer = treat as a scan */
-export const MIN_TEXT_CHARS = 40;
+const MIN_TEXT_CHARS = 40;
 
 const textChars = (s: string) => s.replace(/\s/g, "").length;
 
@@ -140,7 +138,6 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const title = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizerHit = findOrganizer(t);
   // a line of the title read as an organizer ("... Eiropas Sirds Ritma asociācijas (EHRA)"): not the organizer
-  const foldKey = (v: string) => v.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   const titleWords = new Set(foldKey(titleHit.value).split(" "));
   const inTitle = (v: string) => foldKey(v).split(" ").filter((w) => w.length > 2).every((w) => titleWords.has(w));
   if (organizerHit.value && titleHit.value && !organizerHit.stated && inTitle(organizerHit.value)) {

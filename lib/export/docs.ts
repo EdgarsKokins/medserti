@@ -13,6 +13,7 @@ import {
 } from "docx";
 import type { NurseTopic } from "../types";
 import { applyByDate } from "./dates";
+import { formatDate, round1 } from "../format";
 
 /*
  * Recertification documents in the structure of Cabinet Regulation No. 391, Annex 3 ("Resertifikācijas lapa")
@@ -78,10 +79,9 @@ export interface ExportCertificateInfo {
 const FONT = "Times New Roman";
 const SIZE = 22; // half-points: 11 pt
 
-/** "2025-09-25" -> "25.09.2025." */
-export const lvDate = (iso: string | null | undefined) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}.` : "");
-const dates = (c: ExportCertificate) => (c.endDate && c.endDate !== c.date ? `${lvDate(c.date)}-${lvDate(c.endDate)}` : lvDate(c.date));
-const num = (n: number) => (Math.round(n * 10) / 10).toString().replace(".", ",");
+/** "25.09.2025." or "25.09.2025.-26.09.2025." */
+const dates = (c: ExportCertificate) => (c.endDate && c.endDate !== c.date ? `${formatDate(c.date, "lv")}-${formatDate(c.endDate, "lv")}` : formatDate(c.date, "lv"));
+const num = (n: number) => round1(n).toString().replace(".", ",");
 const box = (on: boolean) => (on ? "☒" : "☐");
 const line = (v: string | null | undefined, blank = "________________") => (v && v.trim() ? v.trim() : blank);
 
@@ -169,7 +169,7 @@ function capNote(certs: ExportCertificate[]): Paragraph[] {
 const workplaceLines = (no: string, w: ExportWorkplace | undefined) => [
   field(`${no} darbavieta`.trim() + ` (ārstniecības iestādes, struktūrvienības nosaukums un ārstniecības iestādes reģistrācijas numurs):`, line(w?.name)),
   field("amats:", line(w?.position)),
-  field("darba attiecības laikposmā no", `${line(lvDate(w?.from), "__________")} līdz ${w ? (w.to ? lvDate(w.to) : "šim brīdim") : "__________"}`),
+  field("darba attiecības laikposmā no", `${line(formatDate(w?.from, "lv"), "__________")} līdz ${w ? (w.to ? formatDate(w.to, "lv") : "šim brīdim") : "__________"}`),
 ];
 
 /** at least two entries so the form keeps its 11.1 and 11.2 blanks */
@@ -195,7 +195,7 @@ export function buildRecertificationSheet(person: ExportPerson, cert: ExportCert
     ),
     p("9. Informācija par sertifikātu specialitātē, apakšspecialitātē, papildspecialitātē vai ārstnieciskajā vai diagnostiskajā metodē, kurā tiek veikta resertifikācija:"),
     field("9.1. numurs:", line(cert.number)),
-    field("9.2. derīguma termiņš (dd.mm.gggg.):", line(lvDate(cert.validUntil))),
+    field("9.2. derīguma termiņš (dd.mm.gggg.):", line(formatDate(cert.validUntil, "lv"))),
     field("9.3. specialitāte, apakšspecialitāte vai papildspecialitāte, kurā izsniegts sertifikāts:", line(cert.specialty)),
     field("10. Sertifikācija nepieciešama:", line(cert.specialty)),
     p("11. Profesionālās darbības pieredze sertifikāta derīguma termiņa laikā (norāda visas ārstniecības iestādes, kurās persona strādā vai ir strādājusi):"),
@@ -342,7 +342,7 @@ function nurseTable(rows: NurseExportCertificate[]): Table {
           cell(String(i + 1), { align: AlignmentType.CENTER }),
           cell(c.organizer),
           cell(NURSE_TOPIC_LV[c.topic] ? `${c.title} (${NURSE_TOPIC_LV[c.topic]})` : c.title),
-          cell(c.endDate && c.endDate !== c.date ? `${lvDate(c.date)}-${lvDate(c.endDate)}` : lvDate(c.date)),
+          cell(c.endDate && c.endDate !== c.date ? `${formatDate(c.date, "lv")}-${formatDate(c.endDate, "lv")}` : formatDate(c.date, "lv")),
           cell(num(c.hours), { align: AlignmentType.RIGHT }),
         ],
       }),
@@ -431,7 +431,7 @@ export function buildNurseChecklist(
     "",
     "Vēl jāizdara:",
     "  [ ] Paraksts un datums iesniegumā (vai drošs elektroniskais paraksts eParaksts)",
-    `  [ ] Iesniegt Veselības inspekcijā${registrationUntil ? ` līdz reģistrācijas termiņa beigām (${lvDate(registrationUntil)})` : ""}: https://www.vi.gov.lv`,
+    `  [ ] Iesniegt Veselības inspekcijā${registrationUntil ? ` līdz reģistrācijas termiņa beigām (${formatDate(registrationUntil, "lv")})` : ""}: https://www.vi.gov.lv`,
     "",
     "Pārbaudiet visus datus pirms iesniegšanas. Lēmumu pieņem Veselības inspekcija.",
   ].join("\r\n");
@@ -460,7 +460,7 @@ export function buildChecklist(cert: ExportCertificateInfo, included: number, sk
     ...(languageFile ? [] : ["  [ ] Valsts valodas prasmes dokuments, ja tas nepieciešams (pirmajā resertifikācijā)"]),
     "  [ ] Paraksts un datums abos dokumentos (vai droši elektroniski paraksts eParaksts)",
     "",
-    `Iesniegšanas termiņš: ne vēlāk kā 3 mēnešus pirms sertifikāta derīguma beigām${by ? `, t.i. līdz ${lvDate(by)}` : ""}`,
+    `Iesniegšanas termiņš: ne vēlāk kā 3 mēnešus pirms sertifikāta derīguma beigām${by ? `, t.i. līdz ${formatDate(by, "lv")}` : ""}`,
     "(MK noteikumi Nr. 391, 46. punkts).",
     "Iesniegt var e-pakalpojumā: https://latvija.gov.lv/Services/6463",
     "",

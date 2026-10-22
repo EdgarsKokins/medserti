@@ -8,12 +8,11 @@ import { matchesSpecialty } from "@/lib/parse";
 import { getCourseIndex } from "@/lib/courses/store";
 import { courseExtra, isNurseCourse } from "@/lib/courses/types";
 import CoursesView, { type CourseRow } from "@/components/courses/CoursesView";
-import { courseStrings } from "@/components/courses/strings";
 
 export const maxDuration = 60; // first visit may build the list
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: courseStrings(await getLocale()).title };
+  return { title: t(await getLocale()).courses.title };
 }
 
 export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ open?: string | string[] }> }) {

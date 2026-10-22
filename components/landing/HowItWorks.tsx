@@ -3,7 +3,7 @@
 import s from "./landing-visuals.module.css";
 import { useWaitUntilSeen } from "./useWaitUntilSeen";
 
-export interface HowLabels {
+interface HowLabels {
   steps: { title: string; body: string }[];
   sampleTitle: string;
   sampleName: string;

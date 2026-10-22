@@ -5,8 +5,9 @@ import { getCertificate } from "@/lib/db";
 import { getBytes } from "@/lib/storage";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { FILE_TYPES } from "@/lib/types";
 
-const ALLOWED = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const ALLOWED = new Set<string>(FILE_TYPES);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const m = t(await getLocale()).api;

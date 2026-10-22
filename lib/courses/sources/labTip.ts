@@ -1,5 +1,6 @@
 import type { Course, CourseFormat } from "../types";
-import { cityOf, dmy, fetchText, sleep, textOf, todayIso } from "../util";
+import { cityOf, dmy, fetchText, sleep, textOf } from "../util";
+import { todayLv } from "../../format";
 
 /**
  * LĀB "Apstiprināto TIP saraksts": every event approved for TIP by the Latvian Medical Association.
@@ -11,7 +12,7 @@ const BASE = "https://is.arstubiedriba.lv/tip_list_approved";
 const LOOKBACK_DAYS = 400;
 const MAX_PAGES = 40;
 
-export function parseLabTipPage(html: string, today = todayIso()): { courses: Course[]; oldestDecision: string | null; rows: number } {
+export function parseLabTipPage(html: string, today = todayLv()): { courses: Course[]; oldestDecision: string | null; rows: number } {
   const body = html.slice(html.indexOf("<tbody"), html.lastIndexOf("</tbody>"));
   const courses: Course[] = [];
   let oldestDecision: string | null = null;
@@ -89,7 +90,7 @@ export function parseLabTipPage(html: string, today = todayIso()): { courses: Co
 }
 
 export async function fetchLabTip(): Promise<Course[]> {
-  const today = todayIso();
+  const today = todayLv();
   const cutoff = new Date(Date.now() - LOOKBACK_DAYS * 86_400_000).toISOString().slice(0, 10);
   const out: Course[] = [];
   for (let page = 1; page <= MAX_PAGES; page++) {

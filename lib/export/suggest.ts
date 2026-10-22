@@ -1,4 +1,4 @@
-import { fold } from "./validate";
+import { fold } from "@/lib/text";
 
 export interface Suggestion {
   /** text written into the field (Latvian: it goes into the LĀB documents) */

@@ -1,5 +1,6 @@
 import type { Course, CourseFormat } from "../types";
-import { cityOf, decodeEntities, fetchText, lvLongDate, textOf, tipIn, titleKey, todayIso } from "../util";
+import { cityOf, decodeEntities, fetchText, lvLongDate, textOf, tipIn, titleKey } from "../util";
+import { todayLv } from "../../format";
 
 /**
  * Latvijas Māsu asociācija (LMA) lists upcoming courses for nurses in one WordPress table: title (linked to a
@@ -15,7 +16,7 @@ const ANYTIME = /jebkurā\s+(?:sev\s+)?piemērotā\s+laikā|ieraksts|tālmācīb
 const ONLINE = /zoom|tiešsaist|vebinār|webinār|online|teams/iu;
 const IN_PERSON = /klātien/iu;
 
-export function parseLma(html: string, today = todayIso()): Course[] {
+export function parseLma(html: string, today = todayLv()): Course[] {
   const start = html.indexOf("<tbody");
   if (start < 0) return [];
   const body = html.slice(start, html.indexOf("</tbody>", start));

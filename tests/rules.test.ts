@@ -2,10 +2,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import JSZip from "jszip";
-import { cappedPoints, certificateWindow, computeProgress, practicalCap, ruleBasis, ruleRequiredPoints, todayLv } from "@/lib/rules";
-import { categoryBreakdown, isoDay } from "@/components/dashboard/model";
+import { cappedPoints, certificateWindow, computeProgress, practicalCap, ruleBasis, ruleRequiredPoints } from "@/lib/rules";
+import { categoryBreakdown } from "@/components/dashboard/model";
 import { buildRecertificationSheet, toBuffer, type ExportCertificate, type ExportPerson } from "@/lib/export/docs";
 import type { CmeCertificate, Profile } from "@/lib/types";
+import { todayLv } from "@/lib/format";
 
 const NOW = new Date("2026-10-22T10:00:00Z");
 
@@ -18,7 +19,6 @@ const profile = (over: Partial<Profile> = {}): Profile => ({
   certificateNumber: "",
   certificateIssued: "2024-06-01",
   certificateExpires: "2029-06-01",
-  requiredPointsOverride: null,
   ...over,
 });
 
@@ -209,7 +209,6 @@ test("L6: todayLv is the Riga date, a day ahead of UTC after midnight", () => {
   assert.equal(todayLv(new Date("2026-10-21T22:30:00Z")), "2026-10-22"); // 01:30 in Riga (EEST)
   assert.equal(todayLv(new Date("2026-01-14T22:30:00Z")), "2026-01-15"); // 00:30 in Riga (EET)
   assert.equal(todayLv(new Date("2026-10-22T20:00:00Z")), "2026-10-22");
-  assert.equal(isoDay(new Date("2026-10-21T22:30:00Z")), "2026-10-22");
 });
 
 test("L6: daysLeft counts from the Riga date", () => {

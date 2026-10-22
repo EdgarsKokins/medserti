@@ -1,6 +1,7 @@
-/** Shared helpers for course scrapers. No dependencies so the same code runs in Node scripts and on Vercel. */
+/** Shared helpers for course scrapers. No package dependencies so the same code runs in Node scripts and on Vercel. */
+import { fold } from "../text";
 
-export const USER_AGENT = "MedsertiBot/0.1 (+https://medserti.lv; course listings with links back to the source)";
+const USER_AGENT = "MedsertiBot/0.1 (+https://medserti.lv; course listings with links back to the source)";
 
 export async function fetchText(url: string, timeoutMs = 20_000): Promise<string> {
   const res = await fetch(url, {
@@ -75,7 +76,6 @@ const CITIES = [
   "Ķekava", "Olaine", "Vecumnieki", "Iecava", "Kandava", "Līvāni", "Valka", "Ādaži", "Carnikava", "Baldone",
 ];
 /** strip Latvian diacritics so "Riga" matches "Rīga" */
-const fold = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 // match the stem so locative forms ("Rīgā", "Liepājā", "Cēsīs") also hit
 const CITY_RX = CITIES.map((c) => [c, new RegExp(`(?<![a-z])${fold(c).slice(0, Math.max(4, c.length - 1))}[a-z]*`)] as const);
 /** large Riga hospitals and venues that are often written without the city */
@@ -98,24 +98,15 @@ export function cityOf(location: string): { city: string | null; online: boolean
  * lowercase, first 60 chars. A Cyrillic title keeps its letters instead of collapsing to "".
  */
 export function titleKey(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[^\p{L}\p{N}]+/gu, "")
-    .slice(0, 60);
+  return fold(title).replace(/[^\p{L}\p{N}]+/gu, "").slice(0, 60);
 }
 
 /** Below this length a key is too generic ("kurss", "") to merge two rows by prefix */
-export const MIN_PREFIX_KEY = 10;
+const MIN_PREFIX_KEY = 10;
 const PREFIX = 30;
 
 /** Same course if one key starts with the other's first 30 chars; never for short keys */
 export function samePrefix(a: string, b: string): boolean {
   if (a.length < MIN_PREFIX_KEY || b.length < MIN_PREFIX_KEY) return false;
   return a.startsWith(b.slice(0, PREFIX)) || b.startsWith(a.slice(0, PREFIX));
-}
-
-export function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
 }

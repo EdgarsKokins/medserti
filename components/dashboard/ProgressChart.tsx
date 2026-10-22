@@ -8,7 +8,7 @@ import styles from "./ProgressChart.module.css";
    today marker, forecast at the average pace so far, and an HTML tooltip per date.
    Renders at the measured container width so text stays at its real pixel size. */
 
-export type ChartLocale = "lv" | "en" | "ru";
+type ChartLocale = "lv" | "en" | "ru";
 
 /** Every visible string. {placeholders} are filled in by the chart. */
 export interface ProgressChartLabels {
@@ -35,7 +35,7 @@ export interface ProgressChartLabels {
   chartLabel: string;
 }
 
-export const DEFAULT_LABELS: ProgressChartLabels = {
+const DEFAULT_LABELS: ProgressChartLabels = {
   unit: "TIP",
   today: "Today",
   yourPoints: "Your points",

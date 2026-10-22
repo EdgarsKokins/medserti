@@ -7,7 +7,7 @@ import { loadRuntimeOverrides } from "./overrides-server";
  * Accept-Language -> "ru" only when the browser ranks Russian above Latvian and English.
  * Everyone else gets the default (Latvian); an explicit choice is kept in the cookie.
  */
-export function localeFromAcceptLanguage(header: string | null): Locale | null {
+function localeFromAcceptLanguage(header: string | null): Locale | null {
   if (!header) return null;
   const ranked = header
     .split(",")

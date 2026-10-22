@@ -7,7 +7,7 @@ import { certTitle, dictFor, exclusions, fmtDate, fmtNum, needsReviewCount, rece
 /** hours: nurses, who count academic hours and have no 16% cap on practical training (Reg. 630 Annex 6) */
 export function CategoryBars({ p, rows, locale, hours = false }: { p: Progress; rows: CategoryRow[]; locale: Locale; hours?: boolean }) {
   const d = dictFor(locale, hours).dashboard;
-  const n = (v: number) => fmtNum(v, locale);
+  const n = (v: number) => fmtNum(v);
   // bars show the points on the certificates, so practical training above the cap mark stands out
   const max = Math.max(...rows.map((r) => r.rawPoints), 1);
   const cap = p.required * RULES.practicalCapShare;
@@ -96,7 +96,7 @@ export function RecentActivity({ p, locale }: { p: Progress; locale: Locale }) {
                       </>
                     )}
                   </td>
-                  <td className="num">{fmtNum(c.points ?? 0, locale)}</td>
+                  <td className="num">{fmtNum(c.points ?? 0)}</td>
                 </tr>
               ))}
             </tbody>

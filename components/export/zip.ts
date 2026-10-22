@@ -1,8 +1,9 @@
 import type JSZip from "jszip";
+import { stripMarks } from "@/lib/text";
 
 /** ASCII-safe file name part for the ZIP */
 export const slug = (x: string) =>
-  x.normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 50) || "sertifikats";
+  stripMarks(x).replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 50) || "sertifikats";
 
 export const extOf = (fileName: string) => (fileName.match(/\.[a-z0-9]+$/i)?.[0] ?? ".pdf").toLowerCase();
 

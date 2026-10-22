@@ -1,13 +1,13 @@
 /* Field rules shared by the forms and the API routes, so the browser and the server reject the same input. Client-safe. */
 
-export const NAME_MIN = 2;
+const NAME_MIN = 2;
 export const NAME_MAX = 60;
-export const PASSWORD_MIN = 8;
+const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 32;
 export const EMAIL_MAX = 254;
 export const SPECIALTY_MAX = 120;
 export const CERT_NO_MAX = 30;
-export const MESSAGE_MIN = 10;
+const MESSAGE_MIN = 10;
 export const MESSAGE_MAX = 2000;
 
 /** Letters of any alphabet (Latvian ā, č, Russian ж), joined by single spaces, hyphens or apostrophes: "Anna-Marija O'Brien" */
@@ -19,7 +19,7 @@ const CERT_NO = /^[\p{L}\p{N} ./-]*$/u;
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Length in characters as people count them (an emoji is one, not two) */
-export const charCount = (s: string) => [...s].length;
+const charCount = (s: string) => [...s].length;
 
 export const validName = (s: string) => {
   const v = s.trim().replace(/\s+/g, " ");

@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { checkValue, emptyOverrides, previewTemplate, type BlockId, type Cell, type Entry, type StoredOverrides } from "@/lib/i18n/catalog";
 import { LOCALES, type Locale } from "@/lib/locale";
+import { fold } from "@/lib/text";
 import s from "./admin.module.css";
 
 type Loc = Locale;
@@ -14,7 +15,6 @@ const LOC_NAME: Record<Loc, string> = { lv: "Latviski", en: "Angliski", ru: "Kri
 const SHOWN_KEY = "medserti-admin-langs";
 const MAX_RESULTS = 150;
 
-const fold = (v: string) => v.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 const id = (loc: Loc, key: string) => `${loc}|${key}`;
 const countKeys = (o: StoredOverrides) => LOCS.reduce((n, l) => n + Object.keys(o[l]).length, 0);
 const clone = (o: StoredOverrides): StoredOverrides => {

@@ -180,6 +180,7 @@ export const LABELS: Record<string, string> = {
   "common.loading": "Ielādējot lapu",
   "common.home": "Saite uz sākumlapu",
   "common.retry": "Poga: mēģināt vēlreiz",
+  "common.networkError": "Kļūda: nav savienojuma ar serveri",
   "notFound.title": "Virsraksts",
   "notFound.body": "Teksts",
   "error.title": "Virsraksts",
