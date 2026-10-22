@@ -24,9 +24,8 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: d.api.badEmail }, { status: 400 });
   const email = parsed.data.email.trim().toLowerCase();
 
-  const allowed =
-    (await rateLimit(`forgot-ip:${clientIp(req)}`, 10, HOUR)) && (await rateLimit(`forgot-email:${email}`, 3, HOUR));
-  if (!allowed) return NextResponse.json({ error: d.reset.tooMany }, { status: 429 });
+  const [ipOk, emailOk] = await Promise.all([rateLimit(`forgot-ip:${clientIp(req)}`, 10, HOUR), rateLimit(`forgot-email:${email}`, 3, HOUR)]);
+  if (!ipOk || !emailOk) return NextResponse.json({ error: d.reset.tooMany }, { status: 429 });
 
   const base = siteUrl(req);
   after(async () => {

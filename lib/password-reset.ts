@@ -59,10 +59,15 @@ export async function rateLimit(key: string, max: number, windowMs: number): Pro
   return true;
 }
 
-/** Read-only check of a rateLimit() counter: true while fewer than max hits fall inside the window */
-export async function underLimit(key: string, max: number, windowMs: number): Promise<boolean> {
+/** Read-only check of a rateLimit() counter: under while fewer than max hits fall inside the window; recorded when a counter exists */
+export async function limitState(key: string, max: number, windowMs: number): Promise<{ under: boolean; recorded: boolean }> {
   const rec = await getJson<{ count: number; windowStart: number }>(`rate-limits/${sha256(key)}.json`);
-  return !rec || Date.now() - rec.windowStart > windowMs || rec.count < max;
+  return { under: !rec || Date.now() - rec.windowStart > windowMs || rec.count < max, recorded: !!rec };
+}
+
+/** limitState().under */
+export async function underLimit(key: string, max: number, windowMs: number): Promise<boolean> {
+  return (await limitState(key, max, windowMs)).under;
 }
 
 export async function clearLimit(key: string): Promise<void> {
