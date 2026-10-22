@@ -8,20 +8,17 @@
 /* ---------- hero ---------- */
 .hero { border-bottom: 1px solid var(--border); }
 .scrollCue {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  max-width: 1120px; margin: -24px auto 0; padding: 14px 20px 22px;
+  display: none; align-items: center; justify-content: center; gap: 8px;
+  max-width: 1120px; margin: -16px auto 0; padding: 8px 20px 20px;
   color: var(--muted); font-weight: 600; text-decoration: none;
 }
 .scrollCue:hover, .scrollCue:focus-visible { color: var(--accent); }
-.cueArrow { display: inline-block; font-size: 1.1rem; line-height: 1; }
-@media (prefers-reduced-motion: no-preference) {
-  .cueArrow { animation: cueBob 2.4s ease-in-out infinite; }
-}
-@keyframes cueBob { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(4px); } }
-.heroInner { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px 64px; align-items: center; padding: 80px 20px 72px; max-width: 1120px; margin: 0 auto; }
+/* only on short desktop screens, where the next section may not peek above the fold; elsewhere its top edge is the cue */
+@media (min-width: 961px) and (max-height: 820px) { .scrollCue { display: flex; } }
+.heroInner { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px 64px; align-items: center; padding: 44px 20px 40px; max-width: 1120px; margin: 0 auto; }
 .heroCopy { max-width: 32rem; }
-.heroTitle { font-size: clamp(2.4rem, 4.6vw, 3.6rem); line-height: 1.06; letter-spacing: -0.03em; font-weight: 700; margin: 0 0 20px; text-wrap: balance; }
-.heroSub { font-size: 1.2rem; line-height: 1.55; color: var(--muted); margin: 0 0 32px; text-wrap: pretty; }
+.heroTitle { font-size: clamp(2.2rem, 3.6vw, 3rem); line-height: 1.06; letter-spacing: -0.03em; font-weight: 700; margin: 0 0 20px; text-wrap: balance; }
+.heroSub { font-size: 1.15rem; line-height: 1.55; color: var(--muted); margin: 0 0 24px; text-wrap: pretty; }
 .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
 .ctaMain, .ctaGhost { min-height: 52px; padding: 12px 26px; font-size: 1.05rem; font-weight: 700; }
 .ctaGhost { background: var(--surface); }
@@ -29,6 +26,8 @@
 
 /* ---------- sections ---------- */
 .section { padding: 96px 0 0; }
+/* the section right under the hero starts close, so its heading and first cards show above the fold */
+.sectionFirst { padding-top: 40px; }
 .h2 { font-size: clamp(1.75rem, 3vw, 2.4rem); line-height: 1.12; letter-spacing: -0.025em; font-weight: 700; margin: 0 0 32px; max-width: 24ch; text-wrap: balance; }
 
 /* the problem: four pains, read before the product shows up */

@@ -117,14 +117,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
           </div>
           {/* scroll cue at the foot of the hero: centred, quiet, the arrows bob unless motion is reduced */}
           <a href="#answer" className={s.scrollCue}>
-            <span className={s.cueArrow} aria-hidden>↓</span>
             <span>{a.seeHow}</span>
-            <span className={s.cueArrow} aria-hidden>↓</span>
+            <span aria-hidden>↓</span>
           </a>
         </section>
 
         <div className={s.wrap}>
-          <section className={s.section} aria-labelledby="pain-title">
+          <section className={`${s.section} ${s.sectionFirst}`} aria-labelledby="pain-title">
             <h2 id="pain-title" className={s.h2}>{a.painTitle}</h2>
             <ul className={s.pains}>
               {a.pains.map((p) => (
