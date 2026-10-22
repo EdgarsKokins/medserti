@@ -28,4 +28,5 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
-      - run: npm run build
+      # next/font downloads Google Fonts during the build; one retry rides out a flaky fetch
+      - run: npm run build || npm run build
