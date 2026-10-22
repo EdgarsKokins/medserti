@@ -6,13 +6,21 @@ import JSZip from "jszip";
 import { t, type Locale } from "@/lib/i18n";
 import { NURSE_RULES } from "@/lib/rules";
 import { buildNurseChecklist, buildReRegistration, toBlob, type NurseExportCertificate, type NursePerson } from "@/lib/export/docs";
+import { MAX, finalProblem, liveProblem, type Problem } from "@/lib/export/validate";
+import { addCertificateFiles, saveBlob, slug } from "./zip";
 import s from "./export.module.css";
 
 export type NurseExportRow = NurseExportCertificate & { id: string; fileName: string };
 
-/** ASCII-safe file name part for the ZIP */
-const slug = (x: string) =>
-  x.normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 50) || "sertifikats";
+type TextKey = "firstName" | "lastName" | "practitionerId" | "address" | "phone" | "email";
+const SPEC: Record<TextKey, { kind: "name" | "practitionerId" | "phone" | "email" | "text"; required: boolean; max: number }> = {
+  firstName: { kind: "name", required: true, max: MAX.name },
+  lastName: { kind: "name", required: true, max: MAX.name },
+  practitionerId: { kind: "practitionerId", required: false, max: MAX.practitionerId },
+  address: { kind: "text", required: true, max: MAX.address },
+  phone: { kind: "phone", required: true, max: MAX.phone },
+  email: { kind: "email", required: true, max: MAX.email },
+};
 
 /**
  * Nurses re-register with the Health Inspectorate, not LĀB: one application (Reg. 630 Annex 4) with the course
@@ -35,8 +43,18 @@ export default function NurseExportView({
   prefill: { firstName: string; lastName: string; email: string; practitionerId: string };
 }) {
   const d = t(locale).exportDocs;
-  const [f, setF] = useState<NursePerson>({ ...prefill, address: "", phone: "", notifyBy: "email" });
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [f, setF] = useState<NursePerson>({
+    firstName: prefill.firstName.slice(0, MAX.name),
+    lastName: prefill.lastName.slice(0, MAX.name),
+    email: prefill.email.slice(0, MAX.email),
+    practitionerId: prefill.practitionerId.slice(0, MAX.practitionerId),
+    address: "",
+    phone: "",
+    notifyBy: "email",
+  });
+  const [errors, setErrors] = useState<Record<string, Problem>>({});
+  const [formError, setFormError] = useState(false);
+  const [files, setFiles] = useState<{ busy: boolean; done: number; msg: string | null; warn: boolean }>({ busy: false, done: 0, msg: null, warn: false });
   const [state, setState] = useState<{ busy: boolean; done: number; total: number; msg: string | null; warn: boolean }>({
     busy: false,
     done: 0,
@@ -46,15 +64,25 @@ export default function NurseExportView({
   });
   const set = <K extends keyof NursePerson>(k: K, v: NursePerson[K]) => {
     setF((prev) => ({ ...prev, [k]: v }));
-    setErrors((e) => ({ ...e, [k]: false }));
+    const spec = SPEC[k as TextKey];
+    const p = spec && spec.kind !== "email" && spec.kind !== "text" ? liveProblem(spec.kind, String(v)) : null;
+    setErrors((e) => {
+      const n = { ...e };
+      if (p) n[k] = p;
+      else delete n[k];
+      return n;
+    });
   };
 
   async function download(ev: React.FormEvent) {
     ev.preventDefault();
-    const req: (keyof NursePerson)[] = ["firstName", "lastName", "address", "phone", "email"];
-    const e: Record<string, boolean> = {};
-    for (const k of req) if (!String(f[k]).trim()) e[k] = true;
+    const e: Record<string, Problem> = {};
+    for (const k of Object.keys(SPEC) as TextKey[]) {
+      const p = finalProblem(SPEC[k].kind, f[k], SPEC[k].required, SPEC[k].max);
+      if (p) e[k] = p;
+    }
     setErrors(e);
+    setFormError(Object.keys(e).length > 0);
     if (Object.keys(e).length) {
       document.getElementById(Object.keys(e)[0])?.focus();
       return;
@@ -74,38 +102,55 @@ export default function NurseExportView({
         from: NURSE_RULES.emergencyFrom,
       }),
     );
-    let failed = 0;
-    const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
-    for (let i = 0; i < sorted.length; i++) {
-      const r = sorted[i];
-      try {
-        const res = await fetch(`/api/certificates/${encodeURIComponent(r.id)}/file`);
-        if (!res.ok) throw new Error(String(res.status));
-        const ext = (r.fileName.match(/\.[a-z0-9]+$/i)?.[0] ?? ".pdf").toLowerCase();
-        zip.file(`${folder}/2_Sertifikati/${String(i + 1).padStart(2, "0")}_${r.date}_${slug(r.title)}${ext}`, await res.blob());
-      } catch {
-        failed++;
-      }
-      setState((st) => ({ ...st, done: i + 1 }));
-    }
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${folder}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    const failed = await addCertificateFiles(zip, `${folder}/2_Sertifikati`, rows, (done) => setState((st) => ({ ...st, done })));
+    saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
     setState({ busy: false, done: rows.length, total: rows.length, msg: failed ? d.failed : d.done, warn: failed > 0 });
   }
 
-  const input = (k: "firstName" | "lastName" | "practitionerId" | "address" | "phone" | "email", label: string, extra: { hint?: string; auto?: string; mode?: "tel" | "email" } = {}) => (
+  async function downloadFiles() {
+    setFiles({ busy: true, done: 0, msg: null, warn: false });
+    const zip = new JSZip();
+    const failed = await addCertificateFiles(zip, "Medserti_sertifikati", rows, (done) => setFiles((st) => ({ ...st, done })));
+    saveBlob(await zip.generateAsync({ type: "blob" }), "Medserti_sertifikati.zip");
+    setFiles({ busy: false, done: rows.length, msg: failed ? d.failed : d.filesDone, warn: failed > 0 });
+  }
+
+  const message = (p: Problem) =>
+    ({
+      required: d.required,
+      letters: d.errLetters,
+      digits: d.errDigits,
+      personalCode: d.errPersonalCode,
+      practitionerId: d.errPractitionerId,
+      phone: d.errPhone,
+      email: d.errEmail,
+      tooLong: d.errTooLong,
+    })[p];
+
+  const input = (k: TextKey, label: string, placeholder: string, extra: { hint?: string; auto?: string; mode?: "numeric" | "tel" | "email" } = {}) => (
     <div className="field">
-      <label htmlFor={k}>{label}</label>
-      <input id={k} value={f[k]} onChange={(e) => set(k, e.target.value)} autoComplete={extra.auto ?? "off"} inputMode={extra.mode} aria-invalid={errors[k] || undefined} />
+      <label htmlFor={k}>
+        {label}
+        {SPEC[k].required && <span className={s.req} aria-hidden="true"> *</span>}
+      </label>
+      <input
+        id={k}
+        value={f[k]}
+        onChange={(e) => set(k, e.target.value)}
+        placeholder={placeholder}
+        maxLength={SPEC[k].max}
+        required={SPEC[k].required}
+        autoComplete={extra.auto ?? "off"}
+        inputMode={extra.mode}
+        aria-invalid={!!errors[k] || undefined}
+        aria-describedby={errors[k] ? `${k}-err` : undefined}
+      />
       {extra.hint && <span className="small muted">{extra.hint}</span>}
-      {errors[k] && <span className={s.err}>{d.required}</span>}
+      {errors[k] && (
+        <span id={`${k}-err`} className={s.err} role="alert">
+          {message(errors[k])}
+        </span>
+      )}
     </div>
   );
 
@@ -140,7 +185,17 @@ export default function NurseExportView({
           </ul>
         </div>
         <div className="stack" style={{ gap: 8 }}>
-          <p className={s.strong}>{d.included(rows.length)}</p>
+          <p className={s.strong}>
+            {d.included(rows.length)} <Link href="/certificates">{d.certList}</Link>
+          </p>
+          {rows.length > 0 && (
+            <div className={s.filesRow}>
+              <button type="button" className="btn" onClick={downloadFiles} disabled={files.busy}>
+                {files.busy ? d.preparing(files.done, rows.length) : d.downloadFiles}
+              </button>
+              {files.msg && <span className={files.warn ? s.err : s.ok} role="status">{files.msg}</span>}
+            </div>
+          )}
           {unconfirmed > 0 && (
             <p className="alert" style={{ margin: 0 }}>
               {d.unconfirmed(unconfirmed)} <Link href="/certificates">{d.reviewLink}</Link>
@@ -151,15 +206,16 @@ export default function NurseExportView({
 
       <form className={s.form} onSubmit={download} noValidate>
         <p className={s.privacy}>{d.privacy}</p>
+        <p className="small muted" style={{ margin: 0 }}>{d.requiredNote}</p>
         <fieldset className={s.group}>
           <legend>{d.you}</legend>
           <div className="form-grid">
-            {input("firstName", d.firstName, { auto: "given-name" })}
-            {input("lastName", d.lastName, { auto: "family-name" })}
-            {input("practitionerId", d.practitionerId, { hint: d.practitionerIdHint })}
-            {input("address", d.nurseAddress, { auto: "street-address" })}
-            {input("phone", d.phone, { auto: "tel", mode: "tel" })}
-            {input("email", d.email, { auto: "email", mode: "email" })}
+            {input("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
+            {input("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
+            {input("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
+            {input("address", d.nurseAddress, d.phAddress, { auto: "street-address" })}
+            {input("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
+            {input("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
           </div>
           <div className={s.radios} role="radiogroup" aria-label={d.notifyBy}>
             <span className="small muted">{d.notifyBy}:</span>
@@ -175,7 +231,11 @@ export default function NurseExportView({
           <button className={`btn btn-primary ${s.go}`} disabled={state.busy}>
             {state.busy ? d.preparing(state.done, state.total) : d.download}
           </button>
-          {state.msg && <span className={state.warn ? s.err : s.ok} role="status">{state.msg}</span>}
+          {formError && Object.keys(errors).length > 0 ? (
+            <span className={s.err} role="alert">{d.fixErrors}</span>
+          ) : (
+            state.msg && <span className={state.warn ? s.err : s.ok} role="status">{state.msg}</span>
+          )}
         </div>
       </form>
     </main>
