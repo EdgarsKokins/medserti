@@ -17,11 +17,12 @@ import { categoryBreakdown, cumulativeSeries, dictFor, headline, isoDay } from "
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
-  const fits = (c: Course) => c.allSpecialties || (!!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty));
-  const mine = (c: Course) => !!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty);
+  // matched once per course, not inside the sort comparator
+  const mine = new Map(courses.map((c) => [c, !!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty)]));
+  const fits = (c: Course) => c.allSpecialties || mine.get(c)!;
   const events = courses
     .filter((c) => c.kind === "event" && c.startDate && c.startDate >= todayIso && fits(c))
-    .sort((a, b) => Number(mine(b)) - Number(mine(a)) || a.startDate!.localeCompare(b.startDate!))
+    .sort((a, b) => Number(mine.get(b)) - Number(mine.get(a)) || a.startDate!.localeCompare(b.startDate!))
     .slice(0, n)
     .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
   if (events.length >= n) return events;
