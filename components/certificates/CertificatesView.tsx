@@ -12,13 +12,11 @@ import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
 import { mergeStored } from "./merge";
-import { forgetStored } from "./uploadStore";
+import { forgetStored, getUploadSnapshot, subscribeUploads } from "./uploadStore";
 import styles from "./certificates.module.css";
 
 /** how long "Apstiprināts · Atsaukt" stays after an in-row confirm */
 const UNDO_MS = 6000;
-/** while a certificate is still being read on the server (another tab, or a page loaded mid-upload), check this often */
-const POLL_MS = 4000;
 
 const sortCerts = (list: CmeCertificate[]) =>
   [...list].sort((a, b) => (b.date ?? b.uploadedAt).localeCompare(a.date ?? a.uploadedAt));
@@ -101,29 +99,27 @@ export default function CertificatesView({
     }
   }
 
+  const refreshAfterBatch = useRef(false);
   const onUploaded = useCallback(
     (added: CmeCertificate[], replay: boolean) => {
       setCerts((prev) => sortCerts(mergeStored(prev, added, replay ? "replay" : "live")));
-      if (!replay) router.refresh();
+      if (replay) return;
+      // one refresh per batch, not per file: the queue is still busy while more files follow
+      if (getUploadSnapshot().busy) refreshAfterBatch.current = true;
+      else router.refresh();
     },
     [router],
   );
+  useEffect(
+    () =>
+      subscribeUploads(() => {
+        if (!refreshAfterBatch.current || getUploadSnapshot().busy) return;
+        refreshAfterBatch.current = false;
+        router.refresh();
+      }),
+    [router],
+  );
   const close = useCallback(() => setOpenId(null), []);
-
-  // a certificate listed as "parsing" was mid-upload when the page loaded: fetch until the server is done with it
-  const parsing = certs.some((c) => c.status === "parsing");
-  useEffect(() => {
-    if (!parsing) return;
-    const id = window.setInterval(async () => {
-      const res = await fetch("/api/certificates").catch(() => null);
-      const body = res?.ok ? await res.json().catch(() => null) : null;
-      if (!body?.certificates) return;
-      const fresh: CmeCertificate[] = body.certificates;
-      setCerts((prev) => sortCerts([...fresh, ...prev.filter((p) => !fresh.some((f) => f.id === p.id))]));
-      if (!fresh.some((c) => c.status === "parsing")) router.refresh();
-    }, POLL_MS);
-    return () => window.clearInterval(id);
-  }, [parsing, router]);
 
   const waitingList = certs.filter((c) => c.status !== "confirmed");
   const confirmedList = certs.filter((c) => c.status === "confirmed");

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createHash, randomUUID } from "crypto";
 import { currentUser, requireWritableUser } from "@/lib/auth";
-import { listCertificates, saveCertificate } from "@/lib/db";
-import { putBytes } from "@/lib/storage";
+import { listCertificates, saveCertificate, unreadableNote } from "@/lib/db";
+import { putBytes, remove } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
-import { certificateWindow } from "@/lib/rules";
+import { certificateWindow, todayLv } from "@/lib/rules";
 import type { CmeCertificate } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -49,82 +49,78 @@ export async function POST(req: Request) {
   if (!g.ok) return g.response;
   const { user } = g;
 
+  // one file per request (the upload queue sends them one by one, with per-file progress)
   const form = await req.formData().catch(() => null);
-  const files = (form?.getAll("files") ?? []).filter((f): f is File => f instanceof File);
-  if (!files.length) return NextResponse.json({ error: m.noFiles }, { status: 400 });
+  const file = form?.get("files");
+  if (!(file instanceof File)) return NextResponse.json({ error: m.noFiles }, { status: 400 });
+  const fail = (error: string) => NextResponse.json({ certificates: [], errors: [{ fileName: file.name, error }], error }, { status: 400 });
 
-  const certificates: CmeCertificate[] = [];
-  const errors: { fileName: string; error: string }[] = [];
+  if (file.size > MAX_BYTES) return fail(m.fileTooBig);
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const type = sniffType(bytes);
+  if (!type) return fail(m.onlyTypes);
+  // images and scanned PDFs are OCR'd in the browser; their text arrives as "ocrText"
+  const ocr = form?.get("ocrText");
+  const ocrText = typeof ocr === "string" ? ocr.slice(0, MAX_OCR_CHARS) : null;
 
-  // Images and scanned PDFs are OCR'd in the browser; their text arrives as "ocrText_<index>" (or "ocrText" for a single file)
-  const ocrFor = (i: number) => {
-    const v = form?.get(`ocrText_${i}`) ?? (files.length === 1 ? form?.get("ocrText") : null);
-    return typeof v === "string" ? v.slice(0, MAX_OCR_CHARS) : null;
+  const id = randomUUID();
+  const safeName = sanitizeName(file.name, type);
+  const cert: CmeCertificate = {
+    id,
+    userId: user.id,
+    fileName: file.name.slice(0, 200) || safeName,
+    filePath: `users/${user.id}/files/${id}/${safeName}`,
+    contentType: type,
+    uploadedAt: new Date().toISOString(),
+    status: "parsing",
+    ...EMPTY_FIELDS,
+    parseNotes: null,
   };
 
-  for (const [i, file] of files.entries()) {
-    if (file.size > MAX_BYTES) {
-      errors.push({ fileName: file.name, error: m.fileTooBig });
-      continue;
-    }
-    const bytes = Buffer.from(await file.arrayBuffer());
-    const type = sniffType(bytes);
-    if (!type) {
-      errors.push({ fileName: file.name, error: m.onlyTypes });
-      continue;
-    }
+  try {
+    await putBytes(cert.filePath, bytes, type);
+  } catch (err) {
+    console.error("certificate upload", err);
+    return fail(m.storeFailed);
+  }
 
-    const id = randomUUID();
-    const safeName = sanitizeName(file.name, type);
-    const cert: CmeCertificate = {
-      id,
-      userId: user.id,
-      fileName: file.name.slice(0, 200) || safeName,
-      filePath: `users/${user.id}/files/${id}/${safeName}`,
-      contentType: type,
-      uploadedAt: new Date().toISOString(),
-      status: "parsing",
-      ...EMPTY_FIELDS,
-      parseNotes: null,
-    };
-
-    try {
-      await putBytes(cert.filePath, bytes, type);
-      await saveCertificate(cert);
-    } catch (err) {
-      console.error("certificate upload", err);
-      errors.push({ fileName: file.name, error: m.storeFailed });
-      continue;
-    }
-
-    const result = await parseCertificate(bytes, type, user.profile, ocrFor(i));
-    const fileHash = createHash("sha256").update(bytes).digest("hex");
+  // The record is written once, after parsing: no "parsing" placeholder that a crash could leave behind.
+  // A parser error still stores the file, as "failed" with a note, so the user can enter the details by hand.
+  const fileHash = createHash("sha256").update(bytes).digest("hex");
+  let done: CmeCertificate;
+  try {
+    const [result, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText), listCertificates(user.id)]);
     // confirm without the user only when nothing is a guess (rules in lib/parse/confidence.ts)
-    const existing = (await listCertificates(user.id)).filter((c) => c.id !== id);
     const blocks = autoConfirmBlocks({
       source: result.source,
       pointsKind: result.pointsKind,
       fields: result.fields,
       window: certificateWindow(user.profile),
-      existing,
+      existing: all,
       fileHash,
-      today: new Date().toISOString().slice(0, 10),
+      today: todayLv(),
     });
     const auto = blocks.length === 0;
-    const duplicateOf = findDuplicate(existing, result.fields, fileHash);
-    const done: CmeCertificate = {
+    done = {
       ...cert,
       ...result.fields,
       status: auto ? "confirmed" : result.status,
       autoConfirmed: auto,
       fileHash,
-      duplicateOf,
+      duplicateOf: findDuplicate(all, result.fields, fileHash),
       parseNotes: result.notes,
     };
-    await saveCertificate(done);
-    certificates.push(done);
+  } catch (err) {
+    console.error("certificate parse", err);
+    done = { ...cert, status: "failed", fileHash, parseNotes: unreadableNote(type) };
   }
 
-  if (!certificates.length) return NextResponse.json({ certificates, errors, error: errors[0]?.error }, { status: 400 });
-  return NextResponse.json({ certificates, errors });
+  try {
+    await saveCertificate(done);
+  } catch (err) {
+    console.error("certificate save", err);
+    await remove(`users/${user.id}/files/${id}/`).catch(() => {});
+    return fail(m.storeFailed);
+  }
+  return NextResponse.json({ certificates: [done], errors: [] });
 }

@@ -30,17 +30,31 @@ export async function saveUser(user: UserRecord): Promise<void> {
   await putJson(`users/${user.id}/user.json`, user);
 }
 
+/** after this long a "parsing" record is treated as failed: uploads written before Oct 2026 saved a placeholder that a crash could leave behind */
+const STALE_PARSING_MS = 2 * 60 * 1000;
+
+/** The parse note for a certificate whose file is stored but could not be read: the user enters the details */
+export const unreadableNote = (contentType: string) =>
+  JSON.stringify([{ code: contentType === "application/pdf" ? "pdfUnreadable" : "imageUnreadable" }]);
+
+function recoverStale(c: CmeCertificate, now = Date.now()): CmeCertificate {
+  if (c.status !== "parsing" || now - Date.parse(c.uploadedAt) < STALE_PARSING_MS) return c;
+  return { ...c, status: "failed", parseNotes: c.parseNotes ?? unreadableNote(c.contentType) };
+}
+
 export async function listCertificates(userId: string): Promise<CmeCertificate[]> {
   // the listing says which version of each certificate is current; only changed ones are read
   const entries = (await listVersions(`users/${userId}/certs/`)).filter((e) => e.path.endsWith(".json"));
   const certs = await Promise.all(entries.map((e) => getJsonVersion<CmeCertificate>(e.path, e.version)));
   return certs
     .filter((c): c is CmeCertificate => !!c)
+    .map((c) => recoverStale(c))
     .sort((a, b) => (b.date ?? b.uploadedAt).localeCompare(a.date ?? a.uploadedAt));
 }
 
 export async function getCertificate(userId: string, certId: string): Promise<CmeCertificate | null> {
-  return getJson<CmeCertificate>(`users/${userId}/certs/${certId}.json`);
+  const c = await getJson<CmeCertificate>(`users/${userId}/certs/${certId}.json`);
+  return c && recoverStale(c);
 }
 
 export async function saveCertificate(cert: CmeCertificate): Promise<void> {
