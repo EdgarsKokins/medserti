@@ -6,7 +6,7 @@ import { listCertificates } from "@/lib/db";
 import { computeProgress } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
 import { getCourseIndex } from "@/lib/courses/store";
-import { isNurseCourse } from "@/lib/courses/types";
+import { courseExtra, isNurseCourse } from "@/lib/courses/types";
 import CoursesView, { type CourseRow } from "@/components/courses/CoursesView";
 import { courseStrings } from "@/components/courses/strings";
 
@@ -26,17 +26,16 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   // nurses: "for me" means a course for nurses (LMA list or a nurse audience), not a doctor specialty match
   const nurse = user.profile.profession === "nurse";
 
-  // slim rows for the client; specialty matching runs here so the parser code stays on the server
+  // slim rows for the client: only what the list renders and filters on. Link, venue, approval and contact load per
+  // course when one is opened (/api/courses/item). Specialty matching runs here so the parser code stays on the server.
   const rows: CourseRow[] = idx.courses.map((c) => ({
     id: c.id,
     kind: c.kind,
     title: c.title,
-    url: c.url,
     startDate: c.startDate,
     endDate: c.endDate,
     availableUntil: c.availableUntil,
     format: c.format,
-    location: c.location,
     city: c.city,
     tip: c.tip,
     minutes: c.minutes,
@@ -44,14 +43,13 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
     allSpecialties: c.allSpecialties,
     forMe: nurse ? isNurseCourse(c) : !!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty),
     organizer: c.organizer,
-    approvalId: c.approvalId,
-    annexItem: c.annexItem,
     price: c.price,
     free: c.free,
     source: c.source,
-    detailRef: c.detailRef ?? null,
-    contact: c.contact ?? null,
   }));
+  const openId = typeof open === "string" ? open : null;
+  // the deep-linked course opens at once, so its details come with the page
+  const linked = openId ? idx.courses.find((c) => c.id === openId) : undefined;
 
   return (
     <CoursesView
@@ -63,7 +61,8 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       remaining={progress.remaining}
       hoursUnit={nurse ? t(locale).dashboard.hoursUnit : null}
       nurse={nurse}
-      openId={typeof open === "string" ? open : null}
+      openId={openId}
+      openExtra={linked ? courseExtra(linked) : null}
     />
   );
 }

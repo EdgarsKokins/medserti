@@ -1,5 +1,5 @@
 import type { Course, CourseIndex, CourseSource, SourceStatus } from "./types";
-import { titleKey } from "./util";
+import { samePrefix, titleKey } from "./util";
 import { fetchLabTip } from "./sources/labTip";
 import { fetchLabCourses } from "./sources/labCourses";
 import { fetchRss } from "./sources/rss";
@@ -23,13 +23,12 @@ const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
 export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>): Course[] {
   let tip = bySource.lab_tip ?? [];
   const index = new Map<string, Course>();
-  for (const c of tip) index.set(titleKey(c.title), c);
+  for (const c of tip) if (titleKey(c.title)) index.set(titleKey(c.title), c);
+  // exact title, else a shared prefix on the same date; a short or empty key never matches by prefix
   const tipMatch = (c: Course) => {
     const key = titleKey(c.title);
-    return (
-      index.get(key) ??
-      tip.find((t) => t.startDate === c.startDate && (titleKey(t.title).startsWith(key.slice(0, 30)) || key.startsWith(titleKey(t.title).slice(0, 30))))
-    );
+    if (!key) return undefined;
+    return index.get(key) ?? tip.find((t) => t.startDate === c.startDate && samePrefix(titleKey(t.title), key));
   };
 
   const extra: Course[] = [];
@@ -77,7 +76,7 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
   const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
   for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? [])]) {
     const key = titleKey(c.title);
-    if (seen.has(key)) {
+    if (key && seen.has(key)) {
       // the same course on LĀB's TIP list: keep that row, but take the price the shop publishes
       const row = index.get(key);
       if (row && !row.price && c.price) {
