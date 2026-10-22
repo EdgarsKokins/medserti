@@ -108,6 +108,7 @@ export const en = {
       "A running total as you upload",
       "Specialty share and emergency care checked",
       "Your deadline in view, well ahead",
+      "Recertification documents prepared for you",
     ],
     frameLabel: "Example",
     frameName: "Jānis Paraugs",

@@ -104,6 +104,7 @@ export const lv: Dict = {
       "Kopsumma uzreiz pēc augšupielādes",
       "Specialitātes daļa un neatliekamā palīdzība pārbaudīta",
       "Termiņš redzams laikus",
+      "Resertifikācijas dokumenti sagatavoti automātiski",
     ],
     frameLabel: "Piemērs",
     frameName: "Jānis Paraugs",
