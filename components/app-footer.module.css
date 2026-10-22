@@ -11,7 +11,7 @@
 .label { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .tools { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
 .base { max-width: 1120px; margin: 0 auto; padding: 16px 20px 32px; border-top: 1px solid var(--border); }
-.note { margin: 0 0 10px; max-width: 90ch; line-height: 1.6; }
+.note { margin: 0 0 10px; line-height: 1.6; }
 .note a { color: var(--muted); }
 
 @media (pointer: coarse) {

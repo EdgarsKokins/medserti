@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <a href={nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl} target="_blank" rel="noreferrer">likumi.lv</a>).{" "}
       {!nurse && <>{d.rules.validFor(RULES.validityYears)} </>}
       {nurse ? d.rules.checkOfficialInNurse : d.rules.checkOfficialIn}{" "}
-      <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>. {nurse ? d.rules.planningAidNurse : d.rules.planningAid}
+      <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.rules.register}</a>.
     </>
   ) : null;
   return (
