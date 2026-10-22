@@ -99,3 +99,21 @@ export const LMA_REGISTER_URL = "https://www.masuasociacija.lv/talakizglitibas-p
 /** For nurses: LMA's own list, or an audience that names nurses ("Māsas", "medicīnas māsas") */
 export const isNurseCourse = (c: Pick<Course, "source" | "audience">) =>
   c.source === "lma" || /(?<![\p{L}])(?:mās(?:a|as|ām|u)|nurses?)(?![\p{L}])/iu.test(c.audience);
+
+/**
+ * What only an opened course needs: link, venue, approval, programme reference and registration contact.
+ * The /courses list leaves these out of its rows and loads them per course (/api/courses/item) when one is opened.
+ */
+export type CourseExtra = Pick<Course, "url" | "location" | "approvalId" | "annexItem"> & {
+  detailRef: string | null;
+  contact: CourseContact | null;
+};
+
+export const courseExtra = (c: Course): CourseExtra => ({
+  url: c.url,
+  location: c.location,
+  approvalId: c.approvalId,
+  annexItem: c.annexItem,
+  detailRef: c.detailRef ?? null,
+  contact: c.contact ?? null,
+});

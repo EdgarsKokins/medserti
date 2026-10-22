@@ -2,13 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/i18n";
-import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
+import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/Overview";
 import { specialtyLabel } from "@/lib/specialties";
 
-export type CourseRow = Omit<Course, never> & { forMe: boolean };
+/** What the list renders and filters on; the rest (CourseExtra) loads when a course is opened */
+export type CourseRow = Omit<Course, keyof CourseExtra> & { forMe: boolean };
+
+/** One request per course per page view, shared by every card that opens it; a failed load is retried on the next open */
+const extras = new Map<string, Promise<CourseExtra | null>>();
+function loadExtra(id: string): Promise<CourseExtra | null> {
+  let p = extras.get(id);
+  if (!p) {
+    p = fetch(`/api/courses/item?id=${encodeURIComponent(id)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<CourseExtra>) : null))
+      .catch(() => null);
+    extras.set(id, p);
+    p.then((v) => v || extras.delete(id));
+  }
+  return p;
+}
 
 const PAGE = 40;
 const KINDS: CourseKind[] = ["event", "recorded", "ongoing"];
@@ -31,6 +46,7 @@ export default function CoursesView({
   hoursUnit = null,
   nurse = false,
   openId = null,
+  openExtra = null,
 }: {
   locale: Locale;
   rows: CourseRow[];
@@ -44,6 +60,8 @@ export default function CoursesView({
   nurse?: boolean;
   /** course to show opened and scrolled into view (/courses?open=<id>, from the dashboard picks) */
   openId?: string | null;
+  /** the linked course's details, sent with the page so it opens without a request */
+  openExtra?: CourseExtra | null;
 }) {
   const s = courseStrings(locale);
   const target = useMemo(() => (openId ? rows.find((r) => r.id === openId) ?? null : null), [rows, openId]);
@@ -224,7 +242,7 @@ export default function CoursesView({
       ) : (
         <ul className={styles.list}>
           {filtered.slice(0, shown).map((r) => (
-            <CourseCard key={r.id} r={r} locale={locale} linked={r.id === target?.id} />
+            <CourseCard key={r.id} r={r} locale={locale} linked={r.id === target?.id} preloaded={r.id === target?.id ? openExtra : null} />
           ))}
         </ul>
       )}
@@ -270,9 +288,22 @@ function audienceBadge(r: CourseRow, s: CourseStrings, locale: Locale) {
   );
 }
 
-function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Locale; linked?: boolean }) {
+function CourseCard({ r, locale, linked = false, preloaded = null }: { r: CourseRow; locale: Locale; linked?: boolean; preloaded?: CourseExtra | null }) {
   const s = courseStrings(locale);
   const [open, setOpen] = useState(linked);
+  // undefined: not loaded yet; null: the request failed
+  const [extra, setExtra] = useState<CourseExtra | null | undefined>(preloaded ?? undefined);
+  useEffect(() => {
+    if (!open || extra) return;
+    let alive = true;
+    setExtra(undefined);
+    loadExtra(r.id).then((v) => alive && setExtra(v));
+    return () => {
+      alive = false;
+    };
+    // load on open (and retry a failed load on the next open), not on every state change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, r.id]);
   const item = useRef<HTMLLIElement>(null);
   useEffect(() => {
     if (!linked) return;
@@ -290,7 +321,8 @@ function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Local
   // an online course's format already says "Online", so it gets no separate place
   const online = r.city === "Online";
   const place = online || !r.city ? null : cityLabel(r.city, s);
-  const venue = r.location && !online && r.location !== r.city ? r.location : null;
+  const location = extra?.location ?? null;
+  const venue = location && !online && location !== r.city ? location : null;
   const hours = hoursOf(r.minutes, locale);
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
@@ -330,7 +362,7 @@ function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Local
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <ApplyBox r={r} locale={locale} />
+          <ApplyBox r={r} extra={extra} locale={locale} />
           <dl className={styles.facts}>
             {date && <Fact k={s.details.date} v={date} />}
             <Fact k={s.details.format} v={s.formats[r.format]} />
@@ -340,9 +372,9 @@ function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Local
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
             {r.price && <Fact k={s.details.price} v={r.free ? s.free : r.price} />}
-            {r.approvalId && <Fact k={r.source === "lma" ? s.details.approvalLma : s.details.approval} v={`${r.approvalId}${r.annexItem ? `, ${s.annex(r.annexItem)}` : ""}`} />}
+            {extra?.approvalId && <Fact k={r.source === "lma" ? s.details.approvalLma : s.details.approval} v={`${extra.approvalId}${extra.annexItem ? `, ${s.annex(extra.annexItem)}` : ""}`} />}
           </dl>
-          {r.detailRef && <Programme detailRef={r.detailRef} locale={locale} />}
+          {extra?.detailRef && <Programme detailRef={extra.detailRef} locale={locale} />}
         </div>
       )}
     </li>
@@ -350,20 +382,29 @@ function CourseCard({ r, locale, linked = false }: { r: CourseRow; locale: Local
 }
 
 /** The one thing a doctor needs from an opened course: how to sign up */
-function ApplyBox({ r, locale }: { r: CourseRow; locale: Locale }) {
+function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | null | undefined; locale: Locale }) {
   const a = courseStrings(locale).apply;
+  if (extra === undefined)
+    return (
+      <section className={styles.apply} aria-label={a.title} aria-busy="true">
+        <h3 className={styles.applyTitle}>{a.title}</h3>
+        <p className="small muted" style={{ margin: 0 }}>…</p>
+      </section>
+    );
+  // details failed to load: the source's own list is still a way to sign up
+  const url = extra?.url ?? SOURCE_URLS[r.source];
   // the email goes to a Latvian organiser, so subject, body and date are always Latvian
   const lvDate = r.startDate
     ? `${formatDate(r.startDate, "lv")}${r.endDate ? ` - ${formatDate(r.endDate, "lv")}` : ""}`
     : null;
-  const direct = r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !r.url.endsWith("/kursi")) || (r.source === "lma" && r.url !== SOURCE_URLS.lma);
-  const c = r.contact;
+  const direct = !!extra && (r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !url.endsWith("/kursi")) || (r.source === "lma" && url !== SOURCE_URLS.lma));
+  const c = extra?.contact;
   return (
     <section className={styles.apply} aria-label={a.title}>
       <h3 className={styles.applyTitle}>{a.title}</h3>
       {direct ? (
         <div className="row">
-          <a className="btn btn-primary" href={r.url} target="_blank" rel="noreferrer">
+          <a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">
             {r.kind === "recorded" ? a.watch : a.online} ↗
           </a>
         </div>
@@ -393,7 +434,7 @@ function ApplyBox({ r, locale }: { r: CourseRow; locale: Locale }) {
       ) : (
         <p className="small muted" style={{ margin: 0 }}>
           {a.noContact}{" "}
-          <a href={r.url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : courseStrings(locale).open} ↗</a>
+          <a href={url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : courseStrings(locale).open} ↗</a>
         </p>
       )}
     </section>
