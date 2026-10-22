@@ -51,6 +51,10 @@ export function subscribeUploads(l: () => void) {
   listeners.add(l);
   return () => void listeners.delete(l);
 }
+/** A certificate the user deleted: a page mounted later must not bring the queue's copy back */
+export function forgetStored(id: string) {
+  if (snap.stored.some((c) => c.id === id)) emit({ stored: snap.stored.filter((c) => c.id !== id) });
+}
 /** Called with each batch of certificates the server stored */
 export function onCertificatesStored(l: (certs: CmeCertificate[]) => void) {
   storedListeners.add(l);

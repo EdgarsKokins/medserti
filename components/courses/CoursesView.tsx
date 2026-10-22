@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/i18n";
-import { LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
+import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/Overview";
@@ -76,7 +76,7 @@ export default function CoursesView({
       if (format === "in_person" && !(r.format === "in_person" || r.format === "hybrid")) return false;
       if (until && kind === "event" && r.startDate && r.startDate > until) return false;
       if (minTip && (r.tip ?? 0) < minTip) return false;
-      if (freeOnly && !r.free) return false;
+      if (freeOnly && !freeForFilter(r)) return false;
       return true;
     });
   }, [rows, kind, q, mine, format, period, minTip, freeOnly, nurse]);
@@ -198,7 +198,7 @@ export default function CoursesView({
               {s.mySpecialty}
             </label>
           )}
-          <label className={styles.check}>
+          <label className={styles.check} title={s.freeOnlyHint}>
             <input type="checkbox" checked={freeOnly} onChange={(e) => reset(() => setFreeOnly(e.target.checked))} />
             {s.freeOnly}
           </label>

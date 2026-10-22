@@ -1,4 +1,4 @@
-import { RULES, type Progress } from "@/lib/rules";
+import { exclusionReason, RULES, type Progress } from "@/lib/rules";
 import type { CmeCategory, CmeCertificate } from "@/lib/types";
 import { formatDate, formatNumber, inHours, t, type Dict, type Locale } from "@/lib/i18n";
 
@@ -117,15 +117,21 @@ export interface Exclusions {
   missingData: number;
   failed: number;
   processing: number;
+  duplicates: number;
   total: number;
 }
 
+/** Counts per reason, from the same exclusionReason computeProgress uses */
 export function exclusions(p: Progress): Exclusions {
-  const e: Exclusions = { outsideWindow: 0, missingData: 0, failed: 0, processing: 0, total: p.excluded.length };
+  const e: Exclusions = { outsideWindow: 0, missingData: 0, failed: 0, processing: 0, duplicates: 0, total: p.excluded.length };
+  const ids = new Set([...p.counted, ...p.excluded].map((c) => c.id));
+  const window = { start: p.windowStart, end: p.windowEnd };
   for (const c of p.excluded) {
-    if (c.status === "failed") e.failed++;
-    else if (c.status === "parsing") e.processing++;
-    else if (!c.date || c.points == null) e.missingData++;
+    const r = exclusionReason(c, ids, window);
+    if (r === "failed") e.failed++;
+    else if (r === "processing") e.processing++;
+    else if (r === "duplicate") e.duplicates++;
+    else if (r === "noDate" || r === "noPoints") e.missingData++;
     else e.outsideWindow++;
   }
   return e;

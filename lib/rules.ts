@@ -102,6 +102,41 @@ export function certificateWindow(p: Profile): { start: string | null; end: stri
   return { start, end };
 }
 
+/**
+ * Why computeProgress leaves a certificate out, or null when it counts. The certificate list shows the same reason,
+ * so the dashboard's "not counted" line and the list never disagree.
+ * - duplicate: a repeat of a certificate that is still there is not counted twice
+ * - failed / processing: the file could not be read, or is still being read
+ * - noDate / noPoints: a key field is missing
+ * - beforeWindow / afterWindow: dated outside the certificate window
+ */
+export type ExclusionReason = "duplicate" | "failed" | "processing" | "noDate" | "noPoints" | "beforeWindow" | "afterWindow";
+
+export function exclusionReason(
+  c: Pick<CmeCertificate, "status" | "date" | "points" | "duplicateOf">,
+  ids: Set<string>,
+  window: { start: string | null; end: string | null },
+): ExclusionReason | null {
+  if (c.duplicateOf && ids.has(c.duplicateOf)) return "duplicate";
+  if (c.status === "failed") return "failed";
+  if (c.status === "parsing") return "processing";
+  if (!c.date) return "noDate";
+  if (c.points == null) return "noPoints";
+  if (window.start && c.date < window.start) return "beforeWindow";
+  if (window.end && c.date > window.end) return "afterWindow";
+  return null;
+}
+
+/** Today's date in Latvia (YYYY-MM-DD). The server runs on UTC, which is a day behind after midnight in Riga. */
+export function todayLv(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/** True when the date is more than RULES.validityYears before today: it cannot count towards any open recertification */
+export function olderThanValidity(date: string, today: string): boolean {
+  return date < addYears(today, -RULES.validityYears);
+}
+
 export interface Check {
   id: "total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing";
   have: number;
@@ -144,13 +179,7 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
   const counted: CmeCertificate[] = [];
   const excluded: CmeCertificate[] = [];
   const ids = new Set(certs.map((c) => c.id));
-  for (const c of certs) {
-    // a repeat of a certificate that is still there is not counted twice
-    const repeat = !!c.duplicateOf && ids.has(c.duplicateOf);
-    const usable = !repeat && (c.status === "confirmed" || c.status === "needs_review") && c.points != null && c.date;
-    const inWindow = c.date && (!start || c.date >= start) && (!end || c.date <= end);
-    (usable && inWindow ? counted : excluded).push(c);
-  }
+  for (const c of certs) (exclusionReason(c, ids, { start, end }) ? excluded : counted).push(c);
 
   const nurse = profile.profession === "nurse";
   // the 16% cap is Reg. 391 Annex 4; Reg. 630 Annex 6 has no cap on practical training

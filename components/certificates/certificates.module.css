@@ -104,6 +104,19 @@
 .status { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
 .actions { display: flex; gap: 10px 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 .smallBtn { padding: 5px 14px; font-size: 0.85rem; }
+/* "i" next to "Neieskaitīts": opens the reason under the row */
+.infoBtn {
+  display: inline-grid; place-items: center; flex: none;
+  width: 24px; height: 24px; min-height: 0; padding: 0; margin-left: 4px;
+  border: 1px solid currentColor; border-radius: 50%; background: none; color: var(--muted);
+  font: italic 600 0.78rem/1 var(--font-sans); cursor: pointer;
+}
+.infoBtn:hover, .infoBtn[aria-expanded="true"] { color: var(--text); }
+@media (pointer: coarse) {
+  .infoBtn { position: relative; }
+  .infoBtn::after { content: ""; position: absolute; inset: -10px; }
+}
+.reason { grid-column: 1 / -1; margin: 12px 0 0; }
 
 /* tablet: the title gets the width; status and actions move to a second line under it */
 @media (max-width: 1023px) {
@@ -197,6 +210,14 @@
   .footBtns > .btn { flex: 1 1 auto; }
   .deleteBtn { margin-left: 0; }
 }
+
+/* a field that is wrong or missing: red frame and one line under it */
+.invalid, .invalid:focus { border-color: var(--bad); }
+.invalid { box-shadow: 0 0 0 1px var(--bad); }
+.invalid:focus { outline-color: var(--bad); }
+.fieldError { font-size: 0.82rem; line-height: 1.35; color: var(--bad); }
+/* warning under the date: the certificate will not count */
+.dateNote { margin: 2px 0 0; }
 
 /* "check" next to a field the parser was unsure of */
 .checkMark {

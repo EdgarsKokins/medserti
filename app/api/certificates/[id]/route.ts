@@ -5,6 +5,7 @@ import { deleteCertificate, getCertificate, saveCertificate } from "@/lib/db";
 import type { CmeCertificate } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { todayLv } from "@/lib/rules";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -52,6 +53,10 @@ const bodySchema = (m: Dict["api"]) => {
       }
       if (b.date && b.endDate && b.endDate < b.date)
         ctx.addIssue({ code: "custom", message: m.endBeforeStart, path: ["endDate"] });
+      // a certificate is issued for something that already happened; today is Latvian time, not the server's UTC
+      const today = todayLv();
+      if (b.date && b.date > today) ctx.addIssue({ code: "custom", message: m.dateFuture, path: ["date"] });
+      if (b.endDate && b.endDate > today) ctx.addIssue({ code: "custom", message: m.dateFuture, path: ["endDate"] });
     });
 };
 
@@ -72,7 +77,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const parsed = bodySchema(m).safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
-    return NextResponse.json({ error: issue && OWN_CODES.has(issue.code) ? issue.message : m.invalidInput }, { status: 400 });
+    // the field lets the review panel mark it in red
+    const field = typeof issue?.path[0] === "string" ? issue.path[0] : null;
+    return NextResponse.json({ error: issue && OWN_CODES.has(issue.code) ? issue.message : m.invalidInput, field }, { status: 400 });
   }
   const { status, ...fields } = parsed.data;
 
