@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { currentUserId } from "@/lib/auth";
-import { getJson, putJson } from "@/lib/storage";
+import { getRecord, setRecord } from "@/lib/records";
 import { DETAIL_REF, fetchCourseDetails } from "@/lib/courses/details";
 import type { CourseDetails } from "@/lib/courses/types";
 import { reportServerError } from "@/lib/monitoring/errors";
 
 const MAX_AGE_MS = 7 * 86_400_000; // programmes rarely change after approval
+/** the record outlives MAX_AGE_MS by a week, so a stale copy is still there to show when LĀB is down */
+const KEEP_SEC = (2 * MAX_AGE_MS) / 1000;
 /** Like the course index (lib/courses/store.ts), each server instance keeps what it read for a few minutes */
 const MEM_TTL_MS = 5 * 60_000;
 type Mem = Map<string, { at: number; details: CourseDetails }>;
@@ -26,14 +28,14 @@ export async function GET(req: Request) {
   const hit = mem.get(path);
   if (hit && Date.now() - hit.at < MEM_TTL_MS && Date.now() - Date.parse(hit.details.fetchedAt) < MAX_AGE_MS)
     return NextResponse.json(hit.details);
-  const cached = await getJson<CourseDetails>(path);
+  const cached = await getRecord<CourseDetails>(path);
   if (cached && Date.now() - Date.parse(cached.fetchedAt) < MAX_AGE_MS) {
     remember(path, cached);
     return NextResponse.json(cached);
   }
   try {
     const fresh = await fetchCourseDetails(ref);
-    await putJson(path, fresh);
+    await setRecord(path, fresh, { ttlSec: KEEP_SEC });
     remember(path, fresh);
     return NextResponse.json(fresh);
   } catch (err) {

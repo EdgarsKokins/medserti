@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     await Promise.all([rateLimit(emailKey, ...EMAIL_LIMIT), rateLimit(ipKey, ...IP_LIMIT)]);
     return NextResponse.json({ error: m.wrongCredentials }, { status: 401 });
   }
-  // most sign-ins have no failed attempts on record: nothing to clear, and clearing costs a Blob listing
+  // most sign-ins have no failed attempts on record: nothing to clear, and clearing costs a command
   if (byEmail.recorded) await clearLimit(emailKey);
   await startSession(user.id, user.sessionVersion ?? 0);
   return NextResponse.json({ ok: true });

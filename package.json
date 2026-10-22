@@ -10,6 +10,7 @@
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@upstash/redis": "1.39.0",
     "@vercel/analytics": "2.0.1",
     "@vercel/blob": "2.8.2",
     "aws4fetch": "1.0.20",
@@ -29,6 +30,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "ioredis-mock": "8.13.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0"
   }

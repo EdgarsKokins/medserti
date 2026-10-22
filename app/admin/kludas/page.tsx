@@ -16,7 +16,7 @@ const when = new Intl.DateTimeFormat("lv-LV", { timeZone: "Europe/Riga", day: "2
 const at = (iso: string) => when.format(new Date(iso));
 const SOURCE: Record<ErrorItem["source"], string> = { server: "Serveris", client: "Pārlūks", ui: "Pieprasījums" };
 
-/** Errors of the last 7 days by fingerprint, and "Ziņot par problēmu" messages. 14 Blob reads per view. Admin texts stay in Latvian. */
+/** Errors of the last 7 days by fingerprint, and "Ziņot par problēmu" messages. 2 Redis commands per view. Admin texts stay in Latvian. */
 export default async function ErrorsAdminPage() {
   if (!(await isAdmin())) {
     return (
@@ -56,7 +56,7 @@ export default async function ErrorsAdminPage() {
       <p className="small"><Link href="/admin">← Tekstu redaktors</Link></p>
       <h1>Kļūdas un ziņojumi</h1>
       <p className="small muted">
-        Pēdējās {DAYS} dienas. Faili tiek glabāti {KEEP_DAYS} dienas, pēc tam ikdienas cron tos izdzēš. Par katru jaunu kļūdu dienā
+        Pēdējās {DAYS} dienas. Ieraksti tiek glabāti {KEEP_DAYS} dienas, pēc tam tie izdzēšas automātiski. Par katru jaunu kļūdu dienā
         info@medserti.lv saņem vienu e-pastu (ne vairāk kā 10 dienā). Atkārtojumi tiek saskaitīti un ierakstīti ik pēc 10 minūtēm vai kopā ar nākamo jauno kļūdu.
       </p>
 

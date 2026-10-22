@@ -2,13 +2,13 @@ import "server-only";
 import { randomBytes } from "crypto";
 import { sendEmail } from "../email";
 import { CONTACT_EMAIL } from "../site";
-import { getJson, getJsonTagged, putJsonIfMatch } from "../storage";
-import { dayLv, lastDays } from "./day";
+import { getRecords, updateRecord } from "../records";
+import { DAY_TTL_SEC, dayLv, lastDays } from "./day";
 
 /*
- * "Report a problem" messages: feedback/YYYY-MM-DD.json, one file a day, plus an email to info@.
- * One read and one write per message. The day file also holds the per-sender count, so the daily limit
- * holds across server instances without a separate rate-limit file.
+ * "Report a problem" messages: feedback/YYYY-MM-DD.json, one record a day (expires after KEEP_DAYS), plus an email to info@.
+ * One read and one write per message. The day record also holds the per-sender count, so the daily limit
+ * holds across server instances without a separate rate-limit record.
  */
 
 export type FeedbackEntry = {
@@ -40,18 +40,19 @@ export async function submitFeedback(
 ): Promise<"ok" | "limited"> {
   const day = dayLv(now);
   const entry: FeedbackEntry = { id: randomBytes(6).toString("base64url"), at: now.toISOString(), ...input };
-  for (let attempt = 0; ; attempt++) {
-    const cur = await getJsonTagged<FeedbackDay>(pathOf(day));
-    const file = cur?.value ?? { day, entries: [], bySender: {} };
-    if ((file.bySender[sender] ?? 0) >= PER_SENDER_PER_DAY || file.entries.length >= MAX_PER_DAY) return "limited";
-    const next: FeedbackDay = {
-      day,
-      entries: [...file.entries, entry],
-      bySender: { ...file.bySender, [sender]: (file.bySender[sender] ?? 0) + 1 },
-    };
-    if (await putJsonIfMatch(pathOf(day), next, cur?.etag ?? null)) break;
-    if (attempt >= 2) throw new Error("feedback: write conflict");
-  }
+  let limited = false;
+  // a conditional update, retried on a conflict: two messages at once both land
+  await updateRecord<FeedbackDay>(
+    pathOf(day),
+    (cur) => {
+      const file = cur ?? { day, entries: [], bySender: {} };
+      limited = (file.bySender[sender] ?? 0) >= PER_SENDER_PER_DAY || file.entries.length >= MAX_PER_DAY;
+      if (limited) return undefined;
+      return { day, entries: [...file.entries, entry], bySender: { ...file.bySender, [sender]: (file.bySender[sender] ?? 0) + 1 } };
+    },
+    { ttlSec: DAY_TTL_SEC },
+  );
+  if (limited) return "limited";
   await sendEmail({
     to: CONTACT_EMAIL,
     ...(entry.email ? { replyTo: entry.email } : {}),
@@ -69,12 +70,12 @@ export async function submitFeedback(
     ]
       .filter((l) => l !== null)
       .join("\n"),
-  }).catch((e) => console.error("[feedback] email failed (stored in Blob)", e));
+  }).catch((e) => console.error("[feedback] email failed (stored)", e));
   return "ok";
 }
 
-/** Day files for the admin page, newest first */
+/** Day records for the admin page, newest first (one command) */
 export async function readFeedbackDays(n = 7): Promise<FeedbackDay[]> {
-  const days = await Promise.all(lastDays(n).map((d) => getJson<FeedbackDay>(pathOf(d))));
+  const days = await getRecords<FeedbackDay>(lastDays(n).map(pathOf));
   return days.filter((d): d is FeedbackDay => !!d);
 }

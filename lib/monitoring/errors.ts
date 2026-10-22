@@ -1,18 +1,18 @@
 import "server-only";
 import { sendEmail } from "../email";
 import { CONTACT_EMAIL } from "../site";
-import { getJsonTagged, getJson, putJsonIfMatch } from "../storage";
-import { dayLv, lastDays, pseudonym } from "./day";
+import { getRecordTagged, getRecords, setRecordIfMatch } from "../records";
+import { DAY_TTL_SEC, dayLv, lastDays, pseudonym } from "./day";
 import { deviceLabel, fingerprint, scrubMessage, scrubRoute, topFrame } from "./scrub";
 
 /*
- * Error log: errors/YYYY-MM-DD.json, one file a day, one entry per fingerprint (message + route + top frame) with a count.
+ * Error log: errors/YYYY-MM-DD.json, one record a day (expires after KEEP_DAYS), one entry per fingerprint (message + route + top frame) with a count.
  *
  * Quota: a fingerprint this server instance has not written yet costs one read and one write. Repeats of a known
  * fingerprint are counted in memory and written with the next new one, or once 10 minutes have passed; counts still in
  * memory when the instance stops are lost (an undercount, never a missed error). Each instance writes at most
- * WRITES_PER_HOUR times an hour and WRITES_PER_DAY a day, and once the day file holds MAX_ITEMS fingerprints new ones are
- * only counted (as dropped, written with the next repeat), so an error storm cannot use up the Blob quota. The first time a fingerprint appears each day, info@ gets one email, at most MAX_EMAILS a day.
+ * WRITES_PER_HOUR times an hour and WRITES_PER_DAY a day, and once the day record holds MAX_ITEMS fingerprints new ones are
+ * only counted (as dropped, written with the next repeat), so an error storm cannot use up the Redis command quota. The first time a fingerprint appears each day, info@ gets one email, at most MAX_EMAILS a day.
  */
 
 export type ErrorSource = "server" | "client" | "ui";
@@ -169,13 +169,13 @@ async function flush(s: State): Promise<void> {
   if (s.writes.length >= WRITES_PER_HOUR) return; // keep counting in memory; written once the hour frees up
   const pending = [...s.pending.values()];
   for (let attempt = 0; attempt < 3; attempt++) {
-    const cur = await getJsonTagged<ErrorDay>(pathOf(s.day));
+    const cur = await getRecordTagged<ErrorDay>(pathOf(s.day));
     const merged = mergeDay(cur?.value ?? emptyDay(s.day), pending);
     const { alert } = merged;
     const file = { ...merged.file, dropped: merged.file.dropped + s.dropped };
     s.writes.push(Date.now());
     s.writesToday++;
-    if (!(await putJsonIfMatch(pathOf(s.day), file, cur?.etag ?? null))) continue;
+    if (!(await setRecordIfMatch(pathOf(s.day), file, cur?.tag ?? null, { ttlSec: DAY_TTL_SEC }))) continue;
     for (const p of pending) s.pending.delete(p.fp);
     s.dropped = 0;
     s.known = new Set(Object.keys(file.items));
@@ -211,7 +211,7 @@ function sendAlert(e: ErrorItem) {
 
 /** Day files for the admin page, newest first; days without errors are left out */
 export async function readErrorDays(n = 7): Promise<ErrorDay[]> {
-  const days = await Promise.all(lastDays(n).map((d) => getJson<ErrorDay>(pathOf(d))));
+  const days = await getRecords<ErrorDay>(lastDays(n).map(pathOf));
   return days.filter((d): d is ErrorDay => !!d);
 }
 

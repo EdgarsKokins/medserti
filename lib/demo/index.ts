@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes } from "crypto";
-import { getJson, putBytes, putJson, remove } from "../storage";
+import { putBytes, remove } from "../storage";
+import { deleteRecordsUnder, getRecord, setRecord } from "../records";
 import { getUser, saveCertificates, saveUser } from "../db";
 import bcrypt from "bcryptjs";
 import { addYears, RULES } from "../rules";
@@ -172,12 +173,12 @@ async function seedDemo(today = new Date()): Promise<void> {
   // one manifest write for the lot
   await saveCertificates(certs);
   // the marker goes last: an interrupted seed is retried on the next login
-  await putJson(MARKER, { version: DEMO_VERSION, seededAt } satisfies Marker);
+  await setRecord(MARKER, { version: DEMO_VERSION, seededAt } satisfies Marker);
 }
 
 /** Seed on demo login when the data is missing, stale or from an older version */
 export async function ensureDemo(today = new Date()): Promise<void> {
-  const [marker, user] = await Promise.all([getJson<Marker>(MARKER), getUser(DEMO_USER_ID)]);
+  const [marker, user] = await Promise.all([getRecord<Marker>(MARKER), getUser(DEMO_USER_ID)]);
   const ageDays = marker ? (today.getTime() - Date.parse(marker.seededAt)) / 86_400_000 : Infinity;
   if (marker && user && marker.version === DEMO_VERSION && ageDays < DEMO_MAX_AGE_DAYS) return;
   await resetDemo(today);
@@ -185,6 +186,7 @@ export async function ensureDemo(today = new Date()): Promise<void> {
 
 /** Wipe the demo account and write it again from the canonical data */
 export async function resetDemo(today = new Date()): Promise<void> {
-  await remove(`users/${DEMO_USER_ID}/`);
+  await remove(`users/${DEMO_USER_ID}/files/`);
+  await deleteRecordsUnder(`users/${DEMO_USER_ID}/`);
   await seedDemo(today);
 }

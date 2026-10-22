@@ -807,7 +807,8 @@ export const en = {
         {
           title: "Who processes it for us",
           items: [
-            "Vercel Inc. (USA) hosts the site. Our server and the private Vercel Blob store with your data and files are in Vercel's Frankfurt (Germany, EU) region. Vercel is a US company, so access from outside the EU (for example by its support staff) is possible; that is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
+            "Vercel Inc. (USA) hosts the site. Our server and the private Vercel Blob store with your uploaded certificate files are in Vercel's Frankfurt (Germany, EU) region. Vercel is a US company, so access from outside the EU (for example by its support staff) is possible; that is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
+            "Upstash, Inc. (USA) stores your account, profile and certificate records in its Frankfurt (Germany, EU) region (Upstash Redis, connected through Vercel). Access from outside the EU (for example by its support staff) is possible; that is covered by Upstash's data processing agreement, which includes the EU Standard Contractual Clauses.",
             "jsDelivr (a public file network): when you upload a photo, your browser downloads the text recognition program from cdn.jsdelivr.net. That service sees your IP address, not your files.",
             "Resend (USA) sends our emails, such as password reset links. It receives your email address and the message text.",
             "Vercel Web Analytics counts page views and a few steps in the app (for example, a certificate uploaded or documents exported) without cookies. It receives the page address without query strings, the referring site, and your country, browser, operating system and device type. It cannot recognise you from one day to the next and receives no names, email addresses or certificate data.",

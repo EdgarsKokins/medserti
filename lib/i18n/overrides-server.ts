@@ -1,10 +1,10 @@
 import "server-only";
-import { getJson, putJson } from "../storage";
+import { getRecord, setRecord } from "../records";
 import { compileOverrides, emptyOverrides, type StoredOverrides } from "./catalog";
 import { LOCALES } from "../i18n";
 import { setI18nOverrides, type RuntimeOverrides } from "./overrides";
 
-/** Overrides edited at /admin, in the private Blob store. The previous version is kept for undo. */
+/** Overrides edited at /admin, in the record store (lib/records.ts). The previous version is kept for undo. */
 const CURRENT = "i18n/overrides.json";
 const PREVIOUS = "i18n/overrides.prev.json";
 // a save on this instance applies at once; other instances pick it up within TTL_MS
@@ -24,11 +24,11 @@ function normalize(v: unknown): StoredOverrides {
 }
 
 export async function readStoredOverrides(): Promise<StoredOverrides> {
-  return normalize(await getJson<unknown>(CURRENT));
+  return normalize(await getRecord<unknown>(CURRENT));
 }
 
 export async function readPreviousOverrides(): Promise<StoredOverrides | null> {
-  const v = await getJson<unknown>(PREVIOUS);
+  const v = await getRecord<unknown>(PREVIOUS);
   return v ? normalize(v) : null;
 }
 
@@ -68,8 +68,8 @@ export async function loadRuntimeOverrides(): Promise<RuntimeOverrides> {
 /** Save a validated overrides object; the old one becomes the "previous" version */
 export async function saveStoredOverrides(next: StoredOverrides): Promise<void> {
   const prev = await readStoredOverrides();
-  await putJson(PREVIOUS, prev);
-  await putJson(CURRENT, next);
+  await setRecord(PREVIOUS, prev);
+  await setRecord(CURRENT, next);
   cache.mem = null;
 }
 
@@ -78,8 +78,8 @@ export async function restorePreviousOverrides(): Promise<StoredOverrides | null
   const prev = await readPreviousOverrides();
   if (!prev) return null;
   const cur = await readStoredOverrides();
-  await putJson(CURRENT, prev);
-  await putJson(PREVIOUS, cur);
+  await setRecord(CURRENT, prev);
+  await setRecord(PREVIOUS, cur);
   cache.mem = null;
   return prev;
 }

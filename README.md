@@ -12,11 +12,11 @@ Live: https://medserti.lv (also https://medserti.vercel.app)
 - **Courses** (`/courses`): upcoming TIP events aggregated daily from the LĀB approved TIP list, LĀB courses, kursiarstiem.lv, medicinaskursi.lv and LUMPII (lumpii.lv). Facts plus a link back to the source; contact persons' details are not stored.
 - Latvian UI by default, English switch.
 
-No paid APIs. Hosting is Vercel (Hobby), data and files in a private Vercel Blob store.
+No paid APIs. Hosting is Vercel (Hobby). Records (accounts, certificates, settings) are in Upstash Redis (free tier, Frankfurt); uploaded files in a private Vercel Blob store.
 
 ## Stack
 
-Next.js 16 (App Router), React 19, TypeScript, zod, `@vercel/blob`, `jose` + `bcryptjs` for cookie auth, `unpdf`, `tesseract.js`.
+Next.js 16 (App Router), React 19, TypeScript, zod, `@upstash/redis`, `@vercel/blob`, `jose` + `bcryptjs` for cookie auth, `unpdf`, `tesseract.js`.
 
 ## Layout
 
@@ -26,7 +26,9 @@ Next.js 16 (App Router), React 19, TypeScript, zod, `@vercel/blob`, `jose` + `bc
 | `lib/parse.ts` | Certificate text extractor (Annex 4 logic) |
 | `lib/courses/` | Course scrapers, merge, daily refresh, lecture programmes |
 | `lib/i18n.ts` | LV/EN dictionary |
-| `lib/storage.ts`, `lib/db.ts` | Blob storage (or `./.data` locally without a token) |
+| `lib/records.ts`, `lib/db.ts` | JSON records in Redis (or `./.data-records.json` locally without Redis env vars) |
+| `lib/storage.ts` | Uploaded files in Blob (or `./.data` locally without a token) |
+| `lib/backup.ts` | Weekly R2 backup: Blob files plus a dump of all records; restore with `scripts/restore-backup.mjs` |
 | `app/` | Pages and API routes; `app/api/cron/refresh-courses` runs daily (see `vercel.json`) |
 | `components/` | UI by feature |
 
@@ -37,9 +39,9 @@ npm install
 npm run dev
 ```
 
-Without `BLOB_READ_WRITE_TOKEN` the app stores everything in `./.data`, so you can run it with no accounts or keys. To use the real store, link the Vercel project and pull env vars (`vercel env pull .env.local`).
+Without Redis env vars the app keeps records in `./.data-records.json`, and without `BLOB_READ_WRITE_TOKEN` files in `./.data`, so you can run it with no accounts or keys. `vercel env pull .env.local` brings in the production Redis and Blob credentials: a dev server or script started with them reads and writes live data and uses the free-tier quotas. Test locally without them.
 
-Env vars in production: `AUTH_SECRET`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_PASSWORD`, `RESEND_API_KEY`.
+Env vars in production: `AUTH_SECRET`, `KV_REST_API_URL` + `KV_REST_API_TOKEN` (set by the Upstash integration in the Vercel Marketplace; `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` also work), `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_PASSWORD`, `RESEND_API_KEY`.
 
 Email (password reset) goes through Resend's REST API in `lib/email.ts`. Without `RESEND_API_KEY` the email, including the reset link, is printed to the server console. Optional: `EMAIL_FROM` (default `Medserti <noreply@medserti.lv>`), `EMAIL_REPLY_TO` (default `info@medserti.lv`), `SITE_URL` (base for links in emails; default `https://medserti.lv` in production, the request origin locally).
 
@@ -47,7 +49,7 @@ Email (password reset) goes through Resend's REST API in `lib/email.ts`. Without
 
 ## Editing texts
 
-Admins can change any UI text, LV and EN, at `/admin` without a deploy. Edits are stored as overrides in the Blob store (`i18n/overrides.json`, the version before the last save in `i18n/overrides.prev.json`) and reach every page within a minute. The code dictionaries in `lib/i18n.ts` and `components/courses/strings.ts` stay the defaults. Texts with plural forms or conditions are read-only there and are changed in code.
+Admins can change any UI text, LV and EN, at `/admin` without a deploy. Edits are stored as overrides in Redis (`i18n/overrides.json`, the version before the last save in `i18n/overrides.prev.json`) and reach every page within 5 minutes. The code dictionaries in `lib/i18n.ts` and `components/courses/strings.ts` stay the defaults. Texts with plural forms or conditions are read-only there and are changed in code.
 
 ## Deploying
 

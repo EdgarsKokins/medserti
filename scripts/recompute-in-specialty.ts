@@ -10,16 +10,15 @@
  * It never sets false to true and never touches confirmed, failed or user-saved certificates, the demo
  * account or nurses (their rules do not use inSpecialty).
  *
- * Dry run by default: prints what would change. --apply writes each change through lib/db (a new version,
- * so the versioned read cache picks it up), after saving the old records as JSON in --backup-dir.
+ * Dry run by default: prints what would change. --apply writes each change through lib/db , after saving the old records as JSON in --backup-dir.
  *
- * Run from the app folder (local store: ./.data; production: set BLOB_READ_WRITE_TOKEN):
+ * Run from the app folder (local store: ./.data-records.json; production: set KV_REST_API_URL + KV_REST_API_TOKEN):
  *   npx tsx --conditions=react-server scripts/recompute-in-specialty.ts
  *   npx tsx --conditions=react-server scripts/recompute-in-specialty.ts --apply [--backup-dir "../Working for Claude"]
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { listPaths } from "../lib/storage";
+import { listRecordKeys } from "../lib/records";
 import { getCertificate, getUser, listCertificates, saveCertificate } from "../lib/db";
 import { DEMO_USER_ID } from "../lib/demo/id";
 import { matchesSpecialty } from "../lib/parse/specialty";
@@ -43,7 +42,7 @@ function shouldClear(c: CmeCertificate, specialty: string): boolean {
 }
 
 async function main() {
-  const userIds = [...new Set((await listPaths("users/")).map((p) => /^users\/([0-9a-f-]{36})\/user\.json$/i.exec(p)?.[1]).filter((id): id is string => !!id))];
+  const userIds = [...new Set((await listRecordKeys("users/")).map((p) => /^users\/([0-9a-f-]{36})\/user\.json$/i.exec(p)?.[1]).filter((id): id is string => !!id))];
 
   const counts = { users: 0, skippedUsers: 0, certificates: 0, eligible: 0, change: 0 };
   const skipped: string[] = [];
