@@ -88,6 +88,10 @@ export interface CmeCertificate {
   approvalId: string | null;
   /** ISO 3166-1 alpha-2 code ("LV", "LT"); certificates saved before Oct 2026 may hold an English name ("Latvia") */
   country: string | null;
+  /** language the document is written in (ISO 639-1, lib/parse/language.ts); null when unknown or on older certificates */
+  language?: string | null;
+  /** the LĀB approved-TIP register looked up for a certificate with no points printed (lib/tipRegistry.ts) */
+  tipLookup?: TipLookup | null;
   /** 0-1, share of the key fields (title, date, points) the parser found */
   confidence: number | null;
   /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */
@@ -129,7 +133,44 @@ export type ParseNoteCode =
   | "pointsSummed"
   | "courseTotal"
   | "lecturer"
-  | "lowConfidence";
+  | "lowConfidence"
+  // added Oct 2026 for documents that did not read
+  | "masterClass"
+  | "foreignLanguage"
+  | "tipRegistry"
+  | "tipCandidates"
+  | "tipNoMatch";
+
+/** One event in the LĀB approved-TIP register (is.arstubiedriba.lv/tip_list_approved) */
+export interface RegistryEvent {
+  /** "TIP2025/8456" */
+  approvalId: string;
+  title: string;
+  /** YYYY-MM-DD, first and last listed day */
+  start: string | null;
+  end: string | null;
+  /** every listed day, for series held on several separate days */
+  days: string[];
+  organizer: string;
+  tip: number | null;
+  /** LĀB lecture programme, "application:8456" */
+  detailRef: string | null;
+}
+
+export interface TipCandidate extends RegistryEvent {
+  /** 0-1, how well title, date and organizer agree with the certificate */
+  score: number;
+}
+
+/**
+ * match: one event fits (points filled in, the user confirms); ambiguous: up to 3 to pick from;
+ * none: nothing in the register fits; error: the register could not be reached.
+ */
+export interface TipLookup {
+  status: "match" | "ambiguous" | "none" | "error";
+  candidates: TipCandidate[];
+  checkedAt: string;
+}
 
 /** Fields the parser scores; the review panel marks those below the threshold */
 export type ConfidenceField = "title" | "organizer" | "date" | "points" | "country";

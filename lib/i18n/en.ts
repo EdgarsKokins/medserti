@@ -3,7 +3,7 @@ import { RULES } from "../rule-constants";
 import type { CertStatus, CmeCategory, NurseTopic, Profession } from "../types";
 import type { CourseFormat, CourseKind, CourseSource } from "../courses/types";
 import type { ProgressChartLabels } from "@/components/dashboard/ProgressChart";
-import { capPct, enPl, fieldList, fmtList, fmtN, specialtyPct, type NoteP } from "./shared";
+import { capPct, enPl, fieldList, fmtList, fmtN, specialtyPct, langName, type NoteP } from "./shared";
 
 /* One UI dictionary per file, so a client bundle loads only the current language (components/i18n/DictProvider.tsx). */
 
@@ -568,6 +568,11 @@ export const en = {
     discardQuestion: "You have unsaved changes. Close without saving?",
     discard: "Close without saving",
     keepEditing: "Keep editing",
+    registryMatched: "Points from the LĀB register:",
+    registryPick: "Similar events in the LĀB register:",
+    registryUse: "Use",
+    registryUsed: "Used",
+    registryOpen: "Open in LĀB",
   },
   parseNotes: {
     pdfUnreadable: () => "Could not read text from this PDF. Enter the details manually.",
@@ -608,6 +613,16 @@ export const en = {
         : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
     lowConfidence: (p: NoteP) =>
       `Not sure we read these right: ${fieldList(p.fields, { title: "title", organizer: "organiser", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
+    masterClass: () =>
+      "This document confirms a master class you ran. Annex 4 of Regulation No. 391 has no item for master classes: the certification commission sets the points by analogy (point 51). The closest are item 22 (30 TIP per talk at an international event) and item 18 (10 TIP a year for teaching). Enter the points LĀB approves.",
+    foreignLanguage: (p: NoteP) =>
+      `This document is in ${langName(p.lang, { ru: "Russian", uk: "Ukrainian", lt: "Lithuanian", et: "Estonian", de: "German", pl: "Polish", fr: "French", it: "Italian", cs: "Czech" }, "a foreign language")}. LĀB may ask for a certified Latvian translation (Regulation No. 391, point 47).`,
+    tipRegistry: (p: NoteP) =>
+      `The certificate prints no points. We found this event in the LĀB register of approved events (${p.id}, ${fmtN(p.points)} TIP). Check it is your event, then confirm.`,
+    tipCandidates: (p: NoteP) =>
+      `The certificate prints no points. The LĀB register has ${p.n} similar ${enPl(Number(p.n), "event", "events")}: pick yours below. If the certificate covers several lectures, add up their points.`,
+    tipNoMatch: () =>
+      "The certificate prints no points, and we did not find this event in the LĀB register. Enter the points from the LĀB list of approved TIP events or ask the organiser.",
   },
   dashboard: {
     title: "Dashboard",

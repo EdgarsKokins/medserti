@@ -1,7 +1,7 @@
 import { RULES } from "../rule-constants";
 import type { NurseTopic } from "../types";
 import { ruPl } from "../locale";
-import { capPct, fieldList, fmtList, fmtN, specialtyPct, type NoteP } from "./shared";
+import { capPct, fieldList, fmtList, fmtN, specialtyPct, langName, type NoteP } from "./shared";
 import type { Dict } from "./en";
 
 /* Russian as used by medical practitioners in Latvia. Official Latvian names stay as is: LĀB, TIP, MK noteikumi Nr. 391, Veselības inspekcija. */
@@ -566,6 +566,11 @@ export const ru: Dict = {
     discardQuestion: "Есть несохранённые изменения. Закрыть без сохранения?",
     discard: "Закрыть без сохранения",
     keepEditing: "Продолжить",
+    registryMatched: "Баллы из реестра LĀB:",
+    registryPick: "Похожие мероприятия в реестре LĀB:",
+    registryUse: "Выбрать",
+    registryUsed: "Выбрано",
+    registryOpen: "Открыть в LĀB",
   },
   parseNotes: {
     pdfUnreadable: () => "Не удалось считать текст из этого PDF. Введите данные вручную.",
@@ -606,6 +611,16 @@ export const ru: Dict = {
         : "Вы выступали на этом мероприятии. Доклад на мероприятии в Латвии даёт 10 TIP (приложение 4, пункт 23): добавьте его отдельной записью.",
     lowConfidence: (p: NoteP) =>
       `Не уверены, что правильно считали: ${fieldList(p.fields, { title: "название", organizer: "организатор", date: "дата", points: "баллы", country: "страна" })}. Сверьте с сертификатом.`,
+    masterClass: () =>
+      "Этот документ подтверждает мастер-класс, который вы провели. В приложении 4 Правил КМ № 391 нет пункта для мастер-классов: баллы определяет сертификационная комиссия по аналогии (пункт 51). Ближайшие: пункт 22 (30 TIP за доклад на международном мероприятии) и пункт 18 (10 TIP в год за преподавание). Укажите баллы, которые утвердит LĀB.",
+    foreignLanguage: (p: NoteP) =>
+      `Документ на ${langName(p.lang, { ru: "русском", uk: "украинском", lt: "литовском", et: "эстонском", de: "немецком", pl: "польском", fr: "французском", it: "итальянском", cs: "чешском" }, "иностранном")} языке. LĀB может запросить заверенный перевод на латышский язык (Правила КМ № 391, пункт 47).`,
+    tipRegistry: (p: NoteP) =>
+      `В сертификате баллы не указаны. Мы нашли это мероприятие в реестре LĀB (${p.id}, ${fmtN(p.points)} TIP). Проверьте, что это ваше мероприятие, и подтвердите.`,
+    tipCandidates: (p: NoteP) =>
+      `В сертификате баллы не указаны. В реестре LĀB похожих мероприятий: ${p.n}. Выберите своё ниже. Если сертификат подтверждает несколько лекций, сложите их баллы.`,
+    tipNoMatch: () =>
+      "В сертификате баллы не указаны, и в реестре LĀB это мероприятие не найдено. Укажите баллы из списка утверждённых LĀB мероприятий или спросите организатора.",
   },
   dashboard: {
     title: "Обзор",

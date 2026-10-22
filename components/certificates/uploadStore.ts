@@ -4,6 +4,8 @@ import type { Worker as OcrWorker } from "tesseract.js";
 import { FILE_TYPES, type CmeCertificate } from "@/lib/types";
 import type { Dict } from "@/lib/i18n";
 import { ocrPdfIfScanned } from "./pdfOcr";
+import { canvasEngine, imageCanvas, type GetWorker } from "./ocrCanvas";
+import { ocrPages, type OcrLang } from "@/lib/parse/ocr";
 import { checkImageFile, checkRenderedPage } from "./imageCheck";
 import { ocrUnreadable, type QualityIssue } from "@/lib/parse/imageQuality";
 
@@ -118,18 +120,20 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
   // a new batch replaces the finished rows of the last one, but keeps its failures in view
   emit({ items: [...batch.map((b) => b.item), ...snap.items.filter((p) => p.state === "failed")], busy: true, stored: [] });
 
-  // OCR runs in the browser (free); one worker is shared by the batch and loaded only when an image is present
-  let worker: OcrWorker | null = null;
+  // OCR runs in the browser (free); workers are shared by the batch and loaded only when an image is present.
+  // The Russian model (~2.7 MB) is downloaded only for a page whose Latvian read looks like Cyrillic (lib/parse/ocr.ts).
+  const workers = new Map<OcrLang, Promise<OcrWorker>>();
   let currentKey = "";
-  const getWorker = async () => {
-    if (worker) return worker;
-    const { createWorker } = await import("tesseract.js");
-    worker = await createWorker("lav+eng", 1, {
-      logger: (m) => {
-        if (m.status === "recognizing text" && currentKey) update(currentKey, { progress: Math.round(m.progress * 100) });
-      },
-    });
-    return worker;
+  const getWorker: GetWorker = (lang = "lav") => {
+    if (!workers.has(lang))
+      workers.set(lang, import("tesseract.js").then(({ createWorker }) =>
+        createWorker(lang === "rus" ? "rus+eng" : "lav+eng", 1, {
+          logger: (m) => {
+            if (m.status === "recognizing text" && currentKey) update(currentKey, { progress: Math.round(m.progress * 100) });
+          },
+        }),
+      ));
+    return workers.get(lang)!;
   };
 
   // One request per file: keeps each request small and shows per-file progress
@@ -184,10 +188,11 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
         update(item.key, { state: "reading", progress: 0, issues: undefined });
         currentKey = item.key;
         try {
-          const w = await getWorker();
-          const { data } = await w.recognize(file);
-          ocrText = data.text;
-          ocrConfidence = data.confidence;
+          // a photo is a one-page document: same orientation and language steps as a scanned PDF
+          const page = await imageCanvas(file);
+          const r = await ocrPages<HTMLCanvasElement>({ pageCount: 1, render: async () => page, ...canvasEngine(getWorker) });
+          ocrText = r.text;
+          ocrConfidence = r.confidence;
         } catch (err) {
           console.error("OCR failed", err); // upload anyway; the user enters the details
         }
@@ -229,7 +234,7 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       update(item.key, { state: "failed", message: d.network });
     }
   }
-  if (worker) await (worker as OcrWorker).terminate().catch(() => {});
+  for (const w of workers.values()) await w.then((x) => x.terminate()).catch(() => {});
   emit({ busy: false });
   // files the user picked meanwhile (a retaken photo): start them now
   if (pending.length) {

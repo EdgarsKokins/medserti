@@ -26,6 +26,8 @@ export interface ExportRow {
   rawPoints?: number;
   inSpecialty: boolean;
   fileName: string;
+  /** written in neither Latvian nor English: LĀB may ask for a certified translation (lib/parse/language.ts) */
+  foreignLanguage?: boolean;
 }
 
 type Work = ExportWorkplace & { now: boolean };
@@ -133,7 +135,7 @@ export default function ExportView({
     await build(folder, async (zip, docs, onProgress) => {
       zip.file(`${folder}/1_Iesniegums.docx`, await docs.toBlob(docs.buildApplication(person, cert, rows.length)));
       zip.file(`${folder}/2_Resertifikacijas_lapa.docx`, await docs.toBlob(docs.buildRecertificationSheet(person, cert, rows)));
-      zip.file(`${folder}/Pirms_iesniegsanas.txt`, docs.buildChecklist(cert, rows.length, unconfirmed, langName));
+      zip.file(`${folder}/Pirms_iesniegsanas.txt`, docs.buildChecklist(cert, rows.length, unconfirmed, langName, rows.filter((r) => r.foreignLanguage).map((r) => r.title)));
       if (langName && langFile) zip.file(`${folder}/${langName}`, langFile);
       return addCertificateFiles(zip, `${folder}/3_Sertifikati`, rows, onProgress);
     });

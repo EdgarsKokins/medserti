@@ -13,7 +13,7 @@ const NUM = "(\\d{1,3}(?:[.,]\\s?\\d{1,2})?)";
 const NUM_START = "(?<![\\p{N}]|\\p{N}[.,]|\\p{N}[.,]\\s)(?<!category\\s|level\\s|kategorij\\p{L}{1,2}\\s)";
 
 const POINT_LABEL =
-  "(?:tip(?![\\p{L}])|talakizglitibas\\s+(?:kredit)?punkt\\p{L}*|(?:mediciniskas\\s+)?talakizglitibas\\s+kred\\p{L}tpunkt\\p{L}*|kred\\p{L}tpunkt\\p{L}*|further\\s+education\\s+points?|(?:continuing\\s+)?education\\s+points?|ects(?:\\s+(?:credits?|points?))?|ecmec\\p{L}*|(?:european\\s+)?cme(?:\\s+(?:points?|credits?|hours?))?|cpd\\s+(?:points?|credits?|hours?)|credits?|points?)";
+  "(?:tip(?![\\p{L}])|talakizglitibas\\s+(?:kredit)?punkt\\p{L}*|(?:mediciniskas\\s+)?talakizglitibas\\s+kred\\p{L}tpunkt\\p{L}*|kred\\p{L}tpunkt\\p{L}*|further\\s+education\\s+points?|(?:continuing\\s+)?education\\s+points?|ects(?:\\s+(?:credits?|points?))?|ecmec\\p{L}*|(?:european\\s+)?cme(?:\\s+(?:points?|credits?|hours?))?|cpd\\s+(?:points?|credits?|hours?)|credits?|points?|балл\\p{L}*|кредит\\p{L}*|зачетн\\p{L}*\\s+единиц\\p{L}*)";
 
 /** "12 TIP", "1,3TIP", "24 European CME credits (ECMEC®s)", "9 further education points (405 minutes)" */
 const POINTS_AFTER = rx(
@@ -21,7 +21,7 @@ const POINTS_AFTER = rx(
 );
 /** "Tālākizglītības punktu skaits 6", "TIP: 12", "Credits: 3" */
 const POINTS_BEFORE = rx(
-  `(?<![\\p{L}\\p{N}-])(?:tip|talakizglitibas\\s+punkt\\p{L}*(?:\\s+skaits)?|kred\\p{L}tpunkt\\p{L}*|ects|ecmec\\p{L}*|cme\\s+(?:points?|credits?)|credits?|punkt\\p{L}*\\s+skaits)(?:\\s*\\([^)\\n]{1,30}\\))?\\s*(?:[:=]|-\\s)?\\s*${NUM}(?![\\p{L}\\p{N}/-]|[.,]\\d)`,
+  `(?<![\\p{L}\\p{N}-])(?:tip|talakizglitibas\\s+punkt\\p{L}*(?:\\s+skaits)?|kred\\p{L}tpunkt\\p{L}*|ects|ecmec\\p{L}*|cme\\s+(?:points?|credits?)|credits?|punkt\\p{L}*\\s+skaits|балл\\p{L}*|кредит\\p{L}*)(?:\\s*\\([^)\\n]{1,30}\\))?\\s*(?:[:=]|-\\s)?\\s*${NUM}(?![\\p{L}\\p{N}/-]|[.,]\\d)`,
 );
 /** OCR breaks words with stray dots ("1.3 medicTniska.s ta.la.kizglTtibas kredTtpunktu"): allow a few words in between */
 const POINTS_LOOSE = rx(`${NUM_START}${NUM}\\s+(?:[^\\s\\d]\\S+\\s+){1,3}?(?:kred\\p{L}tpunkt\\p{L}*|talakizglitibas\\s+punkt\\p{L}*)`);
@@ -47,9 +47,10 @@ interface Hit {
 
 /**
  * How the points were found. Only "printed" (one TIP / CME / credit value written on the certificate)
- * can be auto-confirmed; ECTS is a 1:1 assumption, sums and course totals are our inference.
+ * can be auto-confirmed; ECTS is a 1:1 assumption, sums and course totals are our inference, "registry" came from the
+ * LĀB register for a certificate that printed none (./tipMatch.ts).
  */
-export type PointsKind = "printed" | "ects" | "summed" | "courseTotal" | "multiple" | "derived";
+export type PointsKind = "printed" | "ects" | "summed" | "courseTotal" | "multiple" | "derived" | "registry";
 
 export interface PointsResult {
   value: number | null;
@@ -154,7 +155,7 @@ const round = (n: number) => Math.round(n * 100) / 100;
 
 // ----- hours -----
 
-const HOURS_LABEL = "(?:akademisk\\p{L}*\\s+stund\\p{L}*|ak\\.\\s*st(?:und\\p{L}*)?\\.?|academic\\s+hours?|akademin\\p{L}*\\s+valand\\p{L}*)";
+const HOURS_LABEL = "(?:akademisk\\p{L}*\\s+stund\\p{L}*|ak\\.\\s*st(?:und\\p{L}*)?\\.?|academic\\s+hours?|akademin\\p{L}*\\s+valand\\p{L}*|академическ\\p{L}*\\s+час\\p{L}*|ак\\.\\s*ч\\.?)";
 const HOURS_AFTER = rx(`${NB}${NUM}\\s*${HOURS_LABEL}`);
 const HOURS_BEFORE = rx(`${HOURS_LABEL}\\s*(?:[:-]|skaits:?)?\\s*${NUM}${NA}`);
 /** plain hours: "6 stundas", "6 hours", "6 h", "8 val." (lt), "8 ч." (ru), "duration: 6", "ilgums 6 st." */

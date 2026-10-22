@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NURSE_TOPICS, type CmeCategory, type CmeCertificate, type ConfidenceField, type NurseTopic } from "@/lib/types";
+import { NURSE_TOPICS, type CmeCategory, type CmeCertificate, type ConfidenceField, type NurseTopic, type TipCandidate } from "@/lib/types";
+import { registryUrl } from "@/lib/parse/tipMatch";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
 import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import { COUNTRY_CODES, countryCode, countryName, parseNoteLines, STATUS_CLASS } from "./format";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
 import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
 import styles from "./certificates.module.css";
 
@@ -164,6 +165,18 @@ export default function ReviewPanel({
     onDeleted(cert.id);
   }
 
+  // a register event the user picked: its points and approval number, and its days when the certificate gave none
+  const pickCandidate = (c: TipCandidate) => {
+    setAsk(null);
+    setF((prev) => ({
+      ...prev,
+      points: c.tip,
+      approvalId: c.approvalId,
+      ...(prev.date || !c.start ? {} : { date: c.start, endDate: c.end && c.end !== c.start ? c.end : null }),
+    }));
+  };
+  const lookup = cert.tipLookup?.candidates.length ? cert.tipLookup : null;
+
   const notes = useMemo(() => parseNoteLines(cert.parseNotes, dict), [cert.parseNotes, dict]);
   const countries = useMemo(() => {
     const [lv, ...rest] = COUNTRY_CODES;
@@ -257,6 +270,40 @@ export default function ReviewPanel({
                 </ul>
               </>
             )}
+          </div>
+        )}
+
+        {lookup && (
+          <div className={`alert small ${styles.notes}`} role="note">
+            <strong>{lookup.status === "match" ? d.registryMatched : d.registryPick}</strong>
+            <ul className={styles.registryList}>
+              {lookup.candidates.map((c) => {
+                const chosen = f.approvalId === c.approvalId && f.points === c.tip;
+                return (
+                  <li key={c.approvalId} className={styles.registryItem}>
+                    <div className={styles.registryText}>
+                      <span>{c.title}</span>
+                      <span className="muted">
+                        {[
+                          c.approvalId,
+                          c.start && (c.end ? `${formatDate(c.start, locale)} - ${formatDate(c.end, locale)}` : formatDate(c.start, locale)),
+                          c.organizer,
+                          c.tip != null && `${formatNumber(c.tip, 2)} TIP`,
+                        ].filter(Boolean).join(" · ")}
+                      </span>
+                    </div>
+                    <div className={styles.registryActions}>
+                      <a href={registryUrl(c)} target="_blank" rel="noreferrer">{d.registryOpen}</a>
+                      {!readOnly && (
+                        <button type="button" className="btn" disabled={chosen} aria-pressed={chosen} onClick={() => pickCandidate(c)}>
+                          {chosen ? d.registryUsed : d.registryUse}
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 

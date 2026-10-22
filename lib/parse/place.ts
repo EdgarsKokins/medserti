@@ -114,3 +114,12 @@ export function isLecturer(t: Text): boolean {
   return /(?:has been|as) an? (?:lecturer|speaker|moderator)|presented a (?:lecture|talk|report)|invited (?:speaker|lecturer)|lecturer and moderator|ka lektor|lektora statusa|uzstaj\p{L}* ar (?:zinojum|priekslasijum)|visiting surgeon and lecturer|operating surgeon/u.test(t.flat)
     || /провел\p{L}* .{0,30}мастер-класс/u.test(t.flat);
 }
+
+/**
+ * The holder ran a master class (taught, operated to demonstrate), not attended one: "провел 4 мастер-класс-операции",
+ * "performed 3 master class operations", "vadīja meistarklasi". Annex 4 has no item for this; the commission sets
+ * the points by analogy (Reg. 391 point 51), so we suggest the category and leave the points to the user.
+ */
+export function isMasterClassTeacher(t: Text): boolean {
+  return /(?:провел\p{L}*|проводил\p{L}*)\s+(?:\d{1,2}\s*(?:\(\p{L}+\)\s*)?)?мастер-класс|(?:performed|conducted|gave|led|ran|held)\s+(?:\d{1,2}\s+|an?\s+|the\s+)?master[- ]?class|vadij\p{L}*\s+(?:\p{L}+\s+)?meistarklas|meistarklases\s+vaditaj/u.test(t.flat);
+}

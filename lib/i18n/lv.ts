@@ -1,6 +1,6 @@
 import { RULES } from "../rule-constants";
 import type { NurseTopic } from "../types";
-import { capPct, fieldList, fmtList, fmtN, lvPl, specialtyPct, type NoteP } from "./shared";
+import { capPct, fieldList, fmtList, fmtN, lvPl, specialtyPct, langName, type NoteP } from "./shared";
 import type { Dict } from "./en";
 
 export const lv: Dict = {
@@ -571,6 +571,11 @@ export const lv: Dict = {
     discardQuestion: "Jums ir nesaglabātas izmaiņas. Aizvērt, nesaglabājot?",
     discard: "Aizvērt bez saglabāšanas",
     keepEditing: "Turpināt labot",
+    registryMatched: "Punkti no LĀB reģistra:",
+    registryPick: "Līdzīgi pasākumi LĀB reģistrā:",
+    registryUse: "Izmantot",
+    registryUsed: "Izmantots",
+    registryOpen: "Atvērt LĀB",
   },
   parseNotes: {
     pdfUnreadable: () => "Neizdevās nolasīt tekstu no šī PDF faila. Ievadiet datus manuāli.",
@@ -611,6 +616,16 @@ export const lv: Dict = {
         : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
     lowConfidence: (p: NoteP) =>
       `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", organizer: "organizators", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
+    masterClass: () =>
+      "Šis dokuments apliecina meistarklasi, ko vadījāt. MK noteikumu Nr. 391 4. pielikumā meistarklasei sava punkta nav: punktus nosaka sertifikācijas komisija pēc līdzības (51. punkts). Tuvākie ir 22. punkts (30 TIP par ziņojumu starptautiskā pasākumā) un 18. punkts (10 TIP gadā par pedagoģisko darbu). Ievadiet punktus, ko apstiprina LĀB.",
+    foreignLanguage: (p: NoteP) =>
+      `Dokuments ir ${langName(p.lang, { ru: "krievu", uk: "ukraiņu", lt: "lietuviešu", et: "igauņu", de: "vācu", pl: "poļu", fr: "franču", it: "itāļu", cs: "čehu" }, "citā")} valodā. LĀB var prasīt apliecinātu tulkojumu latviešu valodā (MK noteikumu Nr. 391 47. punkts).`,
+    tipRegistry: (p: NoteP) =>
+      `Sertifikātā punkti nav norādīti. LĀB apstiprināto pasākumu reģistrā atradām šo pasākumu (${p.id}, ${fmtN(p.points)} TIP). Pārbaudiet, vai tas ir jūsu pasākums, un apstipriniet.`,
+    tipCandidates: (p: NoteP) =>
+      `Sertifikātā punkti nav norādīti. LĀB reģistrā ir ${p.n} ${lvPl(Number(p.n), "līdzīgs pasākums", "līdzīgi pasākumi")}: izvēlieties savējo zemāk. Ja sertifikāts apliecina vairākas lekcijas, saskaitiet to punktus.`,
+    tipNoMatch: () =>
+      "Sertifikātā punkti nav norādīti, un LĀB reģistrā šo pasākumu neatradām. Ievadiet punktus no LĀB apstiprināto TIP saraksta vai jautājiet organizatoram.",
   },
   dashboard: {
     title: "Pārskats",
