@@ -3,11 +3,11 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
-import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
+import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES, todayLv } from "@/lib/rules";
 import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { formatDate, inHours, t, type Locale } from "@/lib/i18n";
 import { profileComplete } from "@/lib/profile";
-import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, todayIso, validCertNo, validName, validPlainText } from "@/lib/validation";
+import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
 
@@ -83,7 +83,7 @@ export default function ProfileForm({
 
   // the requirement always follows the rules; an override stored before is ignored
   const target = ruleTarget;
-  const today = todayIso();
+  const today = todayLv();
   /** The certificate (or VI registration) period has already ended */
   const ended = (q: Profile) => {
     const end = certificateWindow(q).end;

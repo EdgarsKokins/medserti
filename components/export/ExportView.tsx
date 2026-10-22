@@ -28,6 +28,7 @@ export interface ExportRow {
   date: string;
   endDate: string | null;
   points: number;
+  rawPoints?: number;
   inSpecialty: boolean;
   fileName: string;
 }

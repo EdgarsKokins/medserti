@@ -8,7 +8,8 @@ import { certTitle, dictFor, exclusions, fmtDate, fmtNum, needsReviewCount, rece
 export function CategoryBars({ p, rows, locale, hours = false }: { p: Progress; rows: CategoryRow[]; locale: Locale; hours?: boolean }) {
   const d = dictFor(locale, hours).dashboard;
   const n = (v: number) => fmtNum(v, locale);
-  const max = Math.max(...rows.map((r) => r.points), 1);
+  // bars show the points on the certificates, so practical training above the cap mark stands out
+  const max = Math.max(...rows.map((r) => r.rawPoints), 1);
   const cap = p.required * RULES.practicalCapShare;
   const capped = p.practicalRaw > p.practicalCounted;
   return (
@@ -24,10 +25,10 @@ export function CategoryBars({ p, rows, locale, hours = false }: { p: Progress; 
               <div key={r.category} className={styles.catRow}>
                 <span>{r.label}</span>
                 <span className={styles.catPts}>
-                  {isPractical && capped ? d.cappedOf(n(p.practicalCounted), n(r.points)) : n(r.points)}
+                  {isPractical && capped ? d.cappedOf(n(r.points), n(r.rawPoints)) : n(r.points)}
                 </span>
                 <div className={`bar ${isPractical ? styles.barCapped : ""} ${isPractical && capped ? styles.barWarn : ""}`}>
-                  <span style={{ width: `${(r.points / max) * 100}%` }} />
+                  <span style={{ width: `${(r.rawPoints / max) * 100}%` }} />
                   {isPractical && !hours && (
                     <i
                       className={styles.capMark}

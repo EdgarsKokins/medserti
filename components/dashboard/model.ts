@@ -1,4 +1,4 @@
-import { exclusionReason, RULES, type Progress } from "@/lib/rules";
+import { cappedPoints, exclusionReason, RULES, todayLv, type Progress } from "@/lib/rules";
 import type { CmeCategory, CmeCertificate } from "@/lib/types";
 import { formatDate, formatNumber, inHours, t, type Dict, type Locale } from "@/lib/i18n";
 
@@ -17,7 +17,8 @@ export function fmtNum(n: number, locale: Locale = "en"): string {
   return formatNumber(round1(n), locale, 1);
 }
 
-export const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+/** The date in Riga at this moment, the same "today" the rules use */
+export const isoDay = (d: Date) => todayLv(d);
 export const dayMs = (iso: string) => Date.parse(iso.slice(0, 10) + "T00:00:00Z");
 
 export const certTitle = (c: CmeCertificate) => c.title?.trim() || c.fileName;
@@ -99,16 +100,25 @@ export function cumulativeSeries(p: Progress, hours = false): ChartPoint[] {
 export interface CategoryRow {
   category: CmeCategory;
   label: string;
+  /** points that count, after the practical-training cap, so the rows add up to p.total */
   points: number;
+  /** points on the certificates, before the cap */
+  rawPoints: number;
 }
 
 export function categoryBreakdown(p: Progress, locale: Locale = "en"): CategoryRow[] {
   const labels = t(locale).categories;
-  const sums = new Map<CmeCategory, number>();
-  for (const c of p.counted) sums.set(c.category, (sums.get(c.category) ?? 0) + (c.points ?? 0));
+  const scale = p.practicalRaw > 0 ? p.practicalCounted / p.practicalRaw : 1;
+  const sums = new Map<CmeCategory, { points: number; raw: number }>();
+  for (const c of p.counted) {
+    const s = sums.get(c.category) ?? { points: 0, raw: 0 };
+    s.points += cappedPoints(c, scale);
+    s.raw += c.points ?? 0;
+    sums.set(c.category, s);
+  }
   return [...sums.entries()]
-    .filter(([, pts]) => pts > 0)
-    .map(([category, pts]) => ({ category, label: labels[category] ?? category, points: round1(pts) }))
+    .filter(([, s]) => s.raw > 0)
+    .map(([category, s]) => ({ category, label: labels[category] ?? category, points: round1(s.points), rawPoints: round1(s.raw) }))
     .sort((a, b) => b.points - a.points);
 }
 

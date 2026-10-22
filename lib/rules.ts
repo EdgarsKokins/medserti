@@ -93,14 +93,49 @@ export function addYears(isoDate: string, years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function certificateWindow(p: Profile): { start: string | null; end: string | null } {
+/** Today's date in Latvia (YYYY-MM-DD). The server runs on UTC, which is a day behind after midnight in Riga. */
+export function todayLv(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/**
+ * The period certificates count in. The start is never open: with only an expiry date it is 5 years before it
+ * (Reg. 391 point 6, Reg. 630 point 33), and with no dates at all it is 5 years before today, since an older
+ * certificate cannot count towards any open recertification. The end stays open until a date is known.
+ */
+export function certificateWindow(
+  p: Pick<Profile, "profession" | "certificateIssued" | "certificateExpires">,
+  today = todayLv(),
+): { start: string; end: string | null } {
   // nurses enter only the date their registration runs to; the term behind it is 5 years (Reg. 630 point 33)
   if (p.profession === "nurse" && p.certificateExpires)
     return { start: addYears(p.certificateExpires, -NURSE_RULES.validityYears), end: p.certificateExpires };
-  const start = p.certificateIssued;
-  const end = p.certificateExpires ?? (start ? addYears(start, RULES.validityYears) : null);
+  const end = p.certificateExpires ?? (p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null);
+  const start = p.certificateIssued ?? (end ? addYears(end, -RULES.validityYears) : addYears(today, -RULES.validityYears));
   return { start, end };
 }
+
+/** Days from one YYYY-MM-DD to another */
+export const daysBetween = (from: string, to: string) => Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86_400_000);
+
+/**
+ * The Reg. 391 Annex 4 16% cap on practical training (footnote 3, item 10). Points above the cap count nowhere,
+ * so each practical certificate counts at `scale` of its points. Reg. 630 (nurses) has no cap.
+ */
+export function practicalCap(
+  certs: Pick<CmeCertificate, "category" | "points">[],
+  required: number,
+  nurse: boolean,
+): { raw: number; counted: number; scale: number } {
+  const cap = nurse ? Infinity : required * RULES.practicalCapShare;
+  const raw = certs.reduce((a, c) => a + (c.category === "practical_training" ? (c.points ?? 0) : 0), 0);
+  const counted = Math.min(raw, cap);
+  return { raw, counted, scale: raw > 0 ? counted / raw : 1 };
+}
+
+/** Points a certificate counts for after the practical-training cap */
+export const cappedPoints = (c: Pick<CmeCertificate, "category" | "points">, scale: number) =>
+  (c.points ?? 0) * (c.category === "practical_training" ? scale : 1);
 
 /**
  * Why computeProgress leaves a certificate out, or null when it counts. The certificate list shows the same reason,
@@ -127,11 +162,6 @@ export function exclusionReason(
   return null;
 }
 
-/** Today's date in Latvia (YYYY-MM-DD). The server runs on UTC, which is a day behind after midnight in Riga. */
-export function todayLv(now = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-}
-
 /** True when the date is more than RULES.validityYears before today: it cannot count towards any open recertification */
 export function olderThanValidity(date: string, today: string): boolean {
   return date < addYears(today, -RULES.validityYears);
@@ -146,13 +176,13 @@ export interface Check {
 
 export interface Progress {
   required: number;
-  windowStart: string | null;
+  windowStart: string;
   windowEnd: string | null;
-  /** certificates counted: confirmed or needs_review, dated inside the window (or all, if no window set) */
+  /** certificates counted: confirmed or needs_review, dated inside the window */
   counted: CmeCertificate[];
   /** certificates outside the window or without date/points */
   excluded: CmeCertificate[];
-  /** total after the practical-training cap */
+  /** total after the practical-training cap, rounded to 0.1 for display; the checks use the unrounded sum */
   total: number;
   specialty: number;
   emergencyPoints: number;
@@ -171,10 +201,14 @@ export interface Progress {
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
+/** For display: round to 0.1, but never up to the target while short of it, so 249.96 of 250 shows 249.9, not 250 */
+const shown = (have: number, need: number) => (have < need ? Math.min(round1(have), Math.floor(have * 10 + 1e-9) / 10) : round1(have));
 
+/** `today` is the moment the progress is for; the date used is Riga's (todayLv), on the server and in the browser */
 export function computeProgress(profile: Profile, certs: CmeCertificate[], today = new Date()): Progress {
   const required = requiredPoints(profile);
-  const { start, end } = certificateWindow(profile);
+  const todayIso = todayLv(today);
+  const { start, end } = certificateWindow(profile, todayIso);
 
   const counted: CmeCertificate[] = [];
   const excluded: CmeCertificate[] = [];
@@ -183,23 +217,16 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
 
   const nurse = profile.profession === "nurse";
   // the 16% cap is Reg. 391 Annex 4; Reg. 630 Annex 6 has no cap on practical training
-  const practicalCap = nurse ? Infinity : required * RULES.practicalCapShare;
-  let practicalRaw = 0;
+  const cap = practicalCap(counted, required, nurse);
   let nonPractical = 0;
-  for (const c of counted) {
-    if (c.category === "practical_training") practicalRaw += c.points ?? 0;
-    else nonPractical += c.points ?? 0;
-  }
-  const practicalCounted = Math.min(practicalRaw, practicalCap);
-  // Practical training above the 16% cap does not count anywhere, so scale those points down
-  const practicalScale = practicalRaw > 0 ? practicalCounted / practicalRaw : 1;
+  for (const c of counted) if (c.category !== "practical_training") nonPractical += c.points ?? 0;
 
   let specialty = 0;
   let emergencyPoints = 0;
   let emergencyPracticalHours = 0;
   const topicHours: Record<NurseTopic, number> = { emergency: 0, infection_control: 0, patient_safety: 0, nursing: 0, other: 0 };
   for (const c of counted) {
-    const pts = (c.points ?? 0) * (c.category === "practical_training" ? practicalScale : 1);
+    const pts = cappedPoints(c, cap.scale);
     if (c.inSpecialty) specialty += pts;
     if (nurse) {
       // one topic per certificate, so an hour never counts toward two point 26.3 minimums
@@ -212,15 +239,18 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
     }
   }
   if (nurse) emergencyPoints = topicHours.emergency;
-  const total = round1(nonPractical + practicalCounted);
-  const remaining = Math.max(0, round1(required - total));
+  // "met" compares the unrounded sum: 249.96 of 250 is not met, even though it shows as 250
+  const totalRaw = nonPractical + cap.counted;
+  const total = shown(totalRaw, required);
+  // follows the shown total, so total + remaining = required and 0 left only when met
+  const remaining = totalRaw < required ? round1(required - total) : 0;
 
   let daysLeft: number | null = null;
   let perMonthNeeded: number | null = null;
   if (end) {
-    const ms = new Date(end + "T00:00:00Z").getTime() - today.getTime();
-    daysLeft = Math.ceil(ms / 86_400_000);
-    if (remaining > 0) perMonthNeeded = daysLeft > 0 ? round1(remaining / Math.max(daysLeft / 30.44, 1)) : remaining;
+    daysLeft = daysBetween(todayIso, end);
+    // at least 0.1, so a shortfall never shows as "0 TIP a month"
+    if (remaining > 0) perMonthNeeded = daysLeft > 0 ? Math.max(0.1, round1(remaining / Math.max(daysLeft / 30.44, 1))) : remaining;
   }
 
   const specialtyNeed = Math.ceil(required * RULES.specialtyShare);
@@ -232,30 +262,16 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
     ? ["specialty", "emergency_practical", ...(nurse2027 ? [] : nurseTopics)]
     : ["infection_control", "patient_safety", "nursing"];
   const emergencyNeed = nurse ? NURSE_RULES.emergencyMinHours : RULES.emergencyMinPoints;
-  const hoursCheck = (id: Check["id"], have: number, need: number): Check => ({ id, have: round1(have), need, met: have >= need });
+  // every check compares the unrounded sum; only `have` is rounded, for display
+  const check = (id: Check["id"], have: number, need: number): Check => ({ id, have: shown(have, need), need, met: have >= need });
   const checks: Check[] = [
-    { id: "total" as const, have: total, need: required, met: total >= required },
-    {
-      id: "specialty" as const,
-      have: round1(specialty),
-      need: specialtyNeed,
-      met: specialty >= specialtyNeed,
-    },
-    {
-      id: "emergency_points" as const,
-      have: round1(emergencyPoints),
-      need: emergencyNeed,
-      met: emergencyPoints >= emergencyNeed,
-    },
-    {
-      id: "emergency_practical" as const,
-      have: round1(emergencyPracticalHours),
-      need: RULES.emergencyMinPracticalHours,
-      met: emergencyPracticalHours >= RULES.emergencyMinPracticalHours,
-    },
-    hoursCheck("infection_control", topicHours.infection_control, NURSE_RULES.infectionControlMinHours),
-    hoursCheck("patient_safety", topicHours.patient_safety, NURSE_RULES.patientSafetyMinHours),
-    hoursCheck("nursing", topicHours.nursing, NURSE_RULES.nursingMinHours),
+    check("total", totalRaw, required),
+    check("specialty", specialty, specialtyNeed),
+    check("emergency_points", emergencyPoints, emergencyNeed),
+    check("emergency_practical", emergencyPracticalHours, RULES.emergencyMinPracticalHours),
+    check("infection_control", topicHours.infection_control, NURSE_RULES.infectionControlMinHours),
+    check("patient_safety", topicHours.patient_safety, NURSE_RULES.patientSafetyMinHours),
+    check("nursing", topicHours.nursing, NURSE_RULES.nursingMinHours),
   ].filter((c) => !skips.includes(c.id));
 
   return {
@@ -268,8 +284,8 @@ export function computeProgress(profile: Profile, certs: CmeCertificate[], today
     specialty: round1(specialty),
     emergencyPoints: round1(emergencyPoints),
     emergencyPracticalHours: round1(emergencyPracticalHours),
-    practicalRaw: round1(practicalRaw),
-    practicalCounted: round1(practicalCounted),
+    practicalRaw: round1(cap.raw),
+    practicalCounted: round1(cap.counted),
     topicHours: Object.fromEntries(Object.entries(topicHours).map(([k, v]) => [k, round1(v)])) as Record<NurseTopic, number>,
     remaining,
     daysLeft,

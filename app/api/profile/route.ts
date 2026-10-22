@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
 import { saveUser } from "@/lib/db";
-import { addYears, certificateWindow, RULES } from "@/lib/rules";
+import { addYears, certificateWindow, RULES, todayLv } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { CERT_NO_MAX, SPECIALTY_MAX, tidyName, todayIso, validCertNo, validName, validPlainText } from "@/lib/validation";
+import { CERT_NO_MAX, SPECIALTY_MAX, tidyName, validCertNo, validName, validPlainText } from "@/lib/validation";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Body = z.object({
@@ -38,7 +38,7 @@ export async function PUT(req: Request) {
   const { requiredPointsOverride: _ignored, ...rest } = parsed.data;
   const p = { ...rest, requiredPointsOverride: null };
   if (p.certificateIssued && !p.certificateExpires) p.certificateExpires = addYears(p.certificateIssued, RULES.validityYears);
-  const today = todayIso();
+  const today = todayLv();
   if (p.profession !== "nurse" && p.certificateIssued && p.certificateIssued > today) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });
   // a period that has already ended is initial certification, not recertification: never saved
   const end = certificateWindow(p).end;
