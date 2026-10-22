@@ -82,8 +82,8 @@ export function ruleRequiredPoints(p: RuleInput): number {
   return RULES.points.otherProfessions;
 }
 
+/** The profile's manual override (requiredPointsOverride) is no longer used: older stored values are ignored */
 export function requiredPoints(p: Profile): number {
-  if (p.requiredPointsOverride && p.requiredPointsOverride > 0) return p.requiredPointsOverride;
   return ruleRequiredPoints(p);
 }
 

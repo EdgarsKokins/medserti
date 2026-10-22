@@ -71,7 +71,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <I18nOverrides data={overrides}>
           <nav className="nav">
             <div className="nav-inner">
-              <Link href={signedIn ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
+              {/* the demo account's logo goes to the public homepage, which ends the demo */}
+              <Link href={signedIn && !demo ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
                 <span className="brand-seal" aria-hidden>M</span>
                 <span className="brand-name">{d.brand.name}</span>
               </Link>
@@ -106,11 +107,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           )}
-          {children}
+          <div className="page-body">{children}</div>
           <AppFooter
             locale={locale}
+            signedIn={signedIn}
             note={note}
-            labels={{ nav: d.landing.footerNav, about: d.nav.about, rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules, privacy: d.legal.privacyLink, terms: d.legal.termsLink, rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl, lang: d.lang.label }}
+            labels={{
+              brand: d.brand.name,
+              tagline: d.brand.tagline,
+              nav: d.landing.footerNav,
+              signup: d.nav.signup,
+              login: d.nav.login,
+              demo: d.demo.try,
+              about: d.nav.about,
+              rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules,
+              rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl,
+              privacy: d.legal.privacyLink,
+              terms: d.legal.termsLink,
+              contactLabel: d.landing.footerContact,
+              contactCta: d.contact.cta,
+              lang: d.lang.label,
+              base: nurse ? d.rules.planningAidNurse : d.rules.planningAid,
+            }}
           />
         </I18nOverrides>
       </body>

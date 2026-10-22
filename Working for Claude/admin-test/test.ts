@@ -60,7 +60,7 @@ const stored = {
     "about.people.0.role": "Līdzdibinātājs",
     "courses.needLine": "Jāsavāc vēl {n} TIP.",
     "courses.details.more": "un vēl {n}",
-    "profile.overrideNote": "Noteikumi: {rule} TIP, jūs: {mine} TIP.",
+    "certs.summary": "TIP: {points}, faili: {count}.",
     "parseNotes.noTitle": "Nav nosaukuma.",
     "dashboard.daysLeftShort": "ignored {n}",
     "gone.key": "ignored",
@@ -68,7 +68,7 @@ const stored = {
   en: { "parseNotes.multiplePoints": "Several values ({list}); we took the first." },
 };
 const runtime = compileOverrides(stored);
-eq("compile: positional placeholders", runtime.lv?.["profile.overrideNote"], "Noteikumi: {1} TIP, jūs: {0} TIP.");
+eq("compile: positional placeholders", runtime.lv?.["certs.summary"], "TIP: {1}, faili: {0}.");
 eq("compile: object placeholders", runtime.en?.["parseNotes.multiplePoints"], "Several values ({0.list}); we took the first.");
 eq("compile: code-only and unknown keys skipped", ["dashboard.daysLeftShort", "gone.key"].map((k) => k in (runtime.lv ?? {})), [false, false]);
 setI18nOverrides(runtime);
@@ -79,7 +79,7 @@ eq("sibling array item untouched", lv.landingA.steps[0].title, baseDict("lv").la
 eq("array field next to an edited one untouched", lv.landingA.steps[1].body, baseDict("lv").landingA.steps[1].body);
 eq("array of objects", lv.about.people[0].role, "Līdzdibinātājs");
 eq("still an array", Array.isArray(lv.landingA.steps) && lv.landingA.steps.length, baseDict("lv").landingA.steps.length);
-eq("template, reordered placeholders", lv.profile.overrideNote(200, 250), "Noteikumi: 250 TIP, jūs: 200 TIP.");
+eq("template, reordered placeholders", lv.certs.summary(3, "40"), "TIP: 40, faili: 3.");
 eq("zero-argument function", lv.parseNotes.noTitle(), "Nav nosaukuma.");
 eq("code-only function keeps code", lv.dashboard.daysLeftShort(1), baseDict("lv").dashboard.daysLeftShort(1));
 eq("courses template", courseStrings("lv").needLine("12,5"), "Jāsavāc vēl 12,5 TIP.");

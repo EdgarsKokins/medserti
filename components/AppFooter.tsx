@@ -1,37 +1,76 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import LangSwitch from "@/components/LangSwitch";
+import DemoButton from "@/components/DemoButton";
 import type { Locale } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/site";
+import s from "./app-footer.module.css";
 
-/** Small footer on every page except the landing page, which has its own. The language switch and the rules source live here, out of the way. */
+/** The one site footer, on every page (landing included). Signed-out visitors also get sign-up, log-in and demo links. */
 export default function AppFooter({
   locale,
+  signedIn,
   note,
   labels,
 }: {
   locale: Locale;
+  signedIn: boolean;
   /** signed in: which regulation the numbers follow, and where to check official dates */
   note?: React.ReactNode;
-  labels: { nav: string; about: string; rules: string; privacy: string; terms: string; rulesUrl: string; lang: string };
+  labels: {
+    brand: string;
+    tagline: string;
+    nav: string;
+    signup: string;
+    login: string;
+    demo: string;
+    about: string;
+    rules: string;
+    rulesUrl: string;
+    privacy: string;
+    terms: string;
+    contactLabel: string;
+    contactCta: string;
+    lang: string;
+    base: string;
+  };
 }) {
-  if (usePathname() === "/") return null;
   return (
-    <footer className="app-footer">
-      <div className="app-footer-inner">
-        <nav className="app-footer-links" aria-label={labels.nav}>
-          <Link href="/par-mums">{labels.about}</Link>
-          <a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a>
-          <Link href="/privatums">{labels.privacy}</Link>
-          <Link href="/noteikumi">{labels.terms}</Link>
-          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+    <footer className={s.footer}>
+      <div className={s.inner}>
+        <div className={s.brand}>
+          <span className="brand-seal" aria-hidden>M</span>
+          <div>
+            <div className={s.name}>{labels.brand}</div>
+            <div className={`small ${s.muted}`}>{labels.tagline}</div>
+          </div>
+        </div>
+        <nav aria-label={labels.nav}>
+          <ul className={s.links}>
+            {!signedIn && (
+              <>
+                <li><Link href="/register">{labels.signup}</Link></li>
+                <li><Link href="/login">{labels.login}</Link></li>
+                <li><DemoButton label={labels.demo} className="" /></li>
+              </>
+            )}
+            <li><Link href="/par-mums">{labels.about}</Link></li>
+            <li><a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a></li>
+            <li><Link href="/privatums">{labels.privacy}</Link></li>
+            <li><Link href="/noteikumi">{labels.terms}</Link></li>
+          </ul>
         </nav>
-        <div className="app-footer-tools">
+        <div className={s.contact}>
+          <div className={s.label}>{labels.contactLabel}</div>
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          <Link href="/kontakti" className={`btn ${s.contactBtn}`}>{labels.contactCta}</Link>
+        </div>
+        <div className={s.tools}>
           <LangSwitch locale={locale} label={labels.lang} />
         </div>
-        {note && <p className="app-footer-note">{note}</p>}
+      </div>
+      <div className={s.base}>
+        {note && <p className={`small ${s.muted} ${s.note}`}>{note}</p>}
+        <span className={`small ${s.muted}`}>© {new Date().getFullYear()} {labels.brand}. {labels.base}</span>
       </div>
     </footer>
   );

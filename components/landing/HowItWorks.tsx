@@ -38,11 +38,14 @@ function Step({ no, title, body, children }: { no: number; title: string; body: 
   return (
     <li ref={ref} className={waiting ? s.wait : undefined}>
       <div className={s.stage}>{children}</div>
-      <h3 className={s.stepTitle}>
+      {/* number in its own column, so the title and the line under it start at the same edge */}
+      <div className={s.stepHead}>
         <span className={s.stepNo} aria-hidden>{no}</span>
-        {title}
-      </h3>
-      <p className={s.stepBody}>{body}</p>
+        <div>
+          <h3 className={s.stepTitle}>{title}</h3>
+          <p className={s.stepBody}>{body}</p>
+        </div>
+      </div>
     </li>
   );
 }

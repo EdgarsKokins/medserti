@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
-import { addYears, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
+import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { formatDate, inHours, t, type Locale } from "@/lib/i18n";
 import { profileComplete } from "@/lib/profile";
+import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, todayIso, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
 
-type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "override", string>>;
-
-const MAX_REQUIRED = 5000;
+type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "certNo" | "issued" | "expires", string>>;
 
 /**
  * readOnly: the demo account, fields shown but disabled and no save button.
@@ -43,6 +42,8 @@ export default function ProfileForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  // "Certification needed": the dates put the certificate period in the past, so this is not recertification
+  const expiredDialog = useRef<HTMLDialogElement>(null);
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => {
     setMsg(null);
     setP((prev) => ({ ...prev, [k]: v }));
@@ -62,7 +63,6 @@ export default function ProfileForm({
     const next = { ...p, ...patch };
     // nurses hold no certificate, so no method certificate either
     if (next.profession === "nurse") next.certificationKind = "specialty";
-    if (p.requiredPointsOverride === ruleTarget) next.requiredPointsOverride = null;
     setP(next);
     // the specialty follows the new profession's list; a value that does not fit it is dropped, so only one specialty field shows
     const list = specialtiesFor(next.profession, next.certificationKind);
@@ -81,15 +81,31 @@ export default function ProfileForm({
 
   const defaultExpiry = p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null;
 
-  const override = p.requiredPointsOverride;
-  const hasOverride = override != null && override !== ruleTarget;
-  const target = hasOverride ? override : ruleTarget;
+  // the requirement always follows the rules; an override stored before is ignored
+  const target = ruleTarget;
+  const today = todayIso();
+  /** The certificate (or VI registration) period has already ended */
+  const ended = (q: Profile) => {
+    const end = certificateWindow(q).end;
+    return !!end && end < today;
+  };
+  const dateField = nurse ? "expires" : customEnd ? "expires" : "issued";
+  const checkEnded = () => {
+    if (!ended(p)) return false;
+    setErrors((e) => ({ ...e, [dateField]: dict.api.certExpired }));
+    expiredDialog.current?.showModal();
+    return true;
+  };
 
   function validate(): FieldErrors {
     const e: FieldErrors = {};
     if (!p.fullName.trim()) e.fullName = dict.api.nameRequired;
+    else if (!validName(p.fullName)) e.fullName = dict.api.nameInvalid;
     if (spec.code === OTHER_SPECIALTY && !spec.text.trim()) e.specialtyText = d.specialtyOtherRequired;
-    if (override != null && (!Number.isInteger(override) || override < 1 || override > MAX_REQUIRED)) e.override = dict.api.requiredPointsInvalid;
+    else if (spec.code === OTHER_SPECIALTY && !validPlainText(spec.text, SPECIALTY_MAX)) e.specialtyText = dict.api.specialtyInvalid;
+    if (!validCertNo(p.certificateNumber)) e.certNo = dict.api.certNoInvalid;
+    if (!nurse && p.certificateIssued && p.certificateIssued > today) e.issued = dict.api.issuedFuture;
+    if (ended(p)) e[dateField] = dict.api.certExpired;
     return e;
   }
 
@@ -99,6 +115,8 @@ export default function ProfileForm({
     const found = validate();
     setErrors(found);
     const firstBad = (Object.keys(found) as (keyof FieldErrors)[])[0];
+    // a past deadline is never saved; the dialog explains why and sends the user back to the date
+    if (found[dateField] === dict.api.certExpired) return expiredDialog.current?.showModal();
     if (firstBad) {
       document.getElementById(firstBad)?.focus();
       return;
@@ -108,7 +126,7 @@ export default function ProfileForm({
       ...p,
       specialtyCode: spec.code,
       specialty: listed ? listed.lv : spec.code === OTHER_SPECIALTY ? spec.text.trim() : "",
-      requiredPointsOverride: hasOverride ? override : null,
+      requiredPointsOverride: null,
     };
     setBusy(true);
     const res = await fetch("/api/profile", {
@@ -150,6 +168,7 @@ export default function ProfileForm({
                 clearError("fullName");
               }}
               autoComplete="name"
+              maxLength={NAME_MAX}
               {...errorProps("fullName")}
             />
             {errorText("fullName")}
@@ -169,7 +188,7 @@ export default function ProfileForm({
                 <input
                   id="specialtyText"
                   value={spec.code === OTHER_SPECIALTY ? spec.text : specialtyByCode(spec.code)?.[locale] ?? ""}
-                  maxLength={120}
+                  maxLength={SPECIALTY_MAX}
                   onChange={(e) => {
                     setMsg(null);
                     setSpec({ code: OTHER_SPECIALTY, text: e.target.value });
@@ -201,7 +220,7 @@ export default function ProfileForm({
               <input
                 id="specialtyText"
                 value={spec.text}
-                maxLength={120}
+                maxLength={SPECIALTY_MAX}
                 onChange={(e) => {
                   setMsg(null);
                   setSpec({ code: OTHER_SPECIALTY, text: e.target.value });
@@ -223,6 +242,7 @@ export default function ProfileForm({
             {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
           </p>
           {!p.certificateExpires && <p className="small muted">{nurse ? d.summaryNoDateNurse : d.summaryNoDate}</p>}
+          {basis && <p className="small muted">{basis === "nurse" ? d.nurseRule : d.functionalTransition}</p>}
         </div>
         <div className={s.fields}>
           {!nurse && (
@@ -242,13 +262,34 @@ export default function ProfileForm({
           )}
           <div className="field">
             <label htmlFor="certNo">{nurse ? d.regNo : d.certNo}</label>
-            <input id="certNo" value={p.certificateNumber} onChange={(e) => set("certificateNumber", e.target.value)} />
+            <input
+              id="certNo"
+              value={p.certificateNumber}
+              maxLength={CERT_NO_MAX}
+              onChange={(e) => {
+                set("certificateNumber", e.target.value);
+                clearError("certNo");
+              }}
+              {...errorProps("certNo")}
+            />
+            {errorText("certNo")}
           </div>
           {nurse ? (
             // the register shows the date the registration runs to; the 5-year term behind it follows (Reg. 630 point 33)
             <div className="field">
               <label htmlFor="expires">{d.registrationUntil}</label>
-              <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
+              <input
+                id="expires"
+                type="date"
+                value={p.certificateExpires ?? ""}
+                onChange={(e) => {
+                  set("certificateExpires", e.target.value || null);
+                  clearError("expires");
+                }}
+                onBlur={checkEnded}
+                {...errorProps("expires")}
+              />
+              {errorText("expires")}
               <span className={s.hint}>{d.registrationUntilHint}</span>
             </div>
           ) : (
@@ -258,10 +299,15 @@ export default function ProfileForm({
               <input
                 id="issued"
                 type="date"
+                max={today}
                 value={p.certificateIssued ?? ""}
+                onBlur={checkEnded}
+                {...errorProps("issued")}
                 onChange={(e) => {
                   const v = e.target.value || null;
                   setMsg(null);
+                  clearError("issued");
+                  clearError("expires");
                   setP((prev) => ({
                     ...prev,
                     certificateIssued: v,
@@ -270,6 +316,7 @@ export default function ProfileForm({
                   }));
                 }}
               />
+              {errorText("issued")}
               {!customEnd && (
                 <span className={s.hint}>
                   {defaultExpiry && <>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)} </>}
@@ -290,7 +337,18 @@ export default function ProfileForm({
             {customEnd && (
               <div className="field">
                 <label htmlFor="expires">{d.expires}</label>
-                <input id="expires" type="date" value={p.certificateExpires ?? ""} onChange={(e) => set("certificateExpires", e.target.value || null)} />
+                <input
+                  id="expires"
+                  type="date"
+                  value={p.certificateExpires ?? ""}
+                  onChange={(e) => {
+                    set("certificateExpires", e.target.value || null);
+                    clearError("expires");
+                  }}
+                  onBlur={checkEnded}
+                  {...errorProps("expires")}
+                />
+                {errorText("expires")}
                 {defaultExpiry && (
                   <span className={s.hint}>
                     <button
@@ -309,47 +367,27 @@ export default function ProfileForm({
             )}
             </>
           )}
-          <div className="field">
-            <label htmlFor="override">{nurse ? d.requiredNurse : d.required}</label>
-            <input
-              id="override"
-              type="number"
-              min={1}
-              max={MAX_REQUIRED}
-              step={1}
-              inputMode="numeric"
-              placeholder={d.requiredPlaceholder(ruleTarget)}
-              value={override ?? ""}
-              onChange={(e) => {
-                set("requiredPointsOverride", e.target.value ? Number(e.target.value) : null);
-                clearError("override");
-              }}
-              {...errorProps("override")}
-            />
-            {errorText("override")}
-            {hasOverride ? (
-              <span className={s.hint}>
-                {d.overrideNote(override, ruleTarget)}{" "}
-                <button
-                  type="button"
-                  className={s.inlineBtn}
-                  onClick={() => {
-                    set("requiredPointsOverride", null);
-                    clearError("override");
-                  }}
-                >
-                  {d.useRule}
-                </button>
-              </span>
-            ) : (
-              <span className={s.hint}>{d.requiredHint(ruleTarget)}</span>
-            )}
-            {basis && <span className={s.hint}>{basis === "nurse" ? d.nurseRule : d.functionalTransition}</span>}
-          </div>
         </div>
       </section>
 
       </fieldset>
+      <dialog
+        ref={expiredDialog}
+        className={s.dialog}
+        aria-labelledby="expired-title"
+        aria-describedby="expired-body"
+        onClose={() => document.getElementById(dateField)?.focus()}
+      >
+        <h2 id="expired-title">{nurse ? d.expiredTitleNurse : d.expiredTitle}</h2>
+        <div id="expired-body">
+          <p className={s.dialogQuestion}>{nurse ? d.expiredQuestionNurse : d.expiredQuestion}</p>
+          <p className="muted">{nurse ? d.expiredBodyNurse : d.expiredBody}</p>
+        </div>
+        {/* a button, not <form method="dialog">: this dialog sits inside the profile form */}
+        <div className={s.dialogActions}>
+          <button type="button" className="btn btn-primary" autoFocus onClick={() => expiredDialog.current?.close()}>{d.expiredFix}</button>
+        </div>
+      </dialog>
       <div className={s.actions}>
         {readOnly ? (
           <span className="small muted">{dict.demo.readOnly}</span>

@@ -6,16 +6,15 @@ import ProductFrame from "@/components/landing/ProductFrame";
 import HowItWorks from "@/components/landing/HowItWorks";
 import ScatteredDocs from "@/components/landing/ScatteredDocs";
 import DemoButton from "@/components/DemoButton";
-import LangSwitch from "@/components/LangSwitch";
 import { currentUserId } from "@/lib/auth";
+import { isDemoUserId } from "@/lib/demo/id";
+import EndDemo from "@/components/EndDemo";
 import { readCourseIndex } from "@/lib/courses/store";
 import { SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types";
 import { courseStrings } from "@/components/courses/strings";
 import { MONTHS_SHORT } from "@/components/dashboard/Overview";
 import { formatDate, formatNumber, t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { RULES } from "@/lib/rules";
-import { CONTACT_EMAIL } from "@/lib/site";
 import s from "./landing.module.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -67,9 +66,11 @@ const shortDate = (iso: string, locale: Locale) =>
     ? formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1")
     : `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}${locale === "lv" ? "." : ""}`;
 
-/** Public landing page; signed-in users go straight to their dashboard */
+/** Public landing page; signed-in users go straight to their dashboard. The demo visitor who comes back here (logo, back button) leaves the demo. */
 export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
-  if (await currentUserId()) redirect("/dashboard");
+  const userId = await currentUserId();
+  const demo = isDemoUserId(userId);
+  if (userId && !demo) redirect("/dashboard");
   const locale = await getLocale();
   const d = t(locale);
   const { deleted } = await searchParams;
@@ -82,6 +83,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
   return (
     <div className={s.root}>
+      {demo && <EndDemo />}
       <main>
         {deleted && (
           <div className="container" style={{ paddingBottom: 0 }}>
@@ -238,43 +240,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 
           <div className={s.closing}>
             <p className={s.closingText}>{a.closing}</p>
-            <Link href="/register" className={`btn ${s.closingCta}`}>{a.start}</Link>
+            <div className={s.closingCtas}>
+              <Link href="/register" className={`btn ${s.closingCta}`}>{a.start}</Link>
+              <Link href="/kontakti" className={`btn ${s.closingGhost}`}>{d.contact.cta}</Link>
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className={s.footer}>
-        <div className={s.footerInner}>
-          <div className={s.footerBrand}>
-            <span className="brand-seal" aria-hidden>M</span>
-            <div>
-              <div className={s.footerName}>{d.brand.name}</div>
-              <div className={`small ${s.muted}`}>{d.brand.tagline}</div>
-            </div>
-          </div>
-          <nav aria-label={l.footerNav}>
-            <ul className={s.footerLinks}>
-              <li><Link href="/register">{d.nav.signup}</Link></li>
-              <li><Link href="/login">{d.nav.login}</Link></li>
-              <li><DemoButton label={d.demo.try} className="" /></li>
-              <li><Link href="/par-mums">{d.nav.about}</Link></li>
-              <li><a href={RULES.sourceUrl} target="_blank" rel="noreferrer">{l.footerRules}</a></li>
-              <li><Link href="/privatums">{d.legal.privacyLink}</Link></li>
-              <li><Link href="/noteikumi">{d.legal.termsLink}</Link></li>
-            </ul>
-          </nav>
-          <div className={s.footerContact}>
-            <div className={s.footerLabel}>{l.footerContact}</div>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-          </div>
-          <div className={s.footerTools}>
-            <LangSwitch locale={locale} label={d.lang.label} />
-          </div>
-        </div>
-        <div className={s.footerBase}>
-          <span className={`small ${s.muted}`}>© {new Date().getFullYear()} {d.brand.name}. {d.rules.planningAid}</span>
-        </div>
-      </footer>
     </div>
   );
 }

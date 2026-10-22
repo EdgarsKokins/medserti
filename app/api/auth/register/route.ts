@@ -8,11 +8,12 @@ import { getLocale } from "@/lib/i18n/server";
 import { LEGAL_UPDATED } from "@/lib/legal";
 import { clientIp, rateLimit } from "@/lib/password-reset";
 import { passwordBreached, passwordTooLong } from "@/lib/password-policy";
+import { EMAIL_MAX, tidyName, validEmail, validName, validPassword } from "@/lib/validation";
 
 const Body = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  fullName: z.string().trim().min(1).max(120),
+  email: z.string().trim().max(EMAIL_MAX).refine(validEmail),
+  password: z.string().refine(validPassword),
+  fullName: z.string().trim().min(1).refine(validName).transform(tidyName),
   // sets the program from the first visit: nurses re-register on hours (Reg. 630), everyone else recertifies on TIP
   profession: z.enum(["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"]),
   // checkbox value; the form sends nothing when it is unticked
@@ -22,7 +23,7 @@ const Body = z.object({
 /** User-facing message for the first failing field */
 const HOUR = 60 * 60 * 1000;
 
-const FIELD_ERROR = { email: "badEmail", password: "passwordShort", fullName: "nameRequired", profession: "professionRequired" } as const;
+const FIELD_ERROR = { email: "badEmail", password: "passwordShort", fullName: "nameInvalid", profession: "professionRequired" } as const;
 
 export async function POST(req: Request) {
   const d = t(await getLocale());

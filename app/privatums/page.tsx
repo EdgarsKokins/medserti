@@ -44,7 +44,7 @@ export default async function PrivacyPage() {
       <section className={s.section}>
         <h2>{l.complaintTitle}</h2>
         <p>{l.complaintBody} <a href={DVI_URL} target="_blank" rel="noreferrer">dvi.gov.lv</a></p>
-        <p className={s.seeAlso}><Link href="/noteikumi">{l.seeAlsoTerms}</Link></p>
+        <p className={s.seeAlso}>{l.seeAlsoTerms.pre} <Link href="/noteikumi">{l.seeAlsoTerms.link}</Link>{l.seeAlsoTerms.post}</p>
       </section>
     </main>
   );

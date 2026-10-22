@@ -1,0 +1,20 @@
+/* /kontakti: form on the left, company details on the right; one column on phones */
+.page { max-width: 1120px; margin: 0 auto; padding: 24px 20px 96px; }
+.title { margin: 16px 0 10px; }
+.lead { font-size: 1.1rem; color: var(--muted); margin: 0 0 32px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+.form { display: flex; flex-direction: column; gap: 16px; max-width: 560px; }
+.form textarea { resize: vertical; min-height: 160px; }
+.error { font-size: 0.85rem; color: var(--bad); line-height: 1.4; }
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.details h2 { font-size: 1.25rem; margin: 0 0 16px; }
+.facts { display: grid; grid-template-columns: minmax(0, 180px) minmax(0, 1fr); gap: 10px 20px; margin: 0; }
+.facts dt { color: var(--muted); font-size: 0.9rem; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.pending { color: var(--warn); font-style: italic; }
+@media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 64px; } }
+@media (max-width: 640px) {
+  .page { padding: 8px 16px 64px; }
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .facts dd { margin-bottom: 10px; }
+}

@@ -37,7 +37,7 @@ export interface Profile {
   certificateIssued: string | null;
   /** YYYY-MM-DD, defaults to issued + 5 years, editable */
   certificateExpires: string | null;
-  /** Manual override of required points, null = use the rule */
+  /** Former manual override of required points. No longer edited or read by the rules; saves store null */
   requiredPointsOverride: number | null;
 }
 

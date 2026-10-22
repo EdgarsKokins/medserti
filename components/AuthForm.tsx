@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
 import type { Profession } from "@/lib/types";
+import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, validEmail, validName, validPassword } from "@/lib/validation";
 import DemoButton from "./DemoButton";
 import s from "./auth.module.css";
 
@@ -12,9 +13,6 @@ type Field = "fullName" | "profession" | "email" | "password" | "consent";
 
 /** Sign-up profession list, in the order practitioners look for it; the profile can change it later */
 const PROFESSIONS: Profession[] = ["doctor", "dentist", "nurse", "physician_assistant", "midwife", "functional_specialist", "other_practitioner"];
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD = 8;
 
 export default function AuthForm({ mode, locale }: { mode: "login" | "register"; locale: Locale }) {
   const router = useRouter();
@@ -28,11 +26,15 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   /** Our own messages in the selected language, instead of the browser's validation bubbles */
   function validate(values: Record<Exclude<Field, "consent">, string> & { consent: boolean }): Partial<Record<Field, string>> {
     const errs: Partial<Record<Field, string>> = {};
-    if (mode === "register" && !values.fullName.trim()) errs.fullName = m.nameRequired;
+    if (mode === "register") {
+      if (!values.fullName.trim()) errs.fullName = m.nameRequired;
+      else if (!validName(values.fullName)) errs.fullName = m.nameInvalid;
+    }
     if (mode === "register" && !values.profession) errs.profession = m.professionRequired;
-    if (!EMAIL.test(values.email.trim())) errs.email = m.badEmail;
+    if (!validEmail(values.email)) errs.email = m.badEmail;
     if (!values.password) errs.password = m.passwordRequired;
-    else if (mode === "register" && values.password.length < MIN_PASSWORD) errs.password = m.passwordShort;
+    // the range applies to new passwords only; an older, longer password still logs in
+    else if (mode === "register" && !validPassword(values.password)) errs.password = m.passwordShort;
     if (mode === "register" && !values.consent) errs.consent = d.legal.consent.required;
     return errs;
   }
@@ -108,6 +110,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
                 id="fullName"
                 name="fullName"
                 autoComplete="name"
+                maxLength={NAME_MAX}
                 onChange={() => clearField("fullName")}
                 {...invalid("fullName")}
                 aria-describedby={describedBy("fullName")}
@@ -141,6 +144,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
               name="email"
               type="email"
               autoComplete="email"
+              maxLength={EMAIL_MAX}
               onChange={() => clearField("email")}
               {...invalid("email")}
               aria-describedby={describedBy("email")}
@@ -154,6 +158,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
               name="password"
               type="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
+              maxLength={mode === "register" ? PASSWORD_MAX : undefined}
               onChange={() => clearField("password")}
               {...invalid("password")}
               aria-describedby={describedBy("password", mode === "register" ? "password-hint" : undefined)}
