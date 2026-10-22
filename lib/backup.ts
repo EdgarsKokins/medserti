@@ -1,11 +1,14 @@
 import "server-only";
 import { createHash } from "crypto";
 import { AwsClient } from "aws4fetch";
+import { listRecordKeys, readRaw, type RawRecord } from "./records";
 import { getBytes, listVersions } from "./storage";
 
 /**
- * Weekly off-site copy of the whole Blob store (accounts, certificates, files, settings)
- * into a Cloudflare R2 bucket in the EU, under YYYY-MM-DD/<pathname>, plus YYYY-MM-DD/manifest.json.
+ * Weekly off-site copy of everything stored into a Cloudflare R2 bucket in the EU:
+ * - uploaded files from Vercel Blob under YYYY-MM-DD/<pathname>
+ * - every Redis record (accounts, certificates, settings) as one file, YYYY-MM-DD/records.json
+ * - YYYY-MM-DD/manifest.json listing both, with a sha256 of each
  *
  * Incremental: the store is listed once (listVersions), and only paths whose version is new or changed
  * since the last complete snapshot are read from Vercel Blob. Unchanged paths are copied inside R2
@@ -111,6 +114,32 @@ interface ManifestEntry {
 interface Manifest {
   createdAt: string;
   files: ManifestEntry[];
+  /** the record dump; absent in snapshots from before records moved to Redis */
+  records?: { path: typeof RECORDS_FILE; count: number; size: number; sha256: string };
+}
+
+/** The dump of all records: key -> the record as stored, with its remaining TTL */
+export interface RecordsDump {
+  createdAt: string;
+  records: Record<string, RawRecord>;
+}
+
+const RECORDS_FILE = "records.json";
+/** Short-lived records are left out: logs kept 30 days (a backup kept 8 weeks would outlive them), tokens and counters */
+const SKIP_RECORDS = /^(errors|feedback|rate-limits|reset-tokens)\//;
+/** Only uploaded files are in Blob now; old JSON blobs left there until cleanup are not copied */
+const IS_FILE = /^users\/[^/]+\/files\//;
+
+/** Every record except SKIP_RECORDS, read one key at a time (about 3 commands a key, once a week) */
+async function dumpRecords(now: Date): Promise<{ dump: RecordsDump; count: number }> {
+  const records: Record<string, RawRecord> = {};
+  const keys = (await listRecordKeys("")).filter((k) => !SKIP_RECORDS.test(k));
+  await pool(keys, CONCURRENCY, async (k) => {
+    const r = await readRaw(k);
+    if (r) records[k] = r;
+  });
+  const sorted = Object.fromEntries(Object.entries(records).sort(([a], [b]) => a.localeCompare(b)));
+  return { dump: { createdAt: now.toISOString(), records: sorted }, count: Object.keys(sorted).length };
 }
 
 /** Newest complete snapshot (one with a manifest) older than or equal to `date` */
@@ -135,6 +164,8 @@ interface BackupResult {
   base: string | null;
   files: number;
   bytes: number;
+  /** records in records.json */
+  records: number;
   /** files read from Vercel Blob this run (each is one simple operation) */
   blobReads: number;
   /** read from Vercel Blob and uploaded: new or changed since `base` */
@@ -152,8 +183,7 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
   if (!c) throw new Error("Backup is not configured (BACKUP_S3_* env vars)");
   const date = now.toISOString().slice(0, 10);
 
-  // error and feedback logs are kept 30 days (lib/monitoring); a backup kept 8 weeks would outlive that
-  const current = (await listVersions("")).filter(({ path }) => !/^(errors|feedback)\//.test(path));
+  const current = (await listVersions("users/")).filter(({ path }) => IS_FILE.test(path));
   const prev = await previousSnapshot(c, await datedPrefixes(c), date);
 
   const files: ManifestEntry[] = [];
@@ -197,8 +227,15 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
     verified++;
   });
 
+  // records: one file, written fresh each week, read back and checked like the rest
+  const { dump, count } = await dumpRecords(now);
+  const body = new Uint8Array(Buffer.from(JSON.stringify(dump)));
+  await put(c, `${date}/${RECORDS_FILE}`, body, "application/json");
+  const back = new Uint8Array(await (await ok(await c.aws.fetch(c.url(`${date}/${RECORDS_FILE}`)), `get ${RECORDS_FILE}`)).arrayBuffer());
+  if (sha(back) !== sha(body)) throw new Error(`verify failed for ${RECORDS_FILE}`);
+
   files.sort((a, b) => a.path.localeCompare(b.path));
-  const manifest: Manifest = { createdAt: now.toISOString(), files };
+  const manifest: Manifest = { createdAt: now.toISOString(), files, records: { path: RECORDS_FILE, count, size: body.length, sha256: sha(body) } };
   await put(c, `${date}/manifest.json`, new Uint8Array(Buffer.from(JSON.stringify(manifest, null, 1))), "application/json");
 
   // keep the newest KEEP dated copies; each is self-contained, so whole prefixes can go
@@ -215,7 +252,8 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
     date,
     base: prev?.date ?? null,
     files: files.length,
-    bytes: files.reduce((a, f) => a + f.size, 0),
+    records: count,
+    bytes: files.reduce((a, f) => a + f.size, 0) + body.length,
     blobReads,
     uploaded,
     unchanged,

@@ -812,7 +812,8 @@ export const lv: Dict = {
         {
           title: "Kas datus apstrādā mūsu vārdā",
           items: [
-            "Vercel Inc. (ASV) uztur vietni. Mūsu serveris un privātā Vercel Blob krātuve ar jūsu datiem un failiem atrodas Vercel Frankfurtes (Vācija, ES) reģionā. Vercel ir ASV uzņēmums, tāpēc ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
+            "Vercel Inc. (ASV) uztur vietni. Mūsu serveris un privātā Vercel Blob krātuve ar jūsu augšupielādētajiem sertifikātu failiem atrodas Vercel Frankfurtes (Vācija, ES) reģionā. Vercel ir ASV uzņēmums, tāpēc ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
+            "Upstash, Inc. (ASV) glabā jūsu konta, profila un sertifikātu ierakstus savā Frankfurtes (Vācija, ES) reģionā (Upstash Redis, pieslēgts caur Vercel). Ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Upstash datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
             "jsDelivr (publisks failu tīkls): augšupielādējot foto, jūsu pārlūks lejupielādē teksta atpazīšanas programmu no cdn.jsdelivr.net. Šis pakalpojums redz jūsu IP adresi, bet ne jūsu failus.",
             "Resend (ASV) nosūta mūsu e-pastus, piemēram, paroles atjaunošanas saites. Tas saņem jūsu e-pasta adresi un vēstules tekstu.",
             "Vercel Web Analytics bez sīkdatnēm skaita lapu skatījumus un dažus soļus lietotnē (piemēram, augšupielādētu sertifikātu vai eksportētus dokumentus). Tas saņem lapas adresi bez vaicājuma parametriem, vietni, no kuras atnācāt, un jūsu valsti, pārlūku, operētājsistēmu un ierīces veidu. Tas nevar jūs atpazīt dažādās dienās un nesaņem vārdus, e-pasta adreses vai sertifikātu datus.",

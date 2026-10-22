@@ -18,3 +18,6 @@ next-env.d.ts
 
 # Claude's own working files
 Working for Claude/
+
+# local record store (lib/records.ts without Redis env vars)
+.data-records.json*

@@ -1,11 +1,15 @@
 import "server-only";
-import { getJson, putJson } from "../storage";
+import { getRecord, setRecord } from "../records";
 import { buildCourseIndex } from "./refresh";
 import type { CourseIndex } from "./types";
 
 const PATH = "courses/index.json";
-/** The list changes once a day (cron), so each server instance keeps it for a few minutes instead of reading it per page */
-const TTL_MS = 5 * 60_000;
+/**
+ * The list changes once a day (cron), so each server instance keeps it for an hour instead of reading it per page.
+ * It is about 0.4 MB: re-read every 5 minutes it would use up to ~3.7 GB a month of the Upstash free tier's 10 GB per
+ * warm instance, hourly about 0.3 GB.
+ */
+const TTL_MS = 60 * 60_000;
 /* one cache per server process (route bundles can hold separate copies of this module), plus the read or build in flight */
 type Cache = {
   mem: { at: number; idx: CourseIndex | null } | null;
@@ -18,7 +22,7 @@ async function readCached(): Promise<CourseIndex | null> {
   const { mem } = cache;
   if (mem && Date.now() - mem.at < TTL_MS) return mem.idx;
   const started = Date.now();
-  cache.reading ??= getJson<CourseIndex>(PATH)
+  cache.reading ??= getRecord<CourseIndex>(PATH)
     .then((idx) => {
       // a build that finished meanwhile wrote a newer list; keep that one
       if (!cache.mem || cache.mem.at < started) cache.mem = { at: Date.now(), idx };
@@ -35,10 +39,10 @@ async function build(): Promise<CourseIndex> {
   console.log(`[courses] index built: ${idx.courses.length} courses, ${idx.sources.filter((x) => !x.ok).length} sources failed`);
   // keep the last good list if every source failed this time
   if (!idx.courses.length) {
-    const prev = await getJson<CourseIndex>(PATH);
+    const prev = await getRecord<CourseIndex>(PATH);
     if (prev?.courses.length) return { ...prev, sources: idx.sources };
   }
-  await putJson(PATH, idx);
+  await setRecord(PATH, idx);
   cache.mem = { at: Date.now(), idx };
   return idx;
 }
