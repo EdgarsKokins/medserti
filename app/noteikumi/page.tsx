@@ -27,7 +27,7 @@ export default async function TermsPage() {
       <section className={s.section}>
         <h2>{l.controllerTitle}</h2>
         <Controller l={l} />
-        <p className={s.seeAlso}><Link href="/privatums">{l.seeAlsoPrivacy}</Link></p>
+        <p className={s.seeAlso}>{l.seeAlsoPrivacy.pre} <Link href="/privatums">{l.seeAlsoPrivacy.link}</Link>{l.seeAlsoPrivacy.post}</p>
       </section>
     </main>
   );

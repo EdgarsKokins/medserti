@@ -53,7 +53,7 @@ export default async function DashboardPage() {
   const today = new Date();
   const p = computeProgress(user.profile, certs, today);
   // a hand-set target replaces the rule, so its reason is not shown
-  const basis = user.profile.requiredPointsOverride ? null : ruleBasis(user.profile);
+  const basis = ruleBasis(user.profile);
   // nurses give only the date their registration runs to (Reg. 630 point 33)
   const profileIncomplete = hours ? !user.profile.certificateExpires : !user.profile.certificateIssued;
   const picks = hours

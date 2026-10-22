@@ -46,3 +46,14 @@
   .summary { margin-top: 10px !important; }
   .fields { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* "Certification needed": the dates put the certificate period in the past */
+.dialog {
+  width: min(480px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--border-strong); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); box-shadow: 0 16px 48px color-mix(in srgb, var(--text) 22%, transparent);
+}
+.dialog::backdrop { background: color-mix(in srgb, var(--text) 40%, transparent); }
+.dialog h2 { margin: 0 0 12px; }
+.dialog p { margin: 0 0 12px; line-height: 1.5; }
+.dialogQuestion { font-weight: 600; }
+.dialogActions { margin-top: 20px; }

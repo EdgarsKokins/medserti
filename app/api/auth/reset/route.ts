@@ -7,8 +7,9 @@ import { passwordBreached, passwordTooLong } from "@/lib/password-policy";
 import { isDemoUserId } from "@/lib/demo/id";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { validPassword } from "@/lib/validation";
 
-const Body = z.object({ token: z.string().min(1), password: z.string().min(8) });
+const Body = z.object({ token: z.string().min(1), password: z.string().refine(validPassword) });
 
 export async function POST(req: Request) {
   const d = t(await getLocale());

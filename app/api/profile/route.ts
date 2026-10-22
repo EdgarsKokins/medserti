@@ -2,26 +2,28 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
 import { saveUser } from "@/lib/db";
-import { addYears, ruleRequiredPoints, RULES } from "@/lib/rules";
+import { addYears, certificateWindow, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { CERT_NO_MAX, SPECIALTY_MAX, tidyName, todayIso, validCertNo, validName, validPlainText } from "@/lib/validation";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Body = z.object({
-  fullName: z.string().trim().min(1).max(120),
+  fullName: z.string().trim().min(1).refine(validName).transform(tidyName),
   profession: z.enum(["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"]),
-  specialty: z.string().trim().max(120),
+  specialty: z.string().trim().refine((v) => validPlainText(v, SPECIALTY_MAX)),
   specialtyCode: z.string().trim().max(10).nullable().optional(),
   certificationKind: z.enum(["specialty", "method"]),
-  certificateNumber: z.string().trim().max(60),
+  certificateNumber: z.string().trim().max(CERT_NO_MAX).refine(validCertNo),
   certificateIssued: isoDate.nullable(),
   certificateExpires: isoDate.nullable(),
-  requiredPointsOverride: z.number().int().positive().max(5000).nullable(),
+  // no longer edited: the requirement always follows the rules. Accepted from older clients and dropped.
+  requiredPointsOverride: z.unknown().optional(),
 });
 
 /** User-facing message for the first failing field */
-const FIELD_ERROR = { fullName: "nameRequired", requiredPointsOverride: "requiredPointsInvalid", certificateIssued: "dateFormat", certificateExpires: "dateFormat" } as const;
+const FIELD_ERROR = { fullName: "nameInvalid", specialty: "specialtyInvalid", certificateNumber: "certNoInvalid", certificateIssued: "dateFormat", certificateExpires: "dateFormat" } as const;
 
 export async function PUT(req: Request) {
   const m = t(await getLocale()).api;
@@ -33,14 +35,18 @@ export async function PUT(req: Request) {
     const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const p = parsed.data;
+  const { requiredPointsOverride: _ignored, ...rest } = parsed.data;
+  const p = { ...rest, requiredPointsOverride: null };
   if (p.certificateIssued && !p.certificateExpires) p.certificateExpires = addYears(p.certificateIssued, RULES.validityYears);
+  const today = todayIso();
+  if (p.profession !== "nurse" && p.certificateIssued && p.certificateIssued > today) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });
+  // a period that has already ended is initial certification, not recertification: never saved
+  const end = certificateWindow(p).end;
+  if (end && end < today) return NextResponse.json({ error: m.certExpired }, { status: 400 });
   // a listed code wins: store its LV name so course and certificate matching runs on Latvian text
   const listed = specialtyByCode(p.specialtyCode);
   if (listed) p.specialty = listed.lv;
   else p.specialtyCode = p.specialty ? OTHER_SPECIALTY : null;
-  // an override equal to the rule is no override; keeps the profile following the rule if kind or profession changes
-  if (p.requiredPointsOverride === ruleRequiredPoints(p)) p.requiredPointsOverride = null;
   user.profile = p;
   await saveUser(user);
   return NextResponse.json({ ok: true, profile: user.profile });

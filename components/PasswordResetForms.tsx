@@ -4,10 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { t, type Locale } from "@/lib/i18n";
+import { PASSWORD_MAX, validPassword } from "@/lib/validation";
 import s from "./auth.module.css";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD = 8;
 
 /** Brand header and card, same frame as the login page */
 function Frame({ locale, title, lead, children }: { locale: Locale; title: string; lead: string; children: React.ReactNode }) {
@@ -107,7 +107,7 @@ export function ResetPasswordForm({ locale, token }: { locale: Locale; token: st
     e.preventDefault();
     setError(null);
     const password = String(new FormData(e.currentTarget).get("password") ?? "");
-    const msg = !password ? d.api.passwordRequired : password.length < MIN_PASSWORD ? d.api.passwordShort : null;
+    const msg = !password ? d.api.passwordRequired : !validPassword(password) ? d.api.passwordShort : null;
     if (msg) {
       setFieldError(msg);
       document.getElementById("password")?.focus();
@@ -139,6 +139,7 @@ export function ResetPasswordForm({ locale, token }: { locale: Locale; token: st
             name="password"
             type="password"
             autoComplete="new-password"
+            maxLength={PASSWORD_MAX}
             onChange={() => fieldError && setFieldError(null)}
             aria-invalid={fieldError ? true : undefined}
             aria-describedby={[fieldError ? "password-error" : null, "password-hint"].filter(Boolean).join(" ")}

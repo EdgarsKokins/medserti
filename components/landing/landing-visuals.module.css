@@ -43,8 +43,9 @@
    first paint, and a step that starts below the fold waits in its "before" frame (.wait) until seen. */
 .how { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; grid-template-columns: repeat(4, minmax(0, 1fr)); --ease: cubic-bezier(0.16, 1, 0.3, 1); }
 .stage { height: 250px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--border); padding: 18px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-.stepTitle { display: flex; align-items: center; gap: 10px; margin: 18px 0 4px; font-weight: 700; font-size: 1.15rem; letter-spacing: -0.01em; }
-.stepNo { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-contrast); font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.stepHead { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 10px; align-items: start; margin-top: 18px; }
+.stepTitle { margin: 0 0 4px; font-weight: 700; font-size: 1.15rem; line-height: 28px; letter-spacing: -0.01em; }
+.stepNo { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-contrast); font-size: 0.8rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
 .stepBody { margin: 0; color: var(--muted); }
 
 /* 1. sample certificate being read */
