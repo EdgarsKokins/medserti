@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import s from "./deleteAccount.module.css";
 
 /** "Delete account" on /profile: opens a password check, then deletes everything and goes to the landing page */
 export default function DeleteAccount({ locale }: { locale: Locale }) {
-  const d = t(locale).legal.deleteAccount;
+  const dict = useDict();
+  const d = dict.legal.deleteAccount;
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +17,7 @@ export default function DeleteAccount({ locale }: { locale: Locale }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!password) {
-      setError(t(locale).api.passwordRequired);
+      setError(dict.api.passwordRequired);
       document.getElementById("delete-password")?.focus();
       return;
     }

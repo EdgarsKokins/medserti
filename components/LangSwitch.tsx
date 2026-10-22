@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LOCALE_COOKIE, LOCALES, type Locale } from "@/lib/i18n";
+import { LOCALE_COOKIE, LOCALES, type Locale } from "@/lib/locale";
 
 /** Each language named in itself, for screen readers and the tooltip */
 const NATIVE: Record<Locale, string> = { lv: "Latviešu", en: "English", ru: "Русский" };

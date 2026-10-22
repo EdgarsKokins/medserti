@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CmeCategory, CmeCertificate, ConfidenceField, NurseTopic } from "@/lib/types";
 import { needsApprovalCheck, NURSE_TOPICS, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
-import { inHours, t, type Locale } from "@/lib/i18n";
+import { inHours, type Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { COUNTRY_CODES, countryCode, countryName, formatDate, parseNoteLines, STATUS_CLASS } from "./format";
 import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
 import styles from "./certificates.module.css";
@@ -81,7 +82,8 @@ export default function ReviewPanel({
   /** YYYY-MM-DD in Latvia: no date after it */
   today: string;
 }) {
-  const dict = nurse ? inHours(t(locale)) : t(locale);
+  const base = useDict();
+  const dict = nurse ? inHours(base) : base;
   const d = dict.review;
   const dialog = useRef<HTMLDialogElement>(null);
   const downOnBackdrop = useRef(false);

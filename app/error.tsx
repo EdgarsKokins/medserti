@@ -2,13 +2,12 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { t } from "@/lib/i18n";
-import { useDocLocale } from "@/components/useDocLocale";
+import { useDict } from "@/components/i18n/DictProvider";
 
 /** App-wide error screen; /courses has its own with a course-specific message */
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => console.error("page failed", error), [error]);
-  const d = t(useDocLocale());
+  const d = useDict();
   return (
     <main className="container status-page">
       <h1>{d.error.title}</h1>

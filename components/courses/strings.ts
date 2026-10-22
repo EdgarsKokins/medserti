@@ -1,4 +1,4 @@
-import { ruPl, type Locale } from "@/lib/i18n";
+import { ruPl, type Locale } from "@/lib/locale";
 import { overlay } from "@/lib/i18n/overrides";
 import type { CourseFormat, CourseKind, CourseSource } from "@/lib/courses/types";
 

@@ -1,4 +1,4 @@
-import type { Locale } from "../i18n";
+import type { Locale } from "../locale";
 
 /**
  * Text overrides edited at /admin, applied on top of the code dictionaries. Client-safe.

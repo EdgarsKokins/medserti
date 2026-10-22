@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { canHover, fileUrl, firstPage, pages } from "./filePreview";
 import styles from "./certificates.module.css";
 
@@ -14,7 +15,7 @@ const GAP = 10;
  * a click or tap opens the whole file in an in-page viewer. Ctrl/Cmd-click and middle-click still open the file in a new tab.
  */
 export default function FileLink({ id, fileName, locale, className }: { id: string; fileName: string; locale: Locale; className?: string }) {
-  const d = t(locale).certs;
+  const d = useDict().certs;
   const link = useRef<HTMLAnchorElement>(null);
   const timer = useRef<number | undefined>(undefined);
   const [card, setCard] = useState(false);
@@ -123,7 +124,7 @@ function PreviewCard({ id, cardId, anchor, alt, loading, error }: { id: string; 
 
 /** The whole file in the page: native modal dialog (focus trap, Esc), all pages as images */
 function FileViewer({ id, fileName, locale, onClose }: { id: string; fileName: string; locale: Locale; onClose: () => void }) {
-  const d = t(locale).certs;
+  const d = useDict().certs;
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<{ urls: string[]; total: number } | "loading" | "error">("loading");
 

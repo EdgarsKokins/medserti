@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ACCEPT, startUpload } from "@/components/certificates/uploadStore";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import styles from "./overview.module.css";
 
 /**
@@ -11,7 +12,7 @@ import styles from "./overview.module.css";
  * The upload queue outlives the page, so the certificates page shows each one as it is stored.
  */
 export default function DashboardUpload({ locale, readOnly = false }: { locale: Locale; readOnly?: boolean }) {
-  const dict = t(locale);
+  const dict = useDict();
   const d = dict.dashboard;
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);

@@ -12,6 +12,7 @@ import {
   WidthType,
 } from "docx";
 import type { NurseTopic } from "../types";
+import { applyByDate } from "./dates";
 
 /*
  * Recertification documents in the structure of Cabinet Regulation No. 391, Annex 3 ("Resertifikācijas lapa")
@@ -434,14 +435,6 @@ export function buildNurseChecklist(
     "",
     "Pārbaudiet visus datus pirms iesniegšanas. Lēmumu pieņem Veselības inspekcija.",
   ].join("\r\n");
-}
-
-/** Three months before expiry: the regulation's last day to apply (point 46) */
-export function applyByDate(validUntil: string | null): string | null {
-  if (!validUntil) return null;
-  const d = new Date(validUntil + "T00:00:00Z");
-  d.setUTCMonth(d.getUTCMonth() - 3);
-  return d.toISOString().slice(0, 10);
 }
 
 /** Plain-text checklist that goes into the ZIP next to the documents */

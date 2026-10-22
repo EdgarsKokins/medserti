@@ -5,6 +5,15 @@ import { DETAIL_REF, fetchCourseDetails } from "@/lib/courses/details";
 import type { CourseDetails } from "@/lib/courses/types";
 
 const MAX_AGE_MS = 7 * 86_400_000; // programmes rarely change after approval
+/** Like the course index (lib/courses/store.ts), each server instance keeps what it read for a few minutes */
+const MEM_TTL_MS = 5 * 60_000;
+type Mem = Map<string, { at: number; details: CourseDetails }>;
+const mem: Mem = ((globalThis as { __medsertiCourseDetails?: Mem }).__medsertiCourseDetails ??= new Map());
+
+function remember(path: string, details: CourseDetails) {
+  if (mem.size > 2_000) mem.clear();
+  mem.set(path, { at: Date.now(), details });
+}
 
 /** GET /api/courses/details?ref=application:9696 - lecture programme, fetched from LĀB on first open and cached */
 export async function GET(req: Request) {
@@ -13,11 +22,18 @@ export async function GET(req: Request) {
   if (!DETAIL_REF.test(ref)) return NextResponse.json({ error: "Invalid reference" }, { status: 400 });
 
   const path = `courses/details/${ref.replace(":", "-")}.json`;
+  const hit = mem.get(path);
+  if (hit && Date.now() - hit.at < MEM_TTL_MS && Date.now() - Date.parse(hit.details.fetchedAt) < MAX_AGE_MS)
+    return NextResponse.json(hit.details);
   const cached = await getJson<CourseDetails>(path);
-  if (cached && Date.now() - Date.parse(cached.fetchedAt) < MAX_AGE_MS) return NextResponse.json(cached);
+  if (cached && Date.now() - Date.parse(cached.fetchedAt) < MAX_AGE_MS) {
+    remember(path, cached);
+    return NextResponse.json(cached);
+  }
   try {
     const fresh = await fetchCourseDetails(ref);
     await putJson(path, fresh);
+    remember(path, fresh);
     return NextResponse.json(fresh);
   } catch {
     if (cached) return NextResponse.json(cached);
