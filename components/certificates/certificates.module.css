@@ -114,6 +114,14 @@
 .status { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }
 .actions { display: flex; gap: 10px 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 .smallBtn { padding: 5px 14px; font-size: 0.85rem; }
+/* row delete: a quiet bin that only turns red on hover, then an in-place confirm */
+.binBtn {
+  display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+  background: none; border: 0; border-radius: var(--radius-sm); color: var(--faint); cursor: pointer;
+}
+.binBtn:hover, .binBtn:focus-visible { color: var(--bad); background: var(--bad-soft); }
+@media (pointer: coarse) { .binBtn { width: 44px; height: 44px; } }
+.deleteAsk { display: inline-flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; justify-content: flex-end; }
 /* "i" next to "Neieskaitīts": opens the reason under the row */
 .infoBtn {
   display: inline-grid; place-items: center; flex: none;

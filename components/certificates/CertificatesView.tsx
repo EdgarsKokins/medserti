@@ -80,6 +80,29 @@ export default function CertificatesView({
     [certs, cycle, today],
   );
 
+  // bin icon in the row: asks once in place, then deletes (record and file, as the review panel's Dzēst does)
+  const [askDelete, setAskDelete] = useState<string | null>(null);
+  useEffect(() => {
+    if (!askDelete) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setAskDelete(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [askDelete]);
+
+  async function deleteRow(c: CmeCertificate) {
+    setBusyId(c.id);
+    const res = await fetch(`/api/certificates/${c.id}`, { method: "DELETE" }).catch(() => null);
+    setBusyId(null);
+    setAskDelete(null);
+    const name = c.title || c.fileName;
+    if (!res?.ok) {
+      setLive(d.rowDeleteError);
+      return;
+    }
+    setLive(d.rowDeleted(name));
+    removed(c.id);
+  }
+
   async function quickConfirm(c: CmeCertificate, method: "POST" | "DELETE") {
     setBusyId(c.id);
     const res = await fetch(`/api/certificates/${c.id}/confirm`, { method }).catch(() => null);
@@ -211,6 +234,18 @@ export default function CertificatesView({
           )}
         </span>
         <span className={styles.actions}>
+          {!readOnly && askDelete === c.id ? (
+            <span className={styles.deleteAsk} role="group" aria-label={d.rowDeleteAsk}>
+              <span className="small">{d.rowDeleteAsk}</span>
+              <button type="button" className={`btn btn-danger ${styles.smallBtn}`} disabled={busyId === c.id} onClick={() => deleteRow(c)} autoFocus>
+                {d.rowDeleteYes}
+              </button>
+              <button type="button" className={styles.linkBtn} onClick={() => setAskDelete(null)}>
+                {d.rowDeleteNo}
+              </button>
+            </span>
+          ) : (
+          <>
           <FileLink id={c.id} fileName={c.fileName} locale={locale} className={styles.linkBtn} />
           {readOnly ? (
             <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
@@ -231,6 +266,18 @@ export default function CertificatesView({
             <button type="button" className={styles.linkBtn} onClick={() => setOpenId(c.id)}>
               {d.edit}
             </button>
+          )}
+          {!readOnly && (
+            <button type="button" className={styles.binBtn} aria-label={d.rowDelete(c.title || c.fileName)} title={d.rowDeleteYes} onClick={() => setAskDelete(c.id)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+              </svg>
+            </button>
+          )}
+          </>
           )}
         </span>
         {infoOpen && (
