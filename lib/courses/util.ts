@@ -93,14 +93,27 @@ export function cityOf(location: string): { city: string | null; online: boolean
   return { city: null, online };
 }
 
-/** Normalised key for de-duplication: lowercase letters/digits only, first 60 chars */
+/**
+ * Normalised key for de-duplication: letters and digits of any script (diacritics folded, so "Rīga" = "riga"),
+ * lowercase, first 60 chars. A Cyrillic title keeps its letters instead of collapsing to "".
+ */
 export function titleKey(title: string): string {
   return title
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "")
     .slice(0, 60);
+}
+
+/** Below this length a key is too generic ("kurss", "") to merge two rows by prefix */
+export const MIN_PREFIX_KEY = 10;
+const PREFIX = 30;
+
+/** Same course if one key starts with the other's first 30 chars; never for short keys */
+export function samePrefix(a: string, b: string): boolean {
+  if (a.length < MIN_PREFIX_KEY || b.length < MIN_PREFIX_KEY) return false;
+  return a.startsWith(b.slice(0, PREFIX)) || b.startsWith(a.slice(0, PREFIX));
 }
 
 export function todayIso(): string {

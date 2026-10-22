@@ -19,7 +19,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!cert || cert.userId !== user.id || !cert.filePath.startsWith(`users/${user.id}/files/${id}/`))
     return NextResponse.json({ error: m.notFound }, { status: 404 });
 
-  const file = await getBytes(cert.filePath);
+  // the record is read from origin every time, so a deleted certificate is never served; the file itself is written
+  // once under a fresh id and never changed, so it may come from the CDN cache, where a hit costs no Blob operation
+  const file = await getBytes(cert.filePath, { immutable: true });
   if (!file) return NextResponse.json({ error: m.fileMissing }, { status: 404 });
 
   const type = ALLOWED.has(cert.contentType) ? cert.contentType : "application/octet-stream";
@@ -29,7 +31,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       "Content-Type": type,
       "Content-Length": String(file.data.length),
       "Content-Disposition": `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(cert.fileName)}`,
-      "Cache-Control": "private, no-store",
+      // browser cache only (never a shared cache): previews, the viewer and the ZIP export reuse the same response
+      "Cache-Control": "private, max-age=86400, immutable",
       "X-Content-Type-Options": "nosniff",
     },
   });

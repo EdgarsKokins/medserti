@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "crypto";
 import { getJson, putBytes, putJson, remove } from "../storage";
-import { getUser, saveCertificate, saveUser } from "../db";
+import { getUser, saveCertificates, saveUser } from "../db";
 import bcrypt from "bcryptjs";
 import { addYears, RULES } from "../rules";
 import type { CmeCategory, CmeCertificate, UserRecord } from "../types";
@@ -138,6 +138,7 @@ async function seedDemo(today = new Date()): Promise<void> {
   // 3 years and a few days back, on the 1st of a month
   const issued = plusMonths(iso(today), -36, 1);
   await saveUser(buildUser(issued, seededAt, await bcrypt.hash(randomBytes(32).toString("hex"), 10)));
+  const certs: CmeCertificate[] = [];
   for (const [i, c] of CERTS.entries()) {
     const id = certId(i + 1);
     const date = plusMonths(issued, c.month, c.day);
@@ -167,8 +168,10 @@ async function seedDemo(today = new Date()): Promise<void> {
       confidence: 1,
       parseNotes: c.ects ? JSON.stringify([{ code: "ects" }]) : null,
     };
-    await saveCertificate(cert);
+    certs.push(cert);
   }
+  // one manifest write for the lot
+  await saveCertificates(certs);
   // the marker goes last: an interrupted seed is retried on the next login
   await putJson(MARKER, { version: DEMO_VERSION, seededAt } satisfies Marker);
 }

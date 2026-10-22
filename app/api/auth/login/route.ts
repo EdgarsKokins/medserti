@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getUserByEmail } from "@/lib/db";
 import { startSession, verifyPassword } from "@/lib/auth";
-import { clearLimit, clientIp, rateLimit, underLimit } from "@/lib/password-reset";
+import { clearLimit, clientIp, limitState, rateLimit } from "@/lib/password-reset";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 
@@ -20,7 +20,8 @@ export async function POST(req: Request) {
   const emailKey = `login-email:${email}`;
   const ipKey = `login-ip:${clientIp(req)}`;
 
-  if (!(await underLimit(emailKey, ...EMAIL_LIMIT)) || !(await underLimit(ipKey, ...IP_LIMIT)))
+  const [byEmail, byIp] = await Promise.all([limitState(emailKey, ...EMAIL_LIMIT), limitState(ipKey, ...IP_LIMIT)]);
+  if (!byEmail.under || !byIp.under)
     return NextResponse.json({ error: m.tooManyLogins }, { status: 429 });
 
   const user = await getUserByEmail(email);
@@ -28,7 +29,8 @@ export async function POST(req: Request) {
     await Promise.all([rateLimit(emailKey, ...EMAIL_LIMIT), rateLimit(ipKey, ...IP_LIMIT)]);
     return NextResponse.json({ error: m.wrongCredentials }, { status: 401 });
   }
-  await clearLimit(emailKey);
+  // most sign-ins have no failed attempts on record: nothing to clear, and clearing costs a Blob listing
+  if (byEmail.recorded) await clearLimit(emailKey);
   await startSession(user.id, user.sessionVersion ?? 0);
   return NextResponse.json({ ok: true });
 }
