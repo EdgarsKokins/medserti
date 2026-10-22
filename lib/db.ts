@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "crypto";
-import { getJson, putJson, listPaths, remove } from "./storage";
+import { getJson, getJsonVersion, listVersions, putJson, remove } from "./storage";
 import type { CmeCertificate, UserRecord } from "./types";
 
 /*
@@ -31,8 +31,9 @@ export async function saveUser(user: UserRecord): Promise<void> {
 }
 
 export async function listCertificates(userId: string): Promise<CmeCertificate[]> {
-  const paths = (await listPaths(`users/${userId}/certs/`)).filter((p) => p.endsWith(".json"));
-  const certs = await Promise.all(paths.map((p) => getJson<CmeCertificate>(p)));
+  // the listing says which version of each certificate is current; only changed ones are read
+  const entries = (await listVersions(`users/${userId}/certs/`)).filter((e) => e.path.endsWith(".json"));
+  const certs = await Promise.all(entries.map((e) => getJsonVersion<CmeCertificate>(e.path, e.version)));
   return certs
     .filter((c): c is CmeCertificate => !!c)
     .sort((a, b) => (b.date ?? b.uploadedAt).localeCompare(a.date ?? a.uploadedAt));

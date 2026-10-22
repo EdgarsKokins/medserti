@@ -7,7 +7,8 @@ import { setI18nOverrides, type RuntimeOverrides } from "./overrides";
 /** Overrides edited at /admin, in the private Blob store. The previous version is kept for undo. */
 const CURRENT = "i18n/overrides.json";
 const PREVIOUS = "i18n/overrides.prev.json";
-const TTL_MS = 60_000;
+// a save on this instance applies at once; other instances pick it up within TTL_MS
+const TTL_MS = 5 * 60_000;
 
 const empty = emptyOverrides;
 

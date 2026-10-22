@@ -17,6 +17,11 @@ function localPath(pathname: string) {
   return p;
 }
 
+/** STORAGE_TRACE=1 logs every store read, to measure how many reads a page makes */
+const trace = (op: string, path: string) => {
+  if (process.env.STORAGE_TRACE) console.log(`[storage] ${op} ${path}`);
+};
+
 async function streamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
   return Buffer.from(await new Response(stream).arrayBuffer());
 }
@@ -32,6 +37,7 @@ export async function putBytes(pathname: string, data: Buffer, contentType: stri
 }
 
 export async function getBytes(pathname: string): Promise<{ data: Buffer; contentType: string } | null> {
+  trace("get", pathname);
   if (useBlob) {
     const res = await get(pathname, { access: "private", useCache: false });
     if (!res || res.statusCode !== 200) return null;
@@ -70,12 +76,18 @@ export async function remove(pathname: string): Promise<void> {
 
 /** List pathnames under a prefix */
 export async function listPaths(prefix: string): Promise<string[]> {
+  return (await listVersions(prefix)).map((e) => e.path);
+}
+
+/** Pathnames under a prefix with a version tag that changes whenever the file is rewritten */
+export async function listVersions(prefix: string): Promise<{ path: string; version: string }[]> {
+  trace("list", prefix);
   if (useBlob) {
-    const out: string[] = [];
+    const out: { path: string; version: string }[] = [];
     let cursor: string | undefined;
     do {
       const page = await list({ prefix, cursor, limit: 1000 });
-      out.push(...page.blobs.map((b) => b.pathname));
+      out.push(...page.blobs.map((b) => ({ path: b.pathname, version: `${new Date(b.uploadedAt).getTime()}:${b.size}` })));
       cursor = page.hasMore ? page.cursor : undefined;
     } while (cursor);
     return out;
@@ -83,12 +95,33 @@ export async function listPaths(prefix: string): Promise<string[]> {
   const dir = localPath(prefix);
   try {
     const entries = await fs.readdir(dir, { recursive: true, withFileTypes: true });
-    return entries
-      .filter((e) => e.isFile())
-      .map((e) => path.relative(LOCAL_ROOT, path.join(e.parentPath, e.name)).split(path.sep).join("/"));
+    const files = entries.filter((e) => e.isFile()).map((e) => path.join(e.parentPath, e.name));
+    return Promise.all(
+      files.map(async (f) => {
+        const st = await fs.stat(f);
+        return { path: path.relative(LOCAL_ROOT, f).split(path.sep).join("/"), version: `${st.mtimeMs}:${st.size}` };
+      }),
+    );
   } catch {
     return [];
   }
+}
+
+/* parsed JSON by path + version, per server instance; a file is re-read only when its version changes */
+type VersionCache = Map<string, { version: string; value: unknown }>;
+const versioned: VersionCache = ((globalThis as { __medsertiVersioned?: VersionCache }).__medsertiVersioned ??= new Map());
+
+/**
+ * JSON for a file whose current version came from listVersions: served from memory when that exact
+ * version was read before, so data stays as fresh as the listing while unchanged files cost no read.
+ */
+export async function getJsonVersion<T>(pathname: string, version: string): Promise<T | null> {
+  const hit = versioned.get(pathname);
+  if (hit && hit.version === version) return hit.value as T;
+  const value = await getJson<T>(pathname);
+  if (versioned.size > 20_000) versioned.clear();
+  if (value) versioned.set(pathname, { version, value });
+  return value;
 }
 
 function guessType(p: string) {
