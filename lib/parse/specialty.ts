@@ -39,7 +39,7 @@ const CURATED: Record<string, string[]> = {
   // Kardiologs
   "66": [
     "kardiolog", "cardiolog", "кардиолог", "kardiovaskul", "cardiovascul", "сердечн сосудист",
-    "sirds mazspēj", "heart failur", "сердечн недостаточ", "aritmij", "arrhythmi", "аритми", "koronār", "coronar", "коронарн",
+    "sirds mazspēj", "heart failur", "сердечн недостаточ", "aritm", "arrhythm", "аритм", "ritm traucējum", "sirds ritm", "hsm=", "koronār", "coronar", "коронарн",
     "elektrokardiogr", "elektrokardiolog", "electrocardiogr", "electrocardiolog", "электрокардиогр", "ekg=", "ecg=", "экг=", "ehokardiogr", "echocardiogr", "эхокардиогр",
     "kardiomiopāt", "cardiomyopath", "кардиомиопат", "bradikard", "bradycard", "брадикард", "tahikard", "tachycard", "тахикард",
   ],
