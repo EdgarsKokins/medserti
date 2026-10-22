@@ -35,6 +35,3 @@ export const validMessage = (s: string) => charCount(s.trim()) >= MESSAGE_MIN &&
 
 /** "  anna   bērziņa " -> "anna bērziņa" */
 export const tidyName = (s: string) => s.trim().replace(/\s+/g, " ");
-
-/** Today as YYYY-MM-DD (UTC, same as the rules) */
-export const todayIso = () => new Date().toISOString().slice(0, 10);

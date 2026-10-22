@@ -61,7 +61,10 @@ export interface ExportCertificate {
   title: string;
   date: string; // YYYY-MM-DD
   endDate: string | null;
+  /** points that count, after the 16% practical-training cap (Reg. 391 Annex 4, footnote 3) */
   points: number;
+  /** practical training cut by the cap: the points on the certificate; absent when the row counts in full */
+  rawPoints?: number;
   inSpecialty: boolean;
 }
 
@@ -129,7 +132,7 @@ function activityTable(rows: ExportCertificate[]): Table {
           cell(c.organizer),
           cell(c.title),
           cell(dates(c)),
-          cell(num(c.points), { align: AlignmentType.RIGHT }),
+          cell(c.rawPoints != null ? `${num(c.points)}*` : num(c.points), { align: AlignmentType.RIGHT }),
         ],
       }),
   );
@@ -141,6 +144,25 @@ function activityTable(rows: ExportCertificate[]): Table {
     ],
   });
   return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [head, ...(body.length ? body : [new TableRow({ children: COLS.map(() => cell("")) })]), sum] });
+}
+
+/**
+ * When the 16% cap cut practical training, the rows marked * show the points that count, so the two "Kopā" lines add up
+ * to the total the dashboard shows. The note says what was on the certificates.
+ */
+function capNote(certs: ExportCertificate[]): Paragraph[] {
+  const cut = certs.filter((c) => c.rawPoints != null);
+  if (!cut.length) return [];
+  const raw = cut.reduce((a, c) => a + (c.rawPoints ?? 0), 0);
+  const counted = cut.reduce((a, c) => a + c.points, 0);
+  // rounded down, as the dashboard shows a total short of the target: 249.96 is "249,9", never "250"
+  const total = Math.floor(certs.reduce((a, c) => a + c.points, 0) * 10 + 1e-9) / 10;
+  return [
+    p(
+      `* Praktiskā apmācība: ieskaitīti ${num(counted)} no ${num(raw)} TIP, jo tā nedrīkst pārsniegt 16 % no resertifikācijai nepieciešamā punktu skaita (MK noteikumu Nr. 391 4. pielikuma 3. piezīme). Kopā ieskaitāmi ${num(total)} TIP.`,
+      { size: 18, italic: true, space: 120 },
+    ),
+  ];
 }
 
 const workplaceLines = (no: string, w: ExportWorkplace | undefined) => [
@@ -193,6 +215,7 @@ export function buildRecertificationSheet(person: ExportPerson, cert: ExportCert
     p("13.3. informācija par pārējiem tālākizglītības punktiem:"),
     activityTable(other),
     p("", { space: 120 }),
+    ...capNote(certs),
     p("14. Apliecinu³:"),
     p(`${box(person.declarations)} man nav tiesas noteikta ierobežojuma tiesībām veikt ārstniecību`),
     p(`${box(person.declarations)} neesmu nodots(-a) citas personas aizgādnībā`),

@@ -35,6 +35,7 @@ export function Hero({
   const dict = dictFor(locale, nurse);
   const d = dict.dashboard;
   const n = (v: number) => fmtNum(v, locale);
+  // floored like the headline, so 249.9 of 250 never reads 100%
   const pointsPct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
   let timePct: number | null = null;
   if (p.windowStart && p.windowEnd) {
@@ -100,7 +101,7 @@ export function Hero({
       )}
 
       {timePct != null && p.windowStart && p.windowEnd ? (
-        <div className={styles.band} role="img" aria-label={`${d.collected(Math.round(pointsPct))}, ${d.timeElapsed(Math.round(timePct))}`}>
+        <div className={styles.band} role="img" aria-label={`${d.collected(Math.floor(pointsPct))}, ${d.timeElapsed(Math.round(timePct))}`}>
           <div className={styles.track}>
             <div className={`${styles.fill} ${pointsPct > 0 ? styles.fillSome : ""}`} style={{ width: `${pointsPct}%` }} />
             <div className={styles.todayMark} style={{ left: `${timePct}%` }}>
@@ -110,7 +111,7 @@ export function Hero({
           <div className={styles.bandLabels}>
             <span>{p.windowStart.slice(0, 4)}</span>
             <span className={styles.bandLegend}>
-              <i className={styles.keyFill} /> {d.collected(Math.round(pointsPct))}
+              <i className={styles.keyFill} /> {d.collected(Math.floor(pointsPct))}
               <i className={styles.keyTime} /> {d.timeElapsed(Math.round(timePct))}
             </span>
             <span>{p.windowEnd.slice(0, 4)}</span>
