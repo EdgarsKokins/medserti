@@ -98,7 +98,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               <div className={s.ctas}>
                 <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{a.start}</Link>
                 <DemoButton label={d.demo.try} className={`btn ${s.ctaGhost}`} />
-                <a href="#answer" className={`btn ${s.ctaGhost}`}>{a.seeHow}</a>
               </div>
               <p className={s.freeNote}>{l.freeNote}</p>
             </div>
@@ -116,6 +115,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               deadline={a.scatterDeadline}
             />
           </div>
+          {/* scroll cue at the foot of the hero: centred, quiet, the arrows bob unless motion is reduced */}
+          <a href="#answer" className={s.scrollCue}>
+            <span className={s.cueArrow} aria-hidden>↓</span>
+            <span>{a.seeHow}</span>
+            <span className={s.cueArrow} aria-hidden>↓</span>
+          </a>
         </section>
 
         <div className={s.wrap}>
