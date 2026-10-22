@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { runBackup } from "@/lib/backup";
 
-// copies and then reads back every file; ~12 MB today
+// reads only new or changed files from Blob, copies the rest inside R2, then reads every copy back
 export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
