@@ -6,7 +6,7 @@ import { putBytes, remove } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
 import { certificateWindow } from "@/lib/rules";
-import type { CmeCertificate } from "@/lib/types";
+import type { CmeCertificate, ParseNote } from "@/lib/types";
 import { stripMarks } from "@/lib/text";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -42,6 +42,14 @@ export async function GET() {
   return NextResponse.json({ certificates: await listCertificates(user.id) });
 }
 
+const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable"]);
+
+/** Put the "photo may be blurry" note first, so the review panel says why the fields may be wrong */
+function withImageNote(notes: string | null, reason: string): string {
+  const list: ParseNote[] = notes ? JSON.parse(notes) : [];
+  return JSON.stringify([{ code: "imageBlurry", p: { reason } }, ...list]);
+}
+
 export async function POST(req: Request) {
   const m = t(await getLocale()).api;
   const g = await requireWritableUser();
@@ -61,6 +69,9 @@ export async function POST(req: Request) {
   // images and scanned PDFs are OCR'd in the browser; their text arrives as "ocrText"
   const ocr = form?.get("ocrText");
   const ocrText = typeof ocr === "string" ? ocr.slice(0, MAX_OCR_CHARS) : null;
+  // the browser's blurry-photo check flagged this file and the user uploaded it anyway (lib/parse/imageQuality.ts)
+  const quality = form?.get("imageQuality");
+  const qualityReason = typeof quality === "string" ? quality.split(",").find((q) => QUALITY_REASONS.has(q)) ?? null : null;
 
   const id = randomUUID();
   const safeName = sanitizeName(file.name, type);
@@ -107,7 +118,7 @@ export async function POST(req: Request) {
       autoConfirmed: auto,
       fileHash,
       duplicateOf: findDuplicate(all, result.fields, fileHash),
-      parseNotes: result.notes,
+      parseNotes: qualityReason ? withImageNote(result.notes, qualityReason) : result.notes,
     };
   } catch (err) {
     console.error("certificate parse", err);

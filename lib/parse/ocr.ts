@@ -82,12 +82,30 @@ export function readQuality(r: OcrRead): number {
 /** A first read this good is kept without trying rotations */
 const GOOD_ENOUGH = 62;
 
-export async function ocrPdfPages<Img>(engine: OcrEngine<Img>, onPage?: (page: number, of: number) => void): Promise<string> {
+export interface OcrPdfResult {
+  text: string;
+  /** tesseract confidence of page 1's best read (0-100), for the "photo may be blurry" check */
+  confidence: number;
+  /** false when checkFirstPage asked to stop (the user chose another file) */
+  completed: boolean;
+}
+
+/**
+ * OCR the first pages. `checkFirstPage` sees page 1 as rendered, before any OCR: it can measure it and
+ * return false to stop (nothing is read then).
+ */
+export async function ocrPdfPages<Img>(
+  engine: OcrEngine<Img>,
+  onPage?: (page: number, of: number) => void,
+  checkFirstPage?: (img: Img) => Promise<boolean>,
+): Promise<OcrPdfResult> {
   const pages = Math.min(engine.pageCount, OCR_MAX_PAGES);
   const out: string[] = [];
+  let confidence = 0;
   for (let p = 1; p <= pages; p++) {
     onPage?.(p, pages);
     const img = await engine.render(p);
+    if (p === 1 && checkFirstPage && !(await checkFirstPage(img))) return { text: "", confidence: 0, completed: false };
     let best = await engine.recognize(img);
     if (readQuality(best) < GOOD_ENOUGH) {
       for (const deg of [90, 270] as const) {
@@ -96,7 +114,8 @@ export async function ocrPdfPages<Img>(engine: OcrEngine<Img>, onPage?: (page: n
         if (readQuality(best) >= GOOD_ENOUGH) break;
       }
     }
+    if (p === 1) confidence = best.confidence;
     out.push(best.text);
   }
-  return out.join("\n\n");
+  return { text: out.join("\n\n"), confidence, completed: true };
 }
