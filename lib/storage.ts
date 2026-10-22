@@ -118,7 +118,8 @@ export async function getJsonTagged<T>(pathname: string): Promise<{ value: T; et
   if (useBlob) {
     const res = await get(pathname, { access: "private", useCache: false });
     if (!res || res.statusCode !== 200) return null;
-    return { value: JSON.parse((await streamToBuffer(res.stream)).toString("utf8")) as T, etag: res.blob.etag };
+    // larger files come back compressed with a weak ETag (W/"…"), which ifMatch never matches; the tag inside is the same
+    return { value: JSON.parse((await streamToBuffer(res.stream)).toString("utf8")) as T, etag: res.blob.etag.replace(/^W\//, "") };
   }
   const data = await fs.readFile(localPath(pathname)).catch(() => null);
   return data ? { value: JSON.parse(data.toString("utf8")) as T, etag: sha1(data) } : null;
