@@ -10,7 +10,7 @@ const QUOTES = [
   // OCR turns typographic quotes into two apostrophes: ''Karpālais kanāls''
   /(?:''|’’|‘‘)([^'\n]{4,200}(?:\n[^'\n]{1,200}){0,2})(?:''|’’|“|”)/gu,
 ];
-const ORG_PREFIX = /(?<![\p{L}])(?:SIA|AS|VSIA|NRC|biedrība|nodibinājums|Ltd|LLC|GmbH|Inc|institution|iestāde)\.?\s*$/iu;
+const ORG_PREFIX = /(?<![\p{L}])(?:SIA|AS|VSIA|NRC|biedrība|nodibinājums|Ltd|LLC|GmbH|Inc|institution|iestāde|ООО|ОАО|ЗАО|АО|клиник\p{L}*|больниц\p{L}*|центр\p{L}*|университет\p{L}*|институт\p{L}*)\.?\s*$/iu;
 /** quoted text that is not a title: regulation names, people, approval lines (OCR mispairs quotes across lines) */
 const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|ministr|(?<![\p{L}])(?:dr|prof|asoc)\.|(?<![\p{L}])lab(?![\p{L}])|(?<![\p{L}])tip|\d{4}\//u;
 
@@ -46,6 +46,12 @@ function wordy(s: string): boolean {
   return words.length >= 2 && letters / Math.max(1, s.replace(/\s/g, "").length) >= 0.6;
 }
 
+/** "провел 4 (четыре) мастер-класс-операции", "performed 3 master class operations": the activity is the title */
+const MASTER_CLASS = [
+  /провел\p{L}*\s+(\d{1,2})\s*(?:\(\p{L}+\)\s*)?(мастер-класс[\p{L}-]*)/u,
+  /(?:performed|conducted|gave|held)\s+(\d{1,2})\s+(master[- ]class\p{L}*(?:\s+(?:operations?|surger\p{L}+))?)/u,
+];
+
 /** Title and how sure we are (0-1) */
 export function findTitle(t: Text): { value: string; confidence: number } {
   const { raw } = t;
@@ -53,6 +59,16 @@ export function findTitle(t: Text): { value: string; confidence: number } {
   const lines = t.lines.map((l) => l.replace(/^[|\s:;~_•·*]+/u, ""));
   const folded = lines.map(fold);
   const usable = (i: number) => !!lines[i] && wordy(lines[i]) && !STOP_LINE.test(folded[i]) && !looksLikeDateOrPoints(lines[i]);
+
+  // 0. a letter confirming master classes names no event (its quotes hold the clinic): the activity and count are the title
+  for (const re of MASTER_CLASS) {
+    const m = re.exec(t.flat);
+    if (m) {
+      const from = m.index + m[0].lastIndexOf(m[2]);
+      const what = t.raw.slice(from, from + m[2].length);
+      return { value: `${what.charAt(0).toUpperCase()}${what.slice(1)} (${m[1]})`, confidence: 0.6 };
+    }
+  }
 
   // 1. quoted text, skipping quoted organisation names (SIA „...") and regulation names
   const quoted: { value: string; index: number }[] = [];
@@ -78,6 +94,8 @@ export function findTitle(t: Text): { value: string; confidence: number } {
       const m = rx(re.source, "u").exec(folded[i]);
       if (!m) continue;
       const restFolded = folded[i].slice(m.index + m[0].length);
+      // "Par dalību seminārā tiek piešķirti TIP punkti": a points line, the title is not after it
+      if (/(?<![\p{L}])tip(?![\p{L}])|punkt|kredit/u.test(restFolded)) continue;
       const rest = cleanTitle(lines[i].slice(m.index + m[0].length));
       const organisedBy = ORGANISED_BY.test(restFolded.trim());
       if (wordy(rest) && !organisedBy && !looksLikeDateOrPoints(rest) && !/^(?:un |and )/u.test(restFolded.trim()))
@@ -173,6 +191,18 @@ export function findOrganizer(t: Text): { value: string; confidence: number; sta
   for (const l of top) {
     const m = /(?:issued by|izsniedza|izsniedzējs:?)\s+(.+?)(?:,|\.?$)/iu.exec(l);
     const r = stated(m && out(m[1].replace(/[“”"„]/g, ""), 0.9));
+    if (r) return r;
+  }
+
+  // 1b. Russian letters: "в Университетской клинике «AKFA Medline»", "ООО «AKFA MEDLINE»" (OCR may leave a stray "i" before the quote)
+  {
+    const named = [...t.raw.matchAll(/(?<![\p{L}])(?:клиник\p{L}*|больниц\p{L}*|центр\p{L}*|институт\p{L}*|университет\p{L}*|ООО|ОАО|ЗАО)(?:\s+[^\s«"„“]{1,2})?\s+[«"„“]\s*([^»"”\n]{2,80}?)\s*[»"”]/giu)]
+      .map((m) => m[1].replace(/[.,;:]+(?=\s|$)/g, "").replace(/\s+/g, " ").trim())
+      .filter((v) => cleanName(v));
+    // OCR mixes scripts in a Latin name ("АКЕА Medline"); a name in one script is the clean read
+    const mixed = (v: string) => /[A-Za-z]/.test(v) && /[\u0400-\u04FF]/.test(v);
+    const pick = named.find((v) => !mixed(v)) ?? named[0];
+    const r = pick ? stated(out(pick, mixed(pick) ? 0.6 : 0.8)) : null;
     if (r) return r;
   }
 

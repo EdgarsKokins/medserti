@@ -1,7 +1,9 @@
 import type { CmeCertificate, FieldConfidence, ParseNote, Profile } from "../types";
 import { LOW_CONFIDENCE } from "./confidence";
 import { eventDays, findDates } from "./dates";
-import { findCategory, findCountry, isEmergencyCare, isLecturer } from "./place";
+import { findCategory, findCountry, isEmergencyCare, isLecturer, isMasterClassTeacher } from "./place";
+import { docLanguage, needsTranslation } from "./language";
+import { estimateAbroad } from "../abroad";
 import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
@@ -38,6 +40,7 @@ export type ParsedFields = Pick<
   | "nurseTopic"
   | "approvalId"
   | "country"
+  | "language"
   | "confidence"
   | "fieldConfidence"
 >;
@@ -69,6 +72,7 @@ export const EMPTY_FIELDS: ParsedFields = {
   nurseTopic: null,
   approvalId: null,
   country: null,
+  language: null,
   confidence: null,
   fieldConfidence: null,
 };
@@ -154,18 +158,28 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const emergencyCare = isEmergencyCare(t);
   const countryHit = findCountry(t);
   const country = countryHit.value;
-  const category = findCategory(t, country);
+  const masterClass = isMasterClassTeacher(t);
+  // a master class the holder ran is teaching, wherever it took place
+  const category = masterClass ? "lecture_or_publication" : findCategory(t, country);
+  const language = docLanguage(t);
 
   let points = pts.value;
   let pointsConfidence = pts.confidence;
   let pointsKind = pts.kind;
   const days = eventDays(date, endDate);
   if (points != null && /(?<![\p{L}])(?:ECTS|ECMEC)/iu.test(t.raw)) notes.push({ code: "ects" });
-  if (points != null && category === "training_abroad" && academicHours && academicHours.value !== points)
-    notes.push({ code: "foreignRatio", p: { points, h: academicHours.value } });
+  if (points != null && category === "training_abroad" && academicHours) {
+    // the organizer's credits count 1:1; a recalculation at 1 TIP per 45 minutes may give more (lib/abroad.ts)
+    const e = estimateAbroad({ credits: points, hours: academicHours.value, academic: academicHours.academic, days });
+    if (e.recalculatedMax) notes.push({ code: "abroadRecalc", p: { points, max: e.recalculatedMax, academic: academicHours.academic } });
+    else if (academicHours.value !== points) notes.push({ code: "foreignRatio", p: { points, h: academicHours.value } });
+  }
   if (points != null && (category === "training_latvia" || category === "professional_meeting") && days && points > days * 8)
     notes.push({ code: "dailyCap", p: { points, days } });
-  if (points == null) {
+  if (points == null && masterClass) {
+    // no Annex 4 item: never calculated (see Working for Claude/annex4-teaching-abroad.md)
+    notes.push({ code: "masterClass" });
+  } else if (points == null) {
     const d = derivePoints(category, academicHours, date, endDate);
     if (d) {
       points = d.points;
@@ -176,13 +190,14 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
       notes.push({ code: "noPoints" });
     }
   }
-  if (isLecturer(t)) {
+  if (!masterClass && isLecturer(t)) {
     notes.push({ code: "lecturer", p: { international: !!country && country !== "LV" } });
     if (points != null) pointsConfidence = Math.min(pointsConfidence, 0.6);
   }
   if (!title) notes.push({ code: "noTitle" });
   if (!date) notes.push({ code: "noDate" });
   if (!country) notes.push({ code: "noCountry" });
+  if (needsTranslation(language)) notes.push({ code: "foreignLanguage", p: { lang: language! } });
 
   const fieldConfidence: FieldConfidence = {
     title: r2(titleHit.confidence * ocrFactor),
@@ -218,6 +233,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
       nurseTopic: suggestNurseTopic(t.flat, t.raw),
       approvalId: findApprovalId(t),
       country,
+      language,
       confidence: Math.round((found / 3) * 100) / 100,
       fieldConfidence,
     },

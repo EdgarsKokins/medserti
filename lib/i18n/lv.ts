@@ -1,6 +1,7 @@
+import type { AbroadKind } from "../abroad";
 import { RULES } from "../rule-constants";
 import type { NurseTopic } from "../types";
-import { capPct, fieldList, fmtList, fmtN, lvPl, specialtyPct, type NoteP } from "./shared";
+import { capPct, fieldList, fmtList, fmtN, lvPl, specialtyPct, langName, type NoteP } from "./shared";
 import type { Dict } from "./en";
 
 export const lv: Dict = {
@@ -571,6 +572,11 @@ export const lv: Dict = {
     discardQuestion: "Jums ir nesaglabātas izmaiņas. Aizvērt, nesaglabājot?",
     discard: "Aizvērt bez saglabāšanas",
     keepEditing: "Turpināt labot",
+    registryMatched: "Punkti no LĀB reģistra:",
+    registryPick: "Līdzīgi pasākumi LĀB reģistrā:",
+    registryUse: "Izmantot",
+    registryUsed: "Izmantots",
+    registryOpen: "Atvērt LĀB",
   },
   parseNotes: {
     pdfUnreadable: () => "Neizdevās nolasīt tekstu no šī PDF faila. Ievadiet datus manuāli.",
@@ -592,7 +598,9 @@ export const lv: Dict = {
       `Punkti nav norādīti; aprēķināti kā ${p.days} ${lvPl(Number(p.days), "diena", "dienas")} x 8 TIP par praktisko apmācību (4. pielikuma 10. punkts).`,
     derivedInterdisciplinary: () => "Punkti nav norādīti; sertifikācijas institūcijas starpdisciplīnu konference dod 12 TIP (MK noteikumu 4. pielikuma 4. punkts).",
     derivedAbroad: (p: NoteP) =>
-      `Punkti nav norādīti; aprēķināti kā 1 TIP par ${p.academic ? "akadēmisko stundu" : "stundu"} (${fmtN(p.h)} st.). Ārvalstīs punktus nosaka organizators (4. pielikuma 3. punkts).`,
+      `Punkti nav norādīti; novērtēti kā 1 TIP par 45 minūtēm: ${fmtN(p.h)} ${p.academic ? "akadēmiskās stundas" : "st."} = ${fmtN(p.points)} TIP${p.days ? `, ne vairāk kā 8 TIP dienā (${p.days} ${lvPl(Number(p.days), "diena", "dienas")})` : ""}. Ārvalstīs punktus nosaka organizators (4. pielikuma 3. punkts): tas ir novērtējums, ne LĀB lēmums.`,
+    abroadRecalc: (p: NoteP) =>
+      `Organizatora punkti (${fmtN(p.points)}) ieskaitīti 1:1. Pārrēķinot 1 TIP par 45 minūtēm, tas var būt līdz ${fmtN(p.max)} TIP: tad pievienojiet pamatotu pārrēķinu (4. pielikuma 1. piezīme).`,
     derivedElearning: (p: NoteP) =>
       `Punkti nav norādīti; aprēķināti kā 1 TIP par ${p.academic ? "akadēmisko stundu" : "stundu"} (${fmtN(p.h)} st.), tālmācībai dienas ierobežojuma nav (4. pielikuma 7. un 9. punkts).`,
     derivedLatvia: (p: NoteP) =>
@@ -611,6 +619,16 @@ export const lv: Dict = {
         : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
     lowConfidence: (p: NoteP) =>
       `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", organizer: "organizators", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
+    masterClass: () =>
+      "Šis dokuments apliecina meistarklasi, ko vadījāt. MK noteikumu Nr. 391 4. pielikumā meistarklasei sava punkta nav: punktus nosaka sertifikācijas komisija pēc līdzības (51. punkts). Tuvākie ir 22. punkts (30 TIP par ziņojumu starptautiskā pasākumā) un 18. punkts (10 TIP gadā par pedagoģisko darbu). Ievadiet punktus, ko apstiprina LĀB.",
+    foreignLanguage: (p: NoteP) =>
+      `Dokuments ir ${langName(p.lang, { ru: "krievu", uk: "ukraiņu", lt: "lietuviešu", et: "igauņu", de: "vācu", pl: "poļu", fr: "franču", it: "itāļu", cs: "čehu" }, "citā")} valodā. LĀB var prasīt apliecinātu tulkojumu latviešu valodā (MK noteikumu Nr. 391 47. punkts).`,
+    tipRegistry: (p: NoteP) =>
+      `Sertifikātā punkti nav norādīti. LĀB apstiprināto pasākumu reģistrā atradām šo pasākumu (${p.id}, ${fmtN(p.points)} TIP). Pārbaudiet, vai tas ir jūsu pasākums, un apstipriniet.`,
+    tipCandidates: (p: NoteP) =>
+      `Sertifikātā punkti nav norādīti. LĀB reģistrā ir ${p.n} ${lvPl(Number(p.n), "līdzīgs pasākums", "līdzīgi pasākumi")}: izvēlieties savējo zemāk. Ja sertifikāts apliecina vairākas lekcijas, saskaitiet to punktus.`,
+    tipNoMatch: () =>
+      "Sertifikātā punkti nav norādīti, un LĀB reģistrā šo pasākumu neatradām. Ievadiet punktus no LĀB apstiprināto TIP saraksta vai jautājiet organizatoram.",
   },
   dashboard: {
     title: "Pārskats",
@@ -978,6 +996,31 @@ export const lv: Dict = {
       medicinaskursi: "medicinaskursi.lv",
       lumpii: "LUMPII",
       lma: "Latvijas Māsu asociācija",
+    },
+    abroad: {
+      title: "Kurss ārzemēs: cik TIP?",
+      lead: "Novērtējiet pirms brauciena. Ārvalstīs punktus nosaka organizators, LĀB iepriekšējs apstiprinājums nav vajadzīgs (MK noteikumu Nr. 391 4. pielikuma 3. punkts).",
+      country: "Valsts",
+      kind: "Veids",
+      kinds: { conference: "Kongress vai konference", course: "Kurss", live_surgery: "Tiešraides operācijas", workshop: "Praktiskā darbnīca" } as Record<AbroadKind, string>,
+      from: "No",
+      to: "Līdz",
+      hours: "Programmas stundas",
+      hoursHint: "Stundas, kurās piedalīsieties (60 min)",
+      credits: "Kredītpunkti",
+      creditsHint: "ECMEC, CME vai ECTS, ja organizators tos norāda",
+      estimate: "Novērtējums",
+      fromCredits: (n: string) => `${n} TIP: organizatora kredītpunkti, ieskaitīti 1:1.`,
+      recalc: (n: string) => `Pārrēķinot 1 TIP par 45 minūtēm, var būt līdz ${n} TIP: tad pievienojiet pamatotu pārrēķinu (4. pielikuma 1. piezīme).`,
+      fromHours: (n: string) => `${n} TIP: programmas stundas, 1 TIP par 45 minūtēm.`,
+      capped: "Ierobežots līdz 8 TIP dienā.",
+      none: "Tikai ar datumiem punktus novērtēt nevar. Paprasiet organizatoram programmu ar laikiem vai kredītpunktus.",
+      latvia: "Pasākumiem Latvijā punktus apstiprina LĀB: meklējiet pasākumu sarakstā augstāk.",
+      bring: "Ko atvest mājās:",
+      proofCertificate: "Dalības sertifikātu ar stundām vai kredītpunktiem",
+      proofProgramme: "Programmu ar laikiem, ja sertifikātā stundu nav",
+      proofHandsOn: "Praktiskajām daļām: apliecinājumu, cik stundas piedalījāties",
+      note: "Tas ir novērtējums, nevis LĀB lēmums. Punktus ieskaita sertifikācijas komisija.",
     },
     disclaimer:
       "Dati automātiski apkopoti no publiskām lapām un var būt nepilnīgi. TIP skaitu un datumus pārbaudiet pie organizatora. Kontaktpersonu dati netiek glabāti.",

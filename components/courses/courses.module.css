@@ -126,3 +126,12 @@
 
 .apply { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .applyTitle { margin: 0; font-size: 1.05rem; }
+
+/* "Course abroad: how many TIP?" (components/courses/AbroadEstimate.tsx), also shown in the certificate review panel */
+.abroad { display: flex; flex-direction: column; gap: 14px; }
+.abroad[open] > .abroadTitle { margin-bottom: 2px; }
+.abroadTitle { cursor: pointer; font-weight: 500; font-size: 1.05rem; color: var(--text); }
+.abroad > p { margin: 0 0 6px; }
+.abroadResult { margin: 0; line-height: 1.5; }
+.abroadLine { margin: 8px 0 0; }
+.abroadProof { margin: 4px 0 0; padding-left: 18px; }

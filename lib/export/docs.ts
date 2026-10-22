@@ -438,7 +438,7 @@ export function buildNurseChecklist(
 }
 
 /** Plain-text checklist that goes into the ZIP next to the documents */
-export function buildChecklist(cert: ExportCertificateInfo, included: number, skipped: number, languageFile?: string): string {
+export function buildChecklist(cert: ExportCertificateInfo, included: number, skipped: number, languageFile?: string, foreignTitles: string[] = []): string {
   const by = applyByDate(cert.validUntil);
   return [
     "Medserti: resertifikācijas dokumenti",
@@ -458,6 +458,13 @@ export function buildChecklist(cert: ExportCertificateInfo, included: number, sk
     "  [ ] Maksājuma apliecinājums par resertifikāciju (LĀB cenrādis: EUR 48,38;",
     "      rekvizīti: https://www.arstubiedriba.lv/sertifikacija/)",
     ...(languageFile ? [] : ["  [ ] Valsts valodas prasmes dokuments, ja tas nepieciešams (pirmajā resertifikācijā)"]),
+    // Reg. 391 point 47; see the parser's language note (lib/parse/language.ts)
+    ...(foreignTitles.length
+      ? [
+          `  [ ] Apliecināts tulkojums latviešu valodā ${foreignTitles.length} ${foreignTitles.length % 10 === 1 && foreignTitles.length % 100 !== 11 ? "dokumentam" : "dokumentiem"} svešvalodā, ja LĀB to prasa (47. punkts):`,
+          ...foreignTitles.map((t) => `      - ${t.slice(0, 90)}`),
+        ]
+      : []),
     "  [ ] Paraksts un datums abos dokumentos (vai droši elektroniski paraksts eParaksts)",
     "",
     `Iesniegšanas termiņš: ne vēlāk kā 3 mēnešus pirms sertifikāta derīguma beigām${by ? `, t.i. līdz ${formatDate(by, "lv")}` : ""}`,

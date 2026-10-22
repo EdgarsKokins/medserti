@@ -6,6 +6,7 @@ import { specialtyLabel } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import ExportView, { type ExportRow } from "@/components/export/ExportView";
+import { needsTranslation } from "@/lib/parse/language";
 import NurseExportView, { type NurseExportRow } from "@/components/export/NurseExportView";
 import { nurseTopicOf } from "@/lib/nurse";
 
@@ -37,6 +38,7 @@ export default async function ExportPage() {
       ...(points < (c.points ?? 0) ? { rawPoints: c.points ?? 0 } : {}),
       inSpecialty: c.inSpecialty,
       fileName: c.fileName,
+      ...(needsTranslation(c.language) ? { foreignLanguage: true } : {}),
     };
   });
   const parts = user.profile.fullName.trim().split(/\s+/);

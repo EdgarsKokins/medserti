@@ -1,9 +1,10 @@
+import type { AbroadKind } from "../abroad";
 import type { Check } from "../rules";
 import { RULES } from "../rule-constants";
 import type { CertStatus, CmeCategory, NurseTopic, Profession } from "../types";
 import type { CourseFormat, CourseKind, CourseSource } from "../courses/types";
 import type { ProgressChartLabels } from "@/components/dashboard/ProgressChart";
-import { capPct, enPl, fieldList, fmtList, fmtN, specialtyPct, type NoteP } from "./shared";
+import { capPct, enPl, fieldList, fmtList, fmtN, specialtyPct, langName, type NoteP } from "./shared";
 
 /* One UI dictionary per file, so a client bundle loads only the current language (components/i18n/DictProvider.tsx). */
 
@@ -568,6 +569,11 @@ export const en = {
     discardQuestion: "You have unsaved changes. Close without saving?",
     discard: "Close without saving",
     keepEditing: "Keep editing",
+    registryMatched: "Points from the LĀB register:",
+    registryPick: "Similar events in the LĀB register:",
+    registryUse: "Use",
+    registryUsed: "Used",
+    registryOpen: "Open in LĀB",
   },
   parseNotes: {
     pdfUnreadable: () => "Could not read text from this PDF. Enter the details manually.",
@@ -589,7 +595,9 @@ export const en = {
       `Points not printed; calculated as ${p.days} ${enPl(Number(p.days), "day", "days")} x 8 TIP for practical training (Annex 4 item 10).`,
     derivedInterdisciplinary: () => "Points not printed; an interdisciplinary conference of a certifying body counts 12 TIP (Annex 4 item 4 of Regulation No. 391).",
     derivedAbroad: (p: NoteP) =>
-      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h). Abroad, the organiser sets the points (Annex 4 item 3).`,
+      `Points not printed; estimated as 1 TIP per 45 minutes: ${fmtN(p.h)} ${p.academic ? "academic hours" : "h"} = ${fmtN(p.points)} TIP${p.days ? `, max 8 TIP a day (${p.days} ${enPl(Number(p.days), "day", "days")})` : ""}. Abroad, the organiser sets the points (Annex 4 item 3): this is an estimate, not an LĀB decision.`,
+    abroadRecalc: (p: NoteP) =>
+      `The organiser's points (${fmtN(p.points)}) count 1:1. Recalculated at 1 TIP per 45 minutes, this could be up to ${fmtN(p.max)} TIP: then attach a justified recalculation (Annex 4 footnote 1).`,
     derivedElearning: (p: NoteP) =>
       `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h), no daily cap for distance learning (Annex 4 items 7 and 9).`,
     derivedLatvia: (p: NoteP) =>
@@ -608,6 +616,16 @@ export const en = {
         : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
     lowConfidence: (p: NoteP) =>
       `Not sure we read these right: ${fieldList(p.fields, { title: "title", organizer: "organiser", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
+    masterClass: () =>
+      "This document confirms a master class you ran. Annex 4 of Regulation No. 391 has no item for master classes: the certification commission sets the points by analogy (point 51). The closest are item 22 (30 TIP per talk at an international event) and item 18 (10 TIP a year for teaching). Enter the points LĀB approves.",
+    foreignLanguage: (p: NoteP) =>
+      `This document is in ${langName(p.lang, { ru: "Russian", uk: "Ukrainian", lt: "Lithuanian", et: "Estonian", de: "German", pl: "Polish", fr: "French", it: "Italian", cs: "Czech" }, "a foreign language")}. LĀB may ask for a certified Latvian translation (Regulation No. 391, point 47).`,
+    tipRegistry: (p: NoteP) =>
+      `The certificate prints no points. We found this event in the LĀB register of approved events (${p.id}, ${fmtN(p.points)} TIP). Check it is your event, then confirm.`,
+    tipCandidates: (p: NoteP) =>
+      `The certificate prints no points. The LĀB register has ${p.n} similar ${enPl(Number(p.n), "event", "events")}: pick yours below. If the certificate covers several lectures, add up their points.`,
+    tipNoMatch: () =>
+      "The certificate prints no points, and we did not find this event in the LĀB register. Enter the points from the LĀB list of approved TIP events or ask the organiser.",
   },
   dashboard: {
     title: "Dashboard",
@@ -973,6 +991,31 @@ export const en = {
       lumpii: "LUMPII",
       lma: "Latvian Nurses Association",
     } as Record<CourseSource, string>,
+    abroad: {
+      title: "Course abroad: how many TIP?",
+      lead: "Check before you go. Abroad, the organiser sets the points and no LĀB approval is needed (Regulation No. 391, Annex 4 item 3).",
+      country: "Country",
+      kind: "Type",
+      kinds: { conference: "Congress or conference", course: "Course", live_surgery: "Live surgery", workshop: "Hands-on workshop" } as Record<AbroadKind, string>,
+      from: "From",
+      to: "To",
+      hours: "Programme hours",
+      hoursHint: "Hours you will attend (60 min)",
+      credits: "Credits",
+      creditsHint: "ECMEC, CME or ECTS, if the organiser states them",
+      estimate: "Estimate",
+      fromCredits: (n: string) => `${n} TIP: the organiser's credits, counted 1:1.`,
+      recalc: (n: string) => `Recalculated at 1 TIP per 45 minutes, this could be up to ${n} TIP: then attach a justified recalculation (Annex 4 footnote 1).`,
+      fromHours: (n: string) => `${n} TIP: programme hours, 1 TIP per 45 minutes.`,
+      capped: "Limited to 8 TIP a day.",
+      none: "Dates alone are not enough for an estimate. Ask the organiser for the programme with times, or the credits.",
+      latvia: "For events in Latvia, LĀB approves the points: look the event up in the list above.",
+      bring: "What to bring home:",
+      proofCertificate: "A certificate of attendance with hours or credits",
+      proofProgramme: "The programme with times, if the certificate shows no hours",
+      proofHandsOn: "For hands-on parts: proof of how many hours you took part",
+      note: "This is an estimate, not an LĀB decision. The certification commission counts the points.",
+    },
     disclaimer:
       "Collected automatically from public pages and may be incomplete. Check TIP and dates with the organiser. Contact persons' details are not stored.",
   },

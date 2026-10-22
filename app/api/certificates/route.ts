@@ -5,6 +5,8 @@ import { listCertificates, saveCertificate, unreadableNote } from "@/lib/db";
 import { putBytes, remove } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
+import { applyTipLookup } from "@/lib/parse/tipMatch";
+import { lookupTip } from "@/lib/tipRegistry";
 import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate, ParseNote } from "@/lib/types";
 import { stripMarks } from "@/lib/text";
@@ -41,6 +43,10 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: t(await getLocale()).api.notSignedIn }, { status: 401 });
   return NextResponse.json({ certificates: await listCertificates(user.id) });
 }
+
+/** The LĀB register lists events approved in Latvia; a master class abroad or a certificate with no title has nothing to find */
+const needsLookup = (r: Awaited<ReturnType<typeof parseCertificate>>) =>
+  r.fields.points == null && !!r.fields.title && (r.fields.country == null || r.fields.country === "LV") && r.fields.category !== "lecture_or_publication";
 
 const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable"]);
 
@@ -99,7 +105,16 @@ export async function POST(req: Request) {
   const fileHash = createHash("sha256").update(bytes).digest("hex");
   let done: CmeCertificate;
   try {
-    const [result, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText), listCertificates(user.id)]);
+    const [parsed, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText), listCertificates(user.id)]);
+    // no points printed on a Latvian event: look it up in the LĀB register (filled in for the user to confirm, never confirmed)
+    const result = applyTipLookup(parsed, needsLookup(parsed) ? await lookupTip({
+      title: parsed.fields.title,
+      organizer: parsed.fields.organizer,
+      date: parsed.fields.date,
+      endDate: parsed.fields.endDate,
+      dateConfidence: parsed.fields.fieldConfidence?.date ?? 0,
+      text: ocrText ?? "",
+    }) : null);
     // confirm without the user only when nothing is a guess (rules in lib/parse/confidence.ts)
     const blocks = autoConfirmBlocks({
       source: result.source,
@@ -118,6 +133,7 @@ export async function POST(req: Request) {
       autoConfirmed: auto,
       fileHash,
       duplicateOf: findDuplicate(all, result.fields, fileHash),
+      tipLookup: result.tipLookup,
       parseNotes: qualityReason ? withImageNote(result.notes, qualityReason) : result.notes,
     };
   } catch (err) {

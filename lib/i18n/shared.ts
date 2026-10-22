@@ -16,5 +16,8 @@ export const fmtList = (v: unknown) => String(v ?? "");
 /** "date,points" -> field names in the UI language */
 export const fieldList = (v: unknown, names: Record<string, string>) => String(v ?? "").split(",").filter(Boolean).map((f) => names[f] ?? f).join(", ");
 
+/** A document language code from the parser (lib/parse/language.ts) as a word in the UI language */
+export const langName = (code: unknown, names: Record<string, string>, fallback: string) => names[String(code)] ?? fallback;
+
 export const specialtyPct = RULES.specialtyShare * 100;
 export const capPct = RULES.practicalCapShare * 100;
