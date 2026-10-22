@@ -844,6 +844,7 @@ export const LABELS: Record<string, string> = {
   "exportDocs.certList": "Saite uz sertifikātu sarakstu",
   "exportDocs.downloadFiles": "Poga: lejupielādēt sertifikātu failus",
   "exportDocs.filesDone": "Pēc sertifikātu failu lejupielādes",
+  "exportDocs.buildFailed": "Ja ZIP failu neizdevās izveidot",
   "courses.sourceLabels.lab_tip": "Avots: LĀB TIP pasākumi",
   "courses.sourceLabels.lab_courses": "Avots: LĀB kursi",
   "courses.sourceLabels.lma": "Avots: Latvijas Māsu asociācija",

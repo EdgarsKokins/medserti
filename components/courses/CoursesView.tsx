@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/i18n";
+import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/locale";
 import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { applyEmail, courseStrings, type CourseStrings } from "./strings";
 import styles from "./courses.module.css";
-import { DateBlock } from "@/components/dashboard/Overview";
+import { DateBlock } from "@/components/dashboard/DateBlock";
 import { specialtyLabel } from "@/lib/specialties";
 
 /** What the list renders and filters on; the rest (CourseExtra) loads when a course is opened */

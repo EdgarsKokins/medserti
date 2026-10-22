@@ -8,6 +8,7 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
 import I18nOverrides from "@/components/I18nOverrides";
+import DictProvider from "@/components/i18n/DictProvider";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
 import { NURSE_RULES, REGISTER_URL, RULES } from "@/lib/rules";
@@ -69,67 +70,70 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <body>
         <I18nOverrides data={overrides}>
-          <nav className="nav">
-            <div className="nav-inner">
-              {/* the demo account's logo goes to the public homepage, which ends the demo */}
-              <Link href={signedIn && !demo ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
-                <span className="brand-seal" aria-hidden>M</span>
-                <span className="brand-name">{d.brand.name}</span>
-              </Link>
-              {/* logged-out visitors get no section links: "Par mums" lives on the landing page and in the footer */}
-              {signedIn && (
-                <NavLinks
-                  publicNav={false}
-                  links={[
-                    { href: "/dashboard", label: d.nav.dashboard },
-                    { href: "/certificates", label: d.nav.certificates },
-                    { href: "/courses", label: d.nav.courses },
-                    { href: "/profile", label: d.nav.profile },
-                  ]}
-                />
-              )}
-              <div className="nav-tools">
-                {signedIn ? (
-                  <form action="/api/auth/logout" method="post">
-                    <button className="btn" type="submit">{d.nav.logout}</button>
-                  </form>
-                ) : (
-                  <NavAuth login={d.nav.login} signup={d.nav.signup} />
+          {/* client components read their strings here; only this language's dictionary reaches the browser */}
+          <DictProvider locale={locale}>
+            <nav className="nav">
+              <div className="nav-inner">
+                {/* the demo account's logo goes to the public homepage, which ends the demo */}
+                <Link href={signedIn && !demo ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
+                  <span className="brand-seal" aria-hidden>M</span>
+                  <span className="brand-name">{d.brand.name}</span>
+                </Link>
+                {/* logged-out visitors get no section links: "Par mums" lives on the landing page and in the footer */}
+                {signedIn && (
+                  <NavLinks
+                    publicNav={false}
+                    links={[
+                      { href: "/dashboard", label: d.nav.dashboard },
+                      { href: "/certificates", label: d.nav.certificates },
+                      { href: "/courses", label: d.nav.courses },
+                      { href: "/profile", label: d.nav.profile },
+                    ]}
+                  />
                 )}
+                <div className="nav-tools">
+                  {signedIn ? (
+                    <form action="/api/auth/logout" method="post">
+                      <button className="btn" type="submit">{d.nav.logout}</button>
+                    </form>
+                  ) : (
+                    <NavAuth login={d.nav.login} signup={d.nav.signup} />
+                  )}
+                </div>
               </div>
-            </div>
-          </nav>
-          {demo && (
-            <div className="demo-banner" role="note">
-              <div className="demo-banner-inner">
-                <span>{d.demo.banner}</span>
-                <Link href="/register">{d.demo.bannerCta} →</Link>
+            </nav>
+            {demo && (
+              <div className="demo-banner" role="note">
+                <div className="demo-banner-inner">
+                  <span>{d.demo.banner}</span>
+                  <Link href="/register">{d.demo.bannerCta} →</Link>
+                </div>
               </div>
-            </div>
-          )}
-          <div className="page-body">{children}</div>
-          <AppFooter
-            locale={locale}
-            signedIn={signedIn}
-            note={note}
-            labels={{
-              brand: d.brand.name,
-              tagline: d.brand.tagline,
-              nav: d.landing.footerNav,
-              signup: d.nav.signup,
-              login: d.nav.login,
-              demo: d.demo.try,
-              about: d.nav.about,
-              rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules,
-              rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl,
-              privacy: d.legal.privacyLink,
-              terms: d.legal.termsLink,
-              contactLabel: d.landing.footerContact,
-              contactCta: d.contact.cta,
-              lang: d.lang.label,
-              base: nurse ? d.rules.planningAidNurse : d.rules.planningAid,
-            }}
-          />
+            )}
+            <div className="page-body">{children}</div>
+            <AppFooter
+              locale={locale}
+              signedIn={signedIn}
+              note={note}
+              labels={{
+                brand: d.brand.name,
+                tagline: d.brand.tagline,
+                nav: d.landing.footerNav,
+                signup: d.nav.signup,
+                login: d.nav.login,
+                demo: d.demo.try,
+                about: d.nav.about,
+                rules: nurse ? d.landing.footerRulesNurse : d.landing.footerRules,
+                rulesUrl: nurse ? NURSE_RULES.sourceUrl : RULES.sourceUrl,
+                privacy: d.legal.privacyLink,
+                terms: d.legal.termsLink,
+                contactLabel: d.landing.footerContact,
+                contactCta: d.contact.cta,
+                lang: d.lang.label,
+                base: nurse ? d.rules.planningAidNurse : d.rules.planningAid,
+              }}
+            />
+          </DictProvider>
         </I18nOverrides>
       </body>
     </html>

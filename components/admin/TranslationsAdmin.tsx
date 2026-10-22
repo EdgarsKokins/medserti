@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { checkValue, emptyOverrides, previewTemplate, type BlockId, type Cell, type Entry, type StoredOverrides } from "@/lib/i18n/catalog";
-import { LOCALES, type Locale } from "@/lib/i18n";
+import { LOCALES, type Locale } from "@/lib/locale";
 import s from "./admin.module.css";
 
 type Loc = Locale;

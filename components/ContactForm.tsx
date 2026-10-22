@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { EMAIL_MAX, MESSAGE_MAX, validEmail, validMessage } from "@/lib/validation";
 import s from "./contact.module.css";
 
 type Field = "email" | "message";
 
 export default function ContactForm({ locale }: { locale: Locale }) {
-  const d = t(locale);
+  const d = useDict();
   const c = d.contact;
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);

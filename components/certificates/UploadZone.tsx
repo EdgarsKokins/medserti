@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CmeCertificate } from "@/lib/types";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import {
   ACCEPT,
   getServerUploadSnapshot,
@@ -33,7 +34,7 @@ export default function UploadZone({
   onUploaded: (certs: CmeCertificate[], replay: boolean) => void;
   locale: Locale;
 }) {
-  const d = t(locale).upload;
+  const d = useDict().upload;
   const input = useRef<HTMLInputElement>(null);
   const camera = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);

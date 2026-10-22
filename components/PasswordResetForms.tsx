@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { PASSWORD_MAX, validPassword } from "@/lib/validation";
 import s from "./auth.module.css";
 
@@ -11,7 +12,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Brand header and card, same frame as the login page */
 function Frame({ locale, title, lead, children }: { locale: Locale; title: string; lead: string; children: React.ReactNode }) {
-  const d = t(locale);
+  const d = useDict();
   return (
     <main className={s.page}>
       <div className={s.brand}>
@@ -32,7 +33,7 @@ function Frame({ locale, title, lead, children }: { locale: Locale; title: strin
 }
 
 export function ForgotPasswordForm({ locale }: { locale: Locale }) {
-  const d = t(locale);
+  const d = useDict();
   const r = d.reset;
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +90,7 @@ export function ForgotPasswordForm({ locale }: { locale: Locale }) {
 
 export function ResetPasswordForm({ locale, token }: { locale: Locale; token: string | null }) {
   const router = useRouter();
-  const d = t(locale);
+  const d = useDict();
   const r = d.reset;
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import JSZip from "jszip";
-import { t, type Locale } from "@/lib/i18n";
-import { NURSE_RULES } from "@/lib/rules";
-import { buildNurseChecklist, buildReRegistration, toBlob, type NurseExportCertificate, type NursePerson } from "@/lib/export/docs";
-import { MAX, finalProblem, liveProblem, type Problem } from "@/lib/export/validate";
-import { addCertificateFiles, saveBlob, slug } from "./zip";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
+import { NURSE_RULES } from "@/lib/rule-constants";
+import type { NurseExportCertificate, NursePerson } from "@/lib/export/docs";
+import { MAX } from "@/lib/export/validate";
+import { useExportForm, type FieldSpec } from "./useExportForm";
+import { addCertificateFiles, slug } from "./zip";
 import s from "./export.module.css";
 
 export type NurseExportRow = NurseExportCertificate & { id: string; fileName: string };
 
 type TextKey = "firstName" | "lastName" | "practitionerId" | "address" | "phone" | "email";
-const SPEC: Record<TextKey, { kind: "name" | "practitionerId" | "phone" | "email" | "text"; required: boolean; max: number }> = {
+const SPEC: Record<TextKey, FieldSpec> = {
   firstName: { kind: "name", required: true, max: MAX.name },
   lastName: { kind: "name", required: true, max: MAX.name },
   practitionerId: { kind: "practitionerId", required: false, max: MAX.practitionerId },
@@ -42,117 +42,42 @@ export default function NurseExportView({
   profession: string;
   prefill: { firstName: string; lastName: string; email: string; practitionerId: string };
 }) {
-  const d = t(locale).exportDocs;
-  const [f, setF] = useState<NursePerson>({
-    firstName: prefill.firstName.slice(0, MAX.name),
-    lastName: prefill.lastName.slice(0, MAX.name),
-    email: prefill.email.slice(0, MAX.email),
-    practitionerId: prefill.practitionerId.slice(0, MAX.practitionerId),
-    address: "",
-    phone: "",
-    notifyBy: "email",
+  const d = useDict().exportDocs;
+  const { f, set, errors, formError, checkFields, report, textField, state, files, build, downloadFiles } = useExportForm({
+    spec: SPEC,
+    rows,
+    d,
+    initial: (): NursePerson => ({
+      firstName: prefill.firstName.slice(0, MAX.name),
+      lastName: prefill.lastName.slice(0, MAX.name),
+      email: prefill.email.slice(0, MAX.email),
+      practitionerId: prefill.practitionerId.slice(0, MAX.practitionerId),
+      address: "",
+      phone: "",
+      notifyBy: "email",
+    }),
   });
-  const [errors, setErrors] = useState<Record<string, Problem>>({});
-  const [formError, setFormError] = useState(false);
-  const [files, setFiles] = useState<{ busy: boolean; done: number; msg: string | null; warn: boolean }>({ busy: false, done: 0, msg: null, warn: false });
-  const [state, setState] = useState<{ busy: boolean; done: number; total: number; msg: string | null; warn: boolean }>({
-    busy: false,
-    done: 0,
-    total: 0,
-    msg: null,
-    warn: false,
-  });
-  const set = <K extends keyof NursePerson>(k: K, v: NursePerson[K]) => {
-    setF((prev) => ({ ...prev, [k]: v }));
-    const spec = SPEC[k as TextKey];
-    const p = spec && spec.kind !== "email" && spec.kind !== "text" ? liveProblem(spec.kind, String(v)) : null;
-    setErrors((e) => {
-      const n = { ...e };
-      if (p) n[k] = p;
-      else delete n[k];
-      return n;
-    });
-  };
 
   async function download(ev: React.FormEvent) {
     ev.preventDefault();
-    const e: Record<string, Problem> = {};
-    for (const k of Object.keys(SPEC) as TextKey[]) {
-      const p = finalProblem(SPEC[k].kind, f[k], SPEC[k].required, SPEC[k].max);
-      if (p) e[k] = p;
-    }
-    setErrors(e);
-    setFormError(Object.keys(e).length > 0);
-    if (Object.keys(e).length) {
-      document.getElementById(Object.keys(e)[0])?.focus();
-      return;
-    }
-    setState({ busy: true, done: 0, total: rows.length, msg: null, warn: false });
-    const zip = new JSZip();
+    if (!report(checkFields())) return;
     const folder = `Medserti_parregistracija_${slug(f.lastName)}`;
-    zip.file(`${folder}/1_Iesniegums_parregistracijai.docx`, await toBlob(buildReRegistration(f, profession, rows)));
-    zip.file(
-      `${folder}/Pirms_iesniegsanas.txt`,
-      buildNurseChecklist(rows, registrationUntil, unconfirmed, {
-        total: NURSE_RULES.points,
-        emergency: NURSE_RULES.emergencyMinHours,
-        infection_control: NURSE_RULES.infectionControlMinHours,
-        patient_safety: NURSE_RULES.patientSafetyMinHours,
-        nursing: NURSE_RULES.nursingMinHours,
-        from: NURSE_RULES.emergencyFrom,
-      }),
-    );
-    const failed = await addCertificateFiles(zip, `${folder}/2_Sertifikati`, rows, (done) => setState((st) => ({ ...st, done })));
-    saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
-    setState({ busy: false, done: rows.length, total: rows.length, msg: failed ? d.failed : d.done, warn: failed > 0 });
+    await build(folder, async (zip, docs, onProgress) => {
+      zip.file(`${folder}/1_Iesniegums_parregistracijai.docx`, await docs.toBlob(docs.buildReRegistration(f, profession, rows)));
+      zip.file(
+        `${folder}/Pirms_iesniegsanas.txt`,
+        docs.buildNurseChecklist(rows, registrationUntil, unconfirmed, {
+          total: NURSE_RULES.points,
+          emergency: NURSE_RULES.emergencyMinHours,
+          infection_control: NURSE_RULES.infectionControlMinHours,
+          patient_safety: NURSE_RULES.patientSafetyMinHours,
+          nursing: NURSE_RULES.nursingMinHours,
+          from: NURSE_RULES.emergencyFrom,
+        }),
+      );
+      return addCertificateFiles(zip, `${folder}/2_Sertifikati`, rows, onProgress);
+    });
   }
-
-  async function downloadFiles() {
-    setFiles({ busy: true, done: 0, msg: null, warn: false });
-    const zip = new JSZip();
-    const failed = await addCertificateFiles(zip, "Medserti_sertifikati", rows, (done) => setFiles((st) => ({ ...st, done })));
-    saveBlob(await zip.generateAsync({ type: "blob" }), "Medserti_sertifikati.zip");
-    setFiles({ busy: false, done: rows.length, msg: failed ? d.failed : d.filesDone, warn: failed > 0 });
-  }
-
-  const message = (p: Problem) =>
-    ({
-      required: d.required,
-      letters: d.errLetters,
-      digits: d.errDigits,
-      personalCode: d.errPersonalCode,
-      practitionerId: d.errPractitionerId,
-      phone: d.errPhone,
-      email: d.errEmail,
-      tooLong: d.errTooLong,
-    })[p];
-
-  const input = (k: TextKey, label: string, placeholder: string, extra: { hint?: string; auto?: string; mode?: "numeric" | "tel" | "email" } = {}) => (
-    <div className="field">
-      <label htmlFor={k}>
-        {label}
-        {SPEC[k].required && <span className={s.req} aria-hidden="true"> *</span>}
-      </label>
-      <input
-        id={k}
-        value={f[k]}
-        onChange={(e) => set(k, e.target.value)}
-        placeholder={placeholder}
-        maxLength={SPEC[k].max}
-        required={SPEC[k].required}
-        autoComplete={extra.auto ?? "off"}
-        inputMode={extra.mode}
-        aria-invalid={!!errors[k] || undefined}
-        aria-describedby={errors[k] ? `${k}-err` : undefined}
-      />
-      {extra.hint && <span className="small muted">{extra.hint}</span>}
-      {errors[k] && (
-        <span id={`${k}-err`} className={s.err} role="alert">
-          {message(errors[k])}
-        </span>
-      )}
-    </div>
-  );
 
   if (!registrationUntil) {
     return (
@@ -210,12 +135,12 @@ export default function NurseExportView({
         <fieldset className={s.group}>
           <legend>{d.you}</legend>
           <div className="form-grid">
-            {input("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
-            {input("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
-            {input("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
-            {input("address", d.nurseAddress, d.phAddress, { auto: "street-address" })}
-            {input("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
-            {input("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
+            {textField("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
+            {textField("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
+            {textField("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
+            {textField("address", d.nurseAddress, d.phAddress, { auto: "street-address" })}
+            {textField("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
+            {textField("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
           </div>
           <div className={s.radios} role="radiogroup" aria-label={d.notifyBy}>
             <span className="small muted">{d.notifyBy}:</span>
