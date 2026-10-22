@@ -4,6 +4,8 @@ import type { Worker as OcrWorker } from "tesseract.js";
 import type { CmeCertificate } from "@/lib/types";
 import type { Dict } from "@/lib/i18n";
 import { ocrPdfIfScanned } from "./pdfOcr";
+import { checkImageFile, checkRenderedPage } from "./imageCheck";
+import { ocrUnreadable, type QualityIssue } from "@/lib/parse/imageQuality";
 
 /**
  * Upload queue that lives outside any page: it keeps running when the user moves from the dashboard to /certificates
@@ -16,7 +18,8 @@ const MAX_IMAGE_INPUT_BYTES = 30 * 1024 * 1024;
 const OK_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 export const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
 
-export type UploadState = "queued" | "reading" | "uploading" | "done" | "failed";
+/** "check": the photo may be blurry, dark or too small; waiting for the user to upload anyway or choose another */
+export type UploadState = "queued" | "check" | "reading" | "uploading" | "done" | "failed";
 export interface UploadItem {
   key: string;
   name: string;
@@ -24,6 +27,8 @@ export interface UploadItem {
   message: string | null;
   /** OCR progress 0-100 while reading an image */
   progress?: number;
+  /** what the blurry-photo check found ("check" state) */
+  issues?: QualityIssue[];
 }
 
 export interface UploadSnapshot {
@@ -61,6 +66,25 @@ export function onCertificatesStored(l: (certs: CmeCertificate[]) => void) {
   return () => void storedListeners.delete(l);
 }
 
+// ---- blurry-photo check: a file that fails waits here for the user's choice; never a hard block ----
+type Choice = "upload" | "another";
+const waiting = new Map<string, (c: Choice) => void>();
+/** The user's answer to the "photo may be blurry" callout of one file ("another" drops it; the area opens the picker) */
+export function decideQuality(key: string, choice: Choice) {
+  const resolve = waiting.get(key);
+  if (!resolve) return;
+  waiting.delete(key);
+  resolve(choice);
+}
+function askQuality(key: string, issues: QualityIssue[]): Promise<Choice> {
+  update(key, { state: "check", issues, progress: undefined });
+  return new Promise((resolve) => waiting.set(key, resolve));
+}
+const dropItem = (key: string) => emit({ items: snap.items.filter((it) => it.key !== key) });
+
+/** files picked while a batch runs ("Izvēlēties citu" mid-batch): uploaded right after it */
+let pending: File[] = [];
+
 const isImage = (f: File) => f.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(f.name);
 
 /** Downscale a photo to max 2400px on the long side as JPEG, so it fits the upload limit */
@@ -81,7 +105,11 @@ async function shrinkImage(file: File): Promise<File> {
 
 /** Start uploading; ignored while a batch is running (the pickers are disabled then) */
 export async function startUpload(files: File[], d: Dict["upload"]) {
-  if (!files.length || snap.busy) return;
+  if (!files.length) return;
+  if (snap.busy) {
+    pending.push(...files);
+    return;
+  }
   const stamp = Date.now();
   const batch = files.map((f, i) => ({
     file: f,
@@ -115,26 +143,65 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       continue;
     }
     let ocrText = "";
+    let ocrConfidence: number | null = null;
+    // what the user uploaded despite the blurry-photo check; the server notes it on the certificate
+    let flagged: QualityIssue[] = [];
+    let skip = false;
     const isPdf = !isImage(file) && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
     if (isPdf) {
-      // scanned PDFs have no usable text layer: read them like photos
+      // scanned PDFs have no usable text layer: read them like photos, after the same check on page 1
       currentKey = item.key;
       try {
-        ocrText = await ocrPdfIfScanned(file, getWorker, () => update(item.key, { state: "reading", progress: 0 }));
+        const r = await ocrPdfIfScanned(
+          file,
+          getWorker,
+          () => update(item.key, { state: "reading", progress: 0 }),
+          async (page) => {
+            const issues = checkRenderedPage(page);
+            if (!issues.length) return true;
+            if ((await askQuality(item.key, issues)) === "another") return false;
+            flagged = issues;
+            update(item.key, { state: "reading", progress: 0, issues: undefined });
+            return true;
+          },
+        );
+        if (r && !r.completed) skip = true;
+        else if (r) {
+          ocrText = r.text;
+          ocrConfidence = r.confidence;
+        }
       } catch (err) {
         console.error("PDF OCR failed", err); // upload anyway; the server reads the text layer or asks for manual entry
       }
       currentKey = "";
     } else if (isImage(file)) {
-      update(item.key, { state: "reading", progress: 0 });
-      currentKey = item.key;
-      try {
-        const w = await getWorker();
-        ocrText = (await w.recognize(file)).data.text;
-      } catch (err) {
-        console.error("OCR failed", err); // upload anyway; the user enters the details
+      const issues = await checkImageFile(file);
+      if (issues.length) {
+        if ((await askQuality(item.key, issues)) === "another") skip = true;
+        else flagged = issues;
       }
-      currentKey = "";
+      if (!skip) {
+        update(item.key, { state: "reading", progress: 0, issues: undefined });
+        currentKey = item.key;
+        try {
+          const w = await getWorker();
+          const { data } = await w.recognize(file);
+          ocrText = data.text;
+          ocrConfidence = data.confidence;
+        } catch (err) {
+          console.error("OCR failed", err); // upload anyway; the user enters the details
+        }
+        currentKey = "";
+      }
+    }
+    // after OCR: almost nothing read, or read with low confidence, means the photo was likely unreadable
+    if (!skip && !flagged.length && ocrConfidence != null && ocrUnreadable(ocrConfidence, ocrText)) {
+      if ((await askQuality(item.key, ["unreadable"])) === "another") skip = true;
+      else flagged = ["unreadable"];
+    }
+    if (skip) {
+      dropItem(item.key);
+      continue;
     }
     update(item.key, { state: "uploading", progress: undefined });
     try {
@@ -146,6 +213,7 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       const body = new FormData();
       body.append("files", upload);
       if (ocrText) body.append("ocrText", ocrText);
+      if (flagged.length) body.append("imageQuality", flagged.join(","));
       const res = await fetch("/api/certificates", { method: "POST", body });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -163,4 +231,10 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
   }
   if (worker) await (worker as OcrWorker).terminate().catch(() => {});
   emit({ busy: false });
+  // files the user picked meanwhile (a retaken photo): start them now
+  if (pending.length) {
+    const next = pending;
+    pending = [];
+    void startUpload(next, d);
+  }
 }

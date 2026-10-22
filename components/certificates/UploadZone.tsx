@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import {
   ACCEPT,
+  decideQuality,
   getServerUploadSnapshot,
   getUploadSnapshot,
   onCertificatesStored,
@@ -17,6 +18,7 @@ import styles from "./certificates.module.css";
 
 const STATE_CLASS: Record<UploadState, string> = {
   queued: "badge",
+  check: "badge badge-warn",
   reading: "badge",
   uploading: "badge",
   done: "badge badge-ok",
@@ -53,9 +55,13 @@ export default function UploadZone({
     return onCertificatesStored((certs) => uploaded.current(certs, false));
   }, []);
 
-  function handle(fileList: FileList | null) {
-    if (!fileList?.length || busy) return;
-    setExpanded(false);
+  // which picker the last files came from: "Izvēlēties citu" reopens the same one (the camera for a photo just taken)
+  const lastSource = useRef<"file" | "camera">("file");
+  function handle(fileList: FileList | null, source: "file" | "camera" = "file") {
+    // while a batch runs, new files queue behind it (a retaken photo)
+    if (!fileList?.length) return;
+    lastSource.current = source;
+    if (!busy) setExpanded(false);
     startUpload(Array.from(fileList), d);
     if (input.current) input.current.value = "";
     if (camera.current) camera.current.value = "";
@@ -64,8 +70,10 @@ export default function UploadZone({
   const finished = items.filter((it) => it.state === "done" || it.state === "failed").length;
   const failed = items.filter((it) => it.state === "failed").length;
   const grouped = items.length >= GROUP_FROM;
-  // collapsed, the list still shows what needs the user: failed files
-  const listed = grouped && !expanded ? items.filter((it) => it.state === "failed") : items;
+  // collapsed, the list still shows what needs the user: failed files and photos to check
+  const listed = grouped && !expanded ? items.filter((it) => it.state === "failed" || it.state === "check") : items;
+  const qualityTitle = (issues: string[]) =>
+    issues.includes("small") ? d.qualitySmall : issues.includes("dark") ? d.qualityDark : issues.includes("bright") ? d.qualityBright : d.qualityBlurry;
 
   return (
     <div className={styles.upload}>
@@ -117,7 +125,7 @@ export default function UploadZone({
         </svg>
         {d.takePhoto}
       </button>
-      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => handle(e.target.files)} />
+      <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => handle(e.target.files, "camera")} />
       {grouped && (
         <div className={styles.batch} role="status">
           <span className={styles.batchText}>
@@ -144,6 +152,32 @@ export default function UploadZone({
                   {it.state === "reading" && it.progress ? ` ${it.progress}%` : ""}
                 </span>
               </span>
+              {it.state === "check" && it.issues && (
+                <div className={styles.quality} role="alert">
+                  <strong className={styles.qualityTitle}>{qualityTitle(it.issues)}</strong>
+                  <ul className={styles.qualityTips}>
+                    <li>{d.qualityTip1}</li>
+                    <li>{d.qualityTip2}</li>
+                    <li>{d.qualityTip3}</li>
+                  </ul>
+                  <div className={styles.qualityActions}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => {
+                        decideQuality(it.key, "another");
+                        // opened from the click itself: browsers only allow a picker on a user gesture
+                        (lastSource.current === "camera" ? camera : input).current?.click();
+                      }}
+                    >
+                      {d.chooseAnother}
+                    </button>
+                    <button type="button" className="btn" onClick={() => decideQuality(it.key, "upload")}>
+                      {d.uploadAnyway}
+                    </button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
