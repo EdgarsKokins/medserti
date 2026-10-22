@@ -29,7 +29,8 @@ export default function UploadZone({
   onUploaded,
   locale,
 }: {
-  onUploaded: (certs: CmeCertificate[]) => void;
+  /** replay: the queue's copies from before this page mounted, older than the page's own list */
+  onUploaded: (certs: CmeCertificate[], replay: boolean) => void;
   locale: Locale;
 }) {
   const d = t(locale).upload;
@@ -47,8 +48,8 @@ export default function UploadZone({
   useEffect(() => {
     // certificates stored before this page mounted (upload started elsewhere), then each new one as it lands
     const before = getUploadSnapshot().stored;
-    if (before.length) uploaded.current(before);
-    return onCertificatesStored((certs) => uploaded.current(certs));
+    if (before.length) uploaded.current(before, true);
+    return onCertificatesStored((certs) => uploaded.current(certs, false));
   }, []);
 
   function handle(fileList: FileList | null) {

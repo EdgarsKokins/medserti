@@ -6,10 +6,13 @@ import { useRouter } from "next/navigation";
 import type { CmeCertificate } from "@/lib/types";
 import { inHours, t, type Locale } from "@/lib/i18n";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
+import { exclusionReason, type ExclusionReason } from "@/lib/rules";
 import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
+import { mergeStored } from "./merge";
+import { forgetStored } from "./uploadStore";
 import styles from "./certificates.module.css";
 
 /** how long "Apstiprināts · Atsaukt" stays after an in-row confirm */
@@ -48,10 +51,22 @@ export default function CertificatesView({
   const open = certs.find((c) => c.id === openId) ?? null;
 
   const waiting = useMemo(() => certs.filter((c) => c.status !== "confirmed").length, [certs]);
+  // why each certificate is left out of the progress, by the same rule computeProgress applies on the dashboard
+  const reasons = useMemo(() => {
+    const ids = new Set(certs.map((c) => c.id));
+    return new Map(certs.map((c) => [c.id, exclusionReason(c, ids, cycle)] as const));
+  }, [certs, cycle]);
   const confirmedPoints = useMemo(
-    () => certs.filter((c) => c.status === "confirmed").reduce((s, c) => s + (c.points ?? 0), 0),
-    [certs],
+    () => certs.filter((c) => c.status === "confirmed" && !reasons.get(c.id)).reduce((s, c) => s + (c.points ?? 0), 0),
+    [certs, reasons],
   );
+  const [infoId, setInfoId] = useState<string | null>(null);
+  const reasonText = (r: ExclusionReason) =>
+    r === "beforeWindow"
+      ? (nurse ? d.reasons.beforeWindowNurse : d.reasons.beforeWindow)(formatDate(cycle.start!, locale))
+      : r === "afterWindow"
+        ? d.reasons.afterWindow(formatDate(cycle.end!, locale))
+        : d.reasons[r];
 
   // in-row "Apstiprināt": confirm without the panel, with a few seconds to undo; the server checks again
   const [undo, setUndo] = useState<string | null>(null);
@@ -87,9 +102,9 @@ export default function CertificatesView({
   }
 
   const onUploaded = useCallback(
-    (added: CmeCertificate[]) => {
-      setCerts((prev) => sortCerts([...added, ...prev.filter((p) => !added.some((a) => a.id === p.id))]));
-      router.refresh();
+    (added: CmeCertificate[], replay: boolean) => {
+      setCerts((prev) => sortCerts(mergeStored(prev, added, replay ? "replay" : "live")));
+      if (!replay) router.refresh();
     },
     [router],
   );
@@ -123,6 +138,7 @@ export default function CertificatesView({
   }
 
   function removed(id: string) {
+    forgetStored(id);
     setCerts((prev) => prev.filter((p) => p.id !== id));
     setOpenId(null);
     router.refresh();
@@ -131,6 +147,13 @@ export default function CertificatesView({
   const row = (c: CmeCertificate) => {
     const attention = c.status !== "confirmed";
     const org = c.organizer ? displayOrganizer(c.organizer) : "";
+    const reason = reasons.get(c.id) ?? null;
+    // the rules leave it out although it may be confirmed: say so in the row, with the reason one click away.
+    // Missing data, a failed read and "still reading" keep their own status, which already says what to do.
+    const outside = reason === "beforeWindow" || reason === "afterWindow";
+    const duplicate = reason === "duplicate" || (!!c.duplicateOf && c.status !== "confirmed");
+    const explain = outside || reason === "duplicate" ? reason : null;
+    const infoOpen = infoId === c.id && !!explain;
     return (
       <li
         key={c.id}
@@ -157,13 +180,28 @@ export default function CertificatesView({
           {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>{nurse ? dict.dashboard.hoursUnit : "TIP"}</span></>}
         </span>
         <span className={styles.status}>
-          <span className={c.duplicateOf && c.status !== "confirmed" ? "badge badge-bad" : STATUS_CLASS[c.status]}>
-            {c.duplicateOf && c.status !== "confirmed"
-              ? dict.review.duplicate
-              : c.status === "confirmed" && c.autoConfirmed
-                ? dict.review.autoConfirmed
-                : dict.status[c.status]}
+          <span className={outside || duplicate ? "badge badge-bad" : STATUS_CLASS[c.status]}>
+            {outside
+              ? d.notCounted
+              : duplicate
+                ? dict.review.duplicate
+                : c.status === "confirmed" && c.autoConfirmed
+                  ? dict.review.autoConfirmed
+                  : dict.status[c.status]}
           </span>
+          {explain && (
+            <button
+              type="button"
+              className={styles.infoBtn}
+              aria-expanded={infoOpen}
+              aria-controls={`why-${c.id}`}
+              aria-label={d.whyNotCounted}
+              title={d.whyNotCounted}
+              onClick={() => setInfoId(infoOpen ? null : c.id)}
+            >
+              i
+            </button>
+          )}
           {undo === c.id && c.status === "confirmed" && (
             <>
               <span className="muted" aria-hidden> · </span>
@@ -196,6 +234,11 @@ export default function CertificatesView({
             </button>
           )}
         </span>
+        {infoOpen && (
+          <p id={`why-${c.id}`} className={`alert small ${styles.reason}`} role="note">
+            {reasonText(explain)}
+          </p>
+        )}
       </li>
     );
   };
@@ -255,6 +298,8 @@ export default function CertificatesView({
           onDeleted={removed}
           readOnly={readOnly}
           nurse={nurse}
+          cycle={cycle}
+          today={today}
         />
       )}
     </>

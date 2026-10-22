@@ -112,7 +112,32 @@ function shiftYears(iso: string, years: number) {
   return `${Number(iso.slice(0, 4)) + years}${iso.slice(4)}`;
 }
 
+/**
+ * kursiarstiem.lv course page: the shop's buy button carries the price,
+ * `<span class="amount">45.00&euro;</span> - Nopirkt šo kursu`. No button, no price: we show none rather than guess.
+ */
+export function parseKursiarstiemPrice(html: string): Pick<Course, "price" | "free"> {
+  const m = /class="amount"[^>]*>\s*(?:<[^>]+>\s*)*([\d\s.,]+?)\s*(?:&euro;|€|EUR)/i.exec(html);
+  const n = m ? Number(m[1].replace(/\s/g, "").replace(",", ".")) : NaN;
+  if (!Number.isFinite(n)) return { price: null, free: false };
+  if (n === 0) return { price: "Bez maksas", free: true };
+  return { price: `EUR ${n.toFixed(2).replace(".", ",")}`, free: false };
+}
+
+/** The feed has no prices: read each course page, one at a time. A page that fails keeps the course without a price. */
+async function withKursiarstiemPrices(courses: Course[]): Promise<Course[]> {
+  for (const c of courses) {
+    try {
+      Object.assign(c, parseKursiarstiemPrice(await fetchText(c.url, 10_000)));
+    } catch {
+      // no price shown; the course stays listed
+    }
+    await sleep(250);
+  }
+  return courses;
+}
+
 export async function fetchRss(source: Extract<CourseSource, "kursiarstiem" | "medicinaskursi">): Promise<Course[]> {
-  if (source === "kursiarstiem") return toKursiarstiem(await fetchFeed("kursiarstiem.lv", 3));
+  if (source === "kursiarstiem") return withKursiarstiemPrices(toKursiarstiem(await fetchFeed("kursiarstiem.lv", 3)));
   return toMedicinaskursi(await fetchFeed("medicinaskursi.lv", 5));
 }

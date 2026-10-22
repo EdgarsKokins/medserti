@@ -58,6 +58,7 @@ export function RecentActivity({ p, locale }: { p: Progress; locale: Locale }) {
   const reasons = [
     ex.outsideWindow && d.outsideWindow(ex.outsideWindow),
     ex.missingData && d.missingData(ex.missingData),
+    ex.duplicates && d.duplicates(ex.duplicates),
     ex.failed && d.failed(ex.failed),
     ex.processing && d.processing(ex.processing),
   ].filter(Boolean);

@@ -77,7 +77,15 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
   const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
   for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? [])]) {
     const key = titleKey(c.title);
-    if (seen.has(key)) continue;
+    if (seen.has(key)) {
+      // the same course on LĀB's TIP list: keep that row, but take the price the shop publishes
+      const row = index.get(key);
+      if (row && !row.price && c.price) {
+        row.price = c.price;
+        row.free = c.free;
+      }
+      continue;
+    }
     seen.add(key);
     extra.push(c);
   }

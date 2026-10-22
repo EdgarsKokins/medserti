@@ -6,6 +6,7 @@ import { needsApprovalCheck, NURSE_TOPICS, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
 import { inHours, t, type Locale } from "@/lib/i18n";
 import { COUNTRY_CODES, countryCode, countryName, formatDate, parseNoteLines, STATUS_CLASS } from "./format";
+import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
 import styles from "./certificates.module.css";
 
 type Editable = Pick<
@@ -45,6 +46,15 @@ const pick = (c: CmeCertificate, nurse: boolean): Editable => ({
 
 const toNum = (v: string) => (v.trim() === "" ? null : Number(v));
 
+const FIELD_IDS: Record<CheckedField, string> = {
+  title: "c-title",
+  date: "c-date",
+  endDate: "c-end",
+  points: "c-points",
+  academicHours: "c-hours",
+  practicalHours: "c-prac",
+};
+
 export default function ReviewPanel({
   cert,
   specialty,
@@ -54,6 +64,8 @@ export default function ReviewPanel({
   onDeleted,
   readOnly = false,
   nurse = false,
+  cycle,
+  today,
 }: {
   cert: CmeCertificate;
   specialty: string;
@@ -64,6 +76,10 @@ export default function ReviewPanel({
   readOnly?: boolean;
   /** nurses: a Reg. 630 topic instead of the specialty and emergency checkboxes, hours instead of TIP */
   nurse?: boolean;
+  /** the user's certificate window (lib/rules certificateWindow), for the warning under the date */
+  cycle: { start: string | null; end: string | null };
+  /** YYYY-MM-DD in Latvia: no date after it */
+  today: string;
 }) {
   const dict = nurse ? inHours(t(locale)) : t(locale);
   const d = dict.review;
@@ -74,10 +90,17 @@ export default function ReviewPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ask, setAsk] = useState<"discard" | "delete" | "duplicate" | null>(null);
+  // the field the server rejected, with its message, until the user changes it
+  const [serverField, setServerField] = useState<{ field: string; message: string } | null>(null);
   const set = <K extends keyof Editable>(k: K, v: Editable[K]) => {
     setAsk(null);
+    if (serverField?.field === k) setServerField(null);
     setF((prev) => ({ ...prev, [k]: v }));
   };
+  const errors = fieldErrors(f, today);
+  const blocking = (status: "confirmed" | "needs_review") =>
+    CHECKED_FIELDS.filter((k) => errors[k] && (status === "confirmed" || !MISSING.has(errors[k]!)));
+  const notice = dateNotice(f.date, cycle, today);
   const dirty = JSON.stringify(f) !== JSON.stringify(initial);
 
   // Native modal: focus trap, inert page and Escape come with showModal(). We add the scroll lock and focus return.
@@ -102,9 +125,15 @@ export default function ReviewPanel({
   }
 
   async function save(status: "confirmed" | "needs_review") {
-    setBusy(true);
     setError(null);
     setAsk(null);
+    const bad = blocking(status);
+    if (bad.length) {
+      setError(d.invalidSummary(bad.length));
+      document.getElementById(FIELD_IDS[bad[0]])?.focus();
+      return;
+    }
+    setBusy(true);
     const res = await fetch(`/api/certificates/${cert.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -113,7 +142,10 @@ export default function ReviewPanel({
     });
     const body = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) return setError(body.error ?? d.saveError);
+    if (!res.ok) {
+      if (typeof body.field === "string" && body.error) setServerField({ field: body.field, message: body.error });
+      return setError(body.error ?? d.saveError);
+    }
     onSaved(body.certificate);
   }
 
@@ -140,6 +172,23 @@ export default function ReviewPanel({
   // the parser was unsure of this value and the user has not changed it yet
   const check = (k: ConfidenceField) =>
     isUnsure(cert, k) && f[k] === initial[k] ? <span className={`badge badge-warn ${styles.checkMark}`}>{d.checkField}</span> : null;
+  // red frame and one line under a field that is wrong or missing, so the user sees what blocks a confirm
+  const invalid = (k: CheckedField) => {
+    if (readOnly) return null;
+    if (serverField?.field === k) return serverField.message;
+    const e = errors[k];
+    return e ? d.errors[e] : null;
+  };
+  const fieldProps = (k: CheckedField) => {
+    const msg = invalid(k);
+    return msg
+      ? { "aria-invalid": true as const, "aria-describedby": `${FIELD_IDS[k]}-err`, className: styles.invalid }
+      : {};
+  };
+  const fieldError = (k: CheckedField) => {
+    const msg = invalid(k);
+    return msg ? <span id={`${FIELD_IDS[k]}-err`} className={styles.fieldError}>{msg}</span> : null;
+  };
 
   return (
     <dialog
@@ -210,7 +259,8 @@ export default function ReviewPanel({
         <div className={`form-grid ${styles.panelBody}`}>
           <div className={`field ${styles.wide}`}>
             <label htmlFor="c-title">{d.fTitle}{check("title")}</label>
-            <input id="c-title" value={f.title} onChange={(e) => set("title", e.target.value)} />
+            <input id="c-title" value={f.title} maxLength={300} onChange={(e) => set("title", e.target.value)} {...fieldProps("title")} />
+            {fieldError("title")}
           </div>
           <div className="field">
             <label htmlFor="c-org">{d.fOrganizer}{check("organizer")}</label>
@@ -226,19 +276,32 @@ export default function ReviewPanel({
           </div>
           <div className="field">
             <label htmlFor="c-date">{d.fDate}{check("date")}</label>
-            <input id="c-date" type="date" value={f.date ?? ""} onChange={(e) => set("date", e.target.value || null)} />
+            <input id="c-date" type="date" max={today} value={f.date ?? ""} onChange={(e) => set("date", e.target.value || null)} {...fieldProps("date")} />
+            {fieldError("date")}
+            {notice && (
+              <p className={`alert small ${styles.dateNote}`} role="note">
+                {notice.kind === "older5"
+                  ? nurse ? d.older5Nurse : d.older5
+                  : notice.kind === "beforePeriod"
+                    ? d.beforePeriod(formatDate(notice.date, locale))
+                    : d.afterPeriod(formatDate(notice.date, locale))}
+              </p>
+            )}
           </div>
           <div className="field">
             <label htmlFor="c-end">{d.fEndDate}</label>
-            <input id="c-end" type="date" value={f.endDate ?? ""} onChange={(e) => set("endDate", e.target.value || null)} />
+            <input id="c-end" type="date" min={f.date ?? undefined} max={today} value={f.endDate ?? ""} onChange={(e) => set("endDate", e.target.value || null)} {...fieldProps("endDate")} />
+            {fieldError("endDate")}
           </div>
           <div className="field">
             <label htmlFor="c-points">{d.fPoints}{check("points")}</label>
-            <input id="c-points" type="number" min={0} step="0.5" value={f.points ?? ""} onChange={(e) => set("points", toNum(e.target.value))} />
+            <input id="c-points" type="number" min={0} max={1000} step="0.5" value={f.points ?? ""} onChange={(e) => set("points", toNum(e.target.value))} {...fieldProps("points")} />
+            {fieldError("points")}
           </div>
           <div className="field">
             <label htmlFor="c-hours">{d.fHours}</label>
-            <input id="c-hours" type="number" min={0} step="0.5" value={f.academicHours ?? ""} onChange={(e) => set("academicHours", toNum(e.target.value))} />
+            <input id="c-hours" type="number" min={0} max={1000} step="0.5" value={f.academicHours ?? ""} onChange={(e) => set("academicHours", toNum(e.target.value))} {...fieldProps("academicHours")} />
+            {fieldError("academicHours")}
           </div>
           <div className="field">
             <label htmlFor="c-approval">{d.fApproval}</label>
@@ -277,7 +340,8 @@ export default function ReviewPanel({
             {f.emergencyCare && (
               <div className="field">
                 <label htmlFor="c-prac">{d.fPractical}</label>
-                <input id="c-prac" type="number" min={0} step="0.5" value={f.practicalHours ?? ""} onChange={(e) => set("practicalHours", toNum(e.target.value))} />
+                <input id="c-prac" type="number" min={0} max={1000} step="0.5" value={f.practicalHours ?? ""} onChange={(e) => set("practicalHours", toNum(e.target.value))} {...fieldProps("practicalHours")} />
+                {fieldError("practicalHours")}
               </div>
             )}
             </>

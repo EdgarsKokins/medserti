@@ -87,6 +87,12 @@ export const SOURCE_URLS: Record<CourseSource, string> = {
   lma: "https://www.masuasociacija.lv/konferences-seminari-kursi/",
 };
 
+/**
+ * "Tikai bez maksas": only a listed price excludes a course. No price published (LĀB's TIP list publishes none, and its
+ * courses come with the LĀB subscription rather than a separate fee) counts as free; we show no price for those.
+ */
+export const freeForFilter = (c: Pick<Course, "price" | "free">) => c.free || !c.price;
+
 /** LMA's approval register (208 pages, no event dates): linked for nurses, not scraped */
 export const LMA_REGISTER_URL = "https://www.masuasociacija.lv/talakizglitibas-programmu-registrs/";
 
