@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
-import { saveUser } from "@/lib/db";
+import { getUser, saveUser } from "@/lib/db";
 import { addYears, certificateWindow, RULES, todayLv } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
@@ -47,7 +47,11 @@ export async function PUT(req: Request) {
   const listed = specialtyByCode(p.specialtyCode);
   if (listed) p.specialty = listed.lv;
   else p.specialtyCode = p.specialty ? OTHER_SPECIALTY : null;
-  user.profile = p;
-  await saveUser(user);
-  return NextResponse.json({ ok: true, profile: user.profile });
+  // re-read just before writing and replace only the profile: writing back the record read at the start would undo
+  // a password reset (passwordHash, sessionVersion) that landed while this request ran
+  const fresh = await getUser(user.id);
+  // a reset in between also signed this session out
+  if (!fresh || (fresh.sessionVersion ?? 0) !== (user.sessionVersion ?? 0)) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
+  await saveUser({ ...fresh, profile: p });
+  return NextResponse.json({ ok: true, profile: p });
 }
