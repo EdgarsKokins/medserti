@@ -5,7 +5,10 @@
 .name { font-family: var(--font-serif); font-weight: 600; font-size: 1.3rem; line-height: 1.2; }
 .muted { color: var(--muted); }
 .links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.links a, .contact a { color: var(--text); }
+/* footer links are plain text that underlines on hover; "Ziņot par problēmu" (a button) looks the same */
+.links a, .contact a, .links .reportLink { color: var(--text); text-decoration: none; }
+.links .reportLink { font: inherit; padding: 0; text-align: left; }
+.links a:hover, .contact a:hover, .links .reportLink:hover { text-decoration: underline; }
 .contact { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .contact a.contactBtn { margin-top: 4px; color: var(--text); text-decoration: none; }
 .label { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }

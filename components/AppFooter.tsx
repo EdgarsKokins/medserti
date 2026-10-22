@@ -61,13 +61,13 @@ export default function AppFooter({
             <li><a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a></li>
             <li><Link href="/privatums">{labels.privacy}</Link></li>
             <li><Link href="/noteikumi">{labels.terms}</Link></li>
+            {signedIn && <li><ReportProblem demo={demo} className={s.reportLink} /></li>}
           </ul>
         </nav>
         <div className={s.contact}>
           <div className={s.label}>{labels.contactLabel}</div>
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           <Link href="/kontakti" className={`btn ${s.contactBtn}`}>{labels.contactCta}</Link>
-          {signedIn && <ReportProblem demo={demo} />}
         </div>
         <div className={s.tools}>
           <LangSwitch locale={locale} label={labels.lang} />
