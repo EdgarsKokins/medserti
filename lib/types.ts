@@ -105,6 +105,8 @@ export type ParseNoteCode =
   | "pdfUnreadable"
   | "pdfScan"
   | "imageUnreadable"
+  // the user uploaded a photo or scan the blurry-photo check flagged (p.reason: blurry, dark, bright, small, unreadable)
+  | "imageBlurry"
   | "ocr"
   | "ects"
   | "foreignRatio"
