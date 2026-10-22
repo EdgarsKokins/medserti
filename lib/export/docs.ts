@@ -37,10 +37,20 @@ export interface ExportPerson {
   notifyBy: "email" | "eaddress";
   commission: string;
   workplaces: ExportWorkplace[];
-  abroad: { country: string; workplace: ExportWorkplace; noMisconduct: boolean } | null;
+  /** one entry per workplace abroad; empty = none */
+  abroad: { country: string; workplace: ExportWorkplace }[];
+  abroadNoMisconduct: boolean;
+  /** the state language proficiency document file is in the ZIP */
   languageDoc: boolean;
   earlierActivities: boolean;
+  /** which earlier-period activities, as the person wrote them */
+  earlierNote: string;
+  /** "citi" line of the application: other documents attached */
+  otherDocs: string;
   paperCertificate: boolean;
+  /** how the paper certificate is delivered, when paperCertificate */
+  delivery: "pickup" | "post";
+  deliveryAddress: string;
   /** the person ticked the item 14 statements and the register confirmation themselves */
   declarations: boolean;
 }
@@ -134,10 +144,13 @@ function activityTable(rows: ExportCertificate[]): Table {
 }
 
 const workplaceLines = (no: string, w: ExportWorkplace | undefined) => [
-  field(`${no} darbavieta (ārstniecības iestādes, struktūrvienības nosaukums un ārstniecības iestādes reģistrācijas numurs):`, line(w?.name)),
+  field(`${no} darbavieta`.trim() + ` (ārstniecības iestādes, struktūrvienības nosaukums un ārstniecības iestādes reģistrācijas numurs):`, line(w?.name)),
   field("amats:", line(w?.position)),
   field("darba attiecības laikposmā no", `${line(lvDate(w?.from), "__________")} līdz ${w ? (w.to ? lvDate(w.to) : "šim brīdim") : "__________"}`),
 ];
+
+/** at least two entries so the form keeps its 11.1 and 11.2 blanks */
+const workplaceSlots = (ws: ExportWorkplace[]): (ExportWorkplace | undefined)[] => (ws.length >= 2 ? ws : [ws[0], undefined]);
 
 /** Annex 3, Part I filled from the profile, the export form and confirmed certificates; Parts II and III left for the commission */
 export function buildRecertificationSheet(person: ExportPerson, cert: ExportCertificateInfo, certs: ExportCertificate[]): Document {
@@ -163,17 +176,17 @@ export function buildRecertificationSheet(person: ExportPerson, cert: ExportCert
     field("9.3. specialitāte, apakšspecialitāte vai papildspecialitāte, kurā izsniegts sertifikāts:", line(cert.specialty)),
     field("10. Sertifikācija nepieciešama:", line(cert.specialty)),
     p("11. Profesionālās darbības pieredze sertifikāta derīguma termiņa laikā (norāda visas ārstniecības iestādes, kurās persona strādā vai ir strādājusi):"),
-    ...workplaceLines("11.1.", person.workplaces[0]),
-    ...workplaceLines("11.2.", person.workplaces[1]),
+    // the form has blanks for two workplaces (11.1, 11.2); with more, the rest are 11.2.1, 11.2.2, ...
+    ...workplaceSlots(person.workplaces).flatMap((w, i, all) => workplaceLines(i === 0 ? "11.1." : all.length <= 2 ? "11.2." : `11.2.${i}.`, w)),
     p(
-      `11.3. ${box(!!person.abroad)} sertifikāta derīguma termiņa laikā esmu veicis(-usi) profesionālo darbību ārvalstīs: ${line(person.abroad?.country, "__________")}`,
+      `11.3. ${box(person.abroad.length > 0)} sertifikāta derīguma termiņa laikā esmu veicis(-usi) profesionālo darbību ārvalstīs: ${line([...new Set(person.abroad.map((a) => a.country.trim()).filter(Boolean))].join(", "), "__________")}`,
     ),
-    ...(person.abroad
-      ? [...workplaceLines("", person.abroad.workplace), p(`${box(person.abroad.noMisconduct)} man nav profesionālās darbības pārkāpumu ārvalstīs`)]
-      : []),
+    ...person.abroad.flatMap((a) => [field("valsts:", line(a.country)), ...workplaceLines("", a.workplace)]),
+    ...(person.abroad.length ? [p(`${box(person.abroadNoMisconduct)} man nav profesionālās darbības pārkāpumu ārvalstīs`)] : []),
     p(`12. Valsts valodas prasme: ${person.languageDoc ? "pievienots valsts valodas prasmi apliecinošs dokuments" : "________________"}`),
     p("13. Informācija par profesionālo un zinātnisko darbību un tālākizglītības pasākumiem sertifikāta derīguma termiņa laikā²:"),
     p(`13.1. ir iepriekšējā perioda tālākizglītības pasākumi, kas ņemami vērā šajā resertifikācijas periodā: ${box(person.earlierActivities)} jā  ${box(!person.earlierActivities)} nē`),
+    ...(person.earlierActivities && person.earlierNote.trim() ? [field("", person.earlierNote.trim())] : []),
     p("13.2. informācija par tālākizglītības pasākumiem specialitātē vai ārstnieciskajā vai diagnostiskajā metodē, kurā tiek veikta resertifikācija:"),
     activityTable(own),
     p("", { space: 120 }),
@@ -225,9 +238,19 @@ export function buildApplication(person: ExportPerson, cert: ExportCertificateIn
     p(`${box(certCount > 0)} izglītības dokumenta kopijas par profesionālo un zinātnisko darbību un tālākizglītības pasākumiem (${certCount});`),
     p(`${box(person.languageDoc)} dokumenta kopiju, kas apliecina valsts valodas prasmi¹`),
     p(`${box(false)} maksājumu apliecinoša dokumenta kopiju par resertifikācijas procesa apmaksu;`),
-    p(`${box(false)} citi ______________________________`),
+    p(`${box(!!person.otherDocs.trim())} citi ${line(person.otherDocs, "______________________________")}`),
     p(`${box(person.declarations)} Apliecinu, ka esmu reģistrēts/-a Latvijas ārstniecības personu reģistrā.`),
-    p(`${box(person.paperCertificate)} Sertifikātu vēlos saņemt papīra formā.²`, { space: 240 }),
+    p(`${box(person.paperCertificate)} Sertifikātu vēlos saņemt papīra formā.²`, { space: person.paperCertificate ? 80 : 240 }),
+    ...(person.paperCertificate
+      ? [
+          p(
+            person.delivery === "post"
+              ? `Saņemšanas veids: pa pastu uz adresi ${line(person.deliveryAddress, "________________")}`
+              : "Saņemšanas veids: klātienē sertifikācijas institūcijā",
+            { space: 240 },
+          ),
+        ]
+      : []),
     p("Datums ____________________"),
     p("Paraksts un paraksta atšifrējums ___________________________________", { space: 300 }),
     p("Iesniegumu un dokumentus pieņēma un ar oriģināliem iepazinās:"),
@@ -399,7 +422,7 @@ export function applyByDate(validUntil: string | null): string | null {
 }
 
 /** Plain-text checklist that goes into the ZIP next to the documents */
-export function buildChecklist(cert: ExportCertificateInfo, included: number, skipped: number): string {
+export function buildChecklist(cert: ExportCertificateInfo, included: number, skipped: number, languageFile?: string): string {
   const by = applyByDate(cert.validUntil);
   return [
     "Medserti: resertifikācijas dokumenti",
@@ -408,6 +431,7 @@ export function buildChecklist(cert: ExportCertificateInfo, included: number, sk
     "  1_Iesniegums.docx              iesniegums sertifikācijas komisijai",
     "  2_Resertifikacijas_lapa.docx   3. pielikums, I daļa aizpildīta",
     `  3_Sertifikati/                 ${included} tālākizglītības apliecinājumu kopijas`,
+    ...(languageFile ? [`  ${languageFile.padEnd(31)}valsts valodas prasmes dokuments`] : []),
     "",
     ...(skipped > 0
       ? [`Uzmanību: ${skipped} sertifikāti vēl nav apstiprināti Medserti un nav iekļauti. Apstipriniet tos un sagatavojiet dokumentus vēlreiz.`, ""]
@@ -417,7 +441,7 @@ export function buildChecklist(cert: ExportCertificateInfo, included: number, sk
     "      (vērtēšanas kritēriji pa specialitātēm: https://www.arstubiedriba.lv/kriteriji/)",
     "  [ ] Maksājuma apliecinājums par resertifikāciju (LĀB cenrādis: EUR 48,38;",
     "      rekvizīti: https://www.arstubiedriba.lv/sertifikacija/)",
-    "  [ ] Valsts valodas prasmes dokuments, ja tas nepieciešams (pirmajā resertifikācijā)",
+    ...(languageFile ? [] : ["  [ ] Valsts valodas prasmes dokuments, ja tas nepieciešams (pirmajā resertifikācijā)"]),
     "  [ ] Paraksts un datums abos dokumentos (vai droši elektroniski paraksts eParaksts)",
     "",
     `Iesniegšanas termiņš: ne vēlāk kā 3 mēnešus pirms sertifikāta derīguma beigām${by ? `, t.i. līdz ${lvDate(by)}` : ""}`,
