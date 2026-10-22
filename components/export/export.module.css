@@ -17,6 +17,9 @@
 .err { color: var(--bad); font-size: 0.875rem; }
 .ok { color: var(--ok); }
 .req { color: var(--muted); }
+/* personal details: two even columns so long labels and placeholders fit; address and commission span both */
+.personal { display: grid; gap: 16px 20px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.wide { grid-column: 1 / -1; }
 .form input:focus::placeholder, .form textarea:focus::placeholder { color: transparent; }
 .form input[aria-invalid="true"], .form textarea[aria-invalid="true"] { border-color: var(--bad); background-color: var(--bad-soft); }
 .form input[aria-invalid="true"]:focus { outline-color: var(--bad); }
@@ -37,6 +40,7 @@
 .option:hover, .optionActive { background: var(--accent-soft); }
 .optionHint { font-size: 0.8rem; color: var(--muted); }
 @media (max-width: 720px) {
+  .personal { grid-template-columns: minmax(0, 1fr); }
   .reveal { margin-left: 0; }
   .summary { grid-template-columns: minmax(0, 1fr); }
   .go { width: 100%; }

@@ -216,8 +216,8 @@ export default function ExportView({
     </label>
   );
 
-  const input = (k: TextKey, text: string, placeholder: string, extra: { hint?: string; auto?: string; mode?: "numeric" | "tel" | "email" } = {}) => (
-    <div className="field">
+  const input = (k: TextKey, text: string, placeholder: string, extra: { hint?: string; auto?: string; mode?: "numeric" | "tel" | "email"; wide?: boolean } = {}) => (
+    <div className={extra.wide ? `field ${s.wide}` : "field"}>
       {label(k, text, SPEC[k].required)}
       <input
         id={k}
@@ -337,15 +337,15 @@ export default function ExportView({
 
         <fieldset className={s.group}>
           <legend>{d.you}</legend>
-          <div className="form-grid">
+          <div className={s.personal}>
             {input("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
             {input("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
             {input("personalCode", d.personalCode, d.phPersonalCode, { mode: "numeric" })}
             {input("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
-            {input("address", d.address, d.phAddress, { auto: "street-address" })}
             {input("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
             {input("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
-            {input("commission", d.commission, d.phCommission)}
+            {input("address", d.address, d.phAddress, { auto: "street-address", wide: true })}
+            {input("commission", d.commission, d.phCommission, { wide: true })}
           </div>
           <div className={s.radios} role="radiogroup" aria-label={d.notifyBy}>
             <span className="small muted">{d.notifyBy}:</span>
