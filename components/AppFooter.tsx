@@ -1,6 +1,7 @@
 import Link from "next/link";
 import LangSwitch from "@/components/LangSwitch";
 import DemoButton from "@/components/DemoButton";
+import ReportProblem from "@/components/monitoring/ReportProblem";
 import type { Locale } from "@/lib/i18n";
 import { CONTACT_EMAIL } from "@/lib/site";
 import s from "./app-footer.module.css";
@@ -9,11 +10,14 @@ import s from "./app-footer.module.css";
 export default function AppFooter({
   locale,
   signedIn,
+  demo = false,
   note,
   labels,
 }: {
   locale: Locale;
   signedIn: boolean;
+  /** the shared demo account: the problem report form asks for an email to reply to */
+  demo?: boolean;
   /** signed in: which regulation the numbers follow, and where to check official dates */
   note?: React.ReactNode;
   labels: {
@@ -63,6 +67,7 @@ export default function AppFooter({
           <div className={s.label}>{labels.contactLabel}</div>
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           <Link href="/kontakti" className={`btn ${s.contactBtn}`}>{labels.contactCta}</Link>
+          {signedIn && <ReportProblem demo={demo} />}
         </div>
         <div className={s.tools}>
           <LangSwitch locale={locale} label={labels.lang} />

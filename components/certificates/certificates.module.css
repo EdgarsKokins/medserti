@@ -217,6 +217,7 @@
 }
 .footBtns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .footMsg { margin: 0; }
+.footReport { font-size: 0.9rem; }
 .ask { display: flex; flex-direction: column; gap: 10px; }
 .askText { margin: 0; font-weight: 500; }
 .deleteBtn { margin-left: auto; border-color: transparent; }

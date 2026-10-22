@@ -3,6 +3,7 @@ import { currentUserId } from "@/lib/auth";
 import { getJson, putJson } from "@/lib/storage";
 import { DETAIL_REF, fetchCourseDetails } from "@/lib/courses/details";
 import type { CourseDetails } from "@/lib/courses/types";
+import { reportServerError } from "@/lib/monitoring/errors";
 
 const MAX_AGE_MS = 7 * 86_400_000; // programmes rarely change after approval
 /** Like the course index (lib/courses/store.ts), each server instance keeps what it read for a few minutes */
@@ -35,7 +36,8 @@ export async function GET(req: Request) {
     await putJson(path, fresh);
     remember(path, fresh);
     return NextResponse.json(fresh);
-  } catch {
+  } catch (err) {
+    await reportServerError(err, "/api/courses/details");
     if (cached) return NextResponse.json(cached);
     return NextResponse.json({ error: "Source unavailable" }, { status: 502 });
   }

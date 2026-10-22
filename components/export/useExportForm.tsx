@@ -4,6 +4,8 @@ import type { Dict } from "@/lib/i18n/en";
 import { finalProblem, formatPersonalCode, liveProblem } from "@/lib/export/validate";
 import { Field, type FormProblem } from "./Field";
 import { addCertificateFiles, saveBlob } from "./zip";
+import { reportError, reportFailure } from "@/components/monitoring/report";
+import { trackEvent } from "@/components/monitoring/track";
 
 export type Kind = "name" | "personalCode" | "practitionerId" | "phone" | "email" | "text";
 export type FieldSpec = { kind: Kind; required: boolean; max: number };
@@ -100,8 +102,11 @@ export function useExportForm<F extends object, K extends keyof F & string>({
       const failed = await fill(zip, docs, (done) => setState((st) => ({ ...st, done })));
       saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
       setState({ busy: false, done: rows.length, total: rows.length, msg: failed ? d.failed : d.done, warn: failed > 0 });
+      if (failed) reportFailure("exportDocsFiles", null);
+      trackEvent("Export downloaded", { kind: "documents" });
     } catch (err) {
       console.error("export failed", err);
+      reportError({ source: "client", kind: "exportDocs", message: err instanceof Error ? err.message : err, stack: err instanceof Error ? err.stack : undefined });
       setState({ ...IDLE, msg: d.buildFailed, warn: true });
     }
   }
@@ -116,8 +121,11 @@ export function useExportForm<F extends object, K extends keyof F & string>({
       const failed = await addCertificateFiles(zip, folder, rows, (done) => setFiles((st) => ({ ...st, done })));
       saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
       setFiles({ busy: false, done: rows.length, total: rows.length, msg: failed ? d.failed : d.filesDone, warn: failed > 0 });
+      if (failed) reportFailure("exportFiles", null);
+      trackEvent("Export downloaded", { kind: "files" });
     } catch (err) {
       console.error("certificate files export failed", err);
+      reportError({ source: "client", kind: "exportFiles", message: err instanceof Error ? err.message : err, stack: err instanceof Error ? err.stack : undefined });
       setFiles({ ...IDLE, msg: d.buildFailed, warn: true });
     }
   }

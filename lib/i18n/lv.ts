@@ -782,6 +782,8 @@ export const lv: Dict = {
             "Konts: jūsu e-pasta adrese, parole (tikai kā neatgriezenisks jaucējkods, nekad atklātā veidā), konta izveides datums un datums, kad piekritāt šiem noteikumiem.",
             "Profils: vārds un uzvārds, profesija, specialitāte, sertifikāta veids, sertifikāta numurs, ja to norādāt, sertifikāta izsniegšanas un derīguma datumi un TIP mērķis, ja to iestatāt pats.",
             "Sertifikāti: augšupielādētie faili (PDF vai foto) un no tiem nolasītie vai jūsu ievadītie dati: kursa nosaukums, organizators, datumi, punkti, stundas, kategorija, valsts un apstiprinājuma numurs.",
+            "Kļūdu žurnāls: ja kaut kas nedarbojas, mēs saglabājam kļūdas ziņojumu, lapas ceļu (bez vaicājuma parametriem), pārlūka un ierīces veidu un neatgriezenisku kodu, kas iegūts no jūsu konta ID, lai redzētu, cik cilvēkus viena kļūda skar. Pirms saglabāšanas no kļūdu ziņojumiem izņemam e-pasta adreses, personas kodus, skaitļus un tekstu pēdiņās. Sertifikātu saturu žurnālā neieraksta.",
+            "Ziņojumi par problēmām: tas, ko ierakstāt formā „Ziņot par problēmu”, jūsu konta e-pasta adrese (lai varam atbildēt), valoda, pārlūka un ierīces veids un, ja atzīmējat „Pievienot šo lapu”, lapas ceļš un atvērtā sertifikāta ID. Ziņojums tiek nosūtīts uz info@medserti.lv, un tā kopija tiek glabāta mūsu krātuvē.",
           ],
         },
         {
@@ -789,7 +791,7 @@ export const lv: Dict = {
           items: [
             "Jūsu personas kodu, adresi un darbavietas. Tos ievadāt tikai, eksportējot resertifikācijas dokumentus. Dokumenti tiek veidoti jūsu pārlūkā, un šie lauki mūsu serveri nesasniedz.",
             "Teksts foto attēlos tiek nolasīts jūsu pārlūkā. Mēs saņemam foto un nolasīto tekstu, neko citu no jūsu ierīces.",
-            "Nekādu analītikas, reklāmas vai izsekošanas rīku.",
+            "Nekādu reklāmas vai izsekošanas rīku un nekādu statistikas sīkdatņu.",
           ],
         },
         {
@@ -804,6 +806,7 @@ export const lv: Dict = {
           items: [
             "Līgums (VDAR 6. panta 1. punkta b) apakšpunkts): šie dati ir vajadzīgi, lai sniegtu pakalpojumu, kuram pieteicāties.",
             "Piekrišana (VDAR 6. panta 1. punkta a) apakšpunkts): reģistrējoties jūs piekrītat šai politikai. Piekrišanu varat atsaukt jebkurā laikā, izdzēšot kontu.",
+            "Leģitīmās intereses (VDAR 6. panta 1. punkta f) apakšpunkts): kļūdu žurnāls un lietojuma statistika bez sīkdatnēm, lai pakalpojums darbotos un mēs redzētu, kuras tā daļas tiek izmantotas.",
           ],
         },
         {
@@ -812,6 +815,7 @@ export const lv: Dict = {
             "Vercel Inc. (ASV) uztur vietni. Mūsu serveris un privātā Vercel Blob krātuve ar jūsu datiem un failiem atrodas Vercel Frankfurtes (Vācija, ES) reģionā. Vercel ir ASV uzņēmums, tāpēc ir iespējama piekļuve no ārpus ES (piemēram, tā atbalsta darbiniekiem); to aptver Vercel datu apstrādes līgums, kurā iekļautas ES standarta līguma klauzulas.",
             "jsDelivr (publisks failu tīkls): augšupielādējot foto, jūsu pārlūks lejupielādē teksta atpazīšanas programmu no cdn.jsdelivr.net. Šis pakalpojums redz jūsu IP adresi, bet ne jūsu failus.",
             "Resend (ASV) nosūta mūsu e-pastus, piemēram, paroles atjaunošanas saites. Tas saņem jūsu e-pasta adresi un vēstules tekstu.",
+            "Vercel Web Analytics bez sīkdatnēm skaita lapu skatījumus un dažus soļus lietotnē (piemēram, augšupielādētu sertifikātu vai eksportētus dokumentus). Tas saņem lapas adresi bez vaicājuma parametriem, vietni, no kuras atnācāt, un jūsu valsti, pārlūku, operētājsistēmu un ierīces veidu. Tas nevar jūs atpazīt dažādās dienās un nesaņem vārdus, e-pasta adreses vai sertifikātu datus.",
             "Cloudflare (ASV) glabā mūsu iknedēļas rezerves kopiju savā ES jurisdikcijā (Cloudflare R2, ES).",
           ],
         },
@@ -827,6 +831,7 @@ export const lv: Dict = {
             "Līdz brīdim, kad izdzēšat kontu. Dzēšot to profilā, uzreiz tiek izdzēsts konts, profils, visi sertifikātu ieraksti un visi augšupielādētie faili.",
             "Iknedēļas rezerves kopijas glabājam 8 nedēļas, tāpēc pēc konta dzēšanas jūsu dati no tām pazūd 8 nedēļu laikā. Rezerves kopijas izmantojam tikai, lai atjaunotu pakalpojumu pēc kļūmes.",
             "Paroles atjaunošanas saites derīgums beidzas pēc 1 stundas.",
+            "Kļūdu žurnālu un saglabātos ziņojumus par problēmām glabājam 30 dienas, pēc tam tie tiek izdzēsti automātiski. Rezerves kopijās tie netiek iekļauti. Ziņojums par problēmu paliek arī mūsu e-pasta kastītē, kamēr tas vajadzīgs, lai jums atbildētu.",
             "Vercel pēc saviem noteikumiem īsu laiku glabā tehniskos žurnālus (piemēram, pieprasījumu IP adreses).",
           ],
         },
@@ -886,6 +891,24 @@ export const lv: Dict = {
       failed: "Kontu neizdevās izdzēst. Mēģiniet vēlreiz.",
       done: "Jūsu konts un visi tā dati ir izdzēsti.",
     },
+  },
+  feedback: {
+    button: "Ziņot par problēmu",
+    title: "Ziņot par problēmu",
+    lead: "Pastāstiet, kas notika vai kas neizskatās pareizi. Mēs izlasām katru ziņojumu.",
+    messageLabel: "Kas notika?",
+    emailLabel: "Jūsu e-pasts atbildei (nav obligāts)",
+    includePage: "Pievienot šo lapu",
+    includeCert: "Pievienot šo lapu un atvērto sertifikātu",
+    note: "Kopā ar ziņojumu nosūtām arī jūsu konta e-pastu, valodu un pārlūka veidu, lai varam atbildēt un atkārtot problēmu.",
+    noteDemo: "Kopā ar ziņojumu nosūtām arī valodu un pārlūka veidu. Ja vēlaties atbildi, norādiet e-pastu.",
+    send: "Nosūtīt",
+    sending: "Sūta...",
+    cancel: "Atcelt",
+    close: "Aizvērt",
+    thanks: "Paldies! Ziņojums nosūtīts. Ja vajadzēs vairāk informācijas, atbildēsim uz jūsu e-pastu.",
+    invalid: "Aprakstiet, kas notika (līdz 1000 rakstzīmēm).",
+    failed: "Neizdevās nosūtīt ziņojumu. Mēģiniet vēlreiz vai rakstiet uz info@medserti.lv.",
   },
   contact: {
     title: "Sazinieties ar mums",

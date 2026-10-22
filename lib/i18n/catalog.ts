@@ -59,7 +59,7 @@ const BLOCK_OF: Record<string, BlockId> = {
   courses: "courses",
   profile: "profile", professions: "profile", rules: "profile",
   auth: "auth", reset: "auth", demo: "auth",
-  api: "errors", notFound: "errors", error: "errors",
+  api: "errors", notFound: "errors", error: "errors", feedback: "errors",
   exportDocs: "export",
   about: "about",
   legal: "legal",

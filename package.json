@@ -10,6 +10,7 @@
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@vercel/analytics": "2.0.1",
     "@vercel/blob": "2.8.2",
     "aws4fetch": "1.0.20",
     "bcryptjs": "3.0.3",

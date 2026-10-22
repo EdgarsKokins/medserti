@@ -5,6 +5,7 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { clientIp, rateLimit } from "@/lib/password-reset";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { reportServerError } from "@/lib/monitoring/errors";
 import { EMAIL_MAX, MESSAGE_MAX, validEmail, validMessage } from "@/lib/validation";
 
 const HOUR = 60 * 60 * 1000;
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     console.error("[contact] send failed", e);
+    await reportServerError(e, "/api/contact");
     return NextResponse.json({ error: d.contact.failed }, { status: 502 });
   }
   return NextResponse.json({ ok: true });

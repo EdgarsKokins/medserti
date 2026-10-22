@@ -2,9 +2,13 @@
 
 import { useEffect } from "react";
 import { useDict } from "@/components/i18n/DictProvider";
+import { reportBoundary } from "@/components/monitoring/report";
 
 export default function CoursesError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => console.error("courses page failed", error), [error]);
+  useEffect(() => {
+    console.error("courses page failed", error);
+    reportBoundary(error);
+  }, [error]);
   const d = useDict();
   const s = d.courses;
   return (

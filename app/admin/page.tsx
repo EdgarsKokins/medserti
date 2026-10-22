@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import { BLOCKS, catalog, emptyOverrides } from "@/lib/i18n/catalog";
 import { LOCALES } from "@/lib/i18n";
@@ -42,6 +43,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         stale={stale}
       />
       {/* admin tools stay in Latvian like the editor above; the demo account is lib/demo */}
+      <section className="card" style={{ marginTop: 40 }} aria-labelledby="errors-link">
+        <h2 id="errors-link">Kļūdas un ziņojumi</h2>
+        <p className="small muted">Servera un pārlūka kļūdas un „Ziņot par problēmu” ziņojumi par pēdējām 7 dienām.</p>
+        <Link href="/admin/kludas" className="btn">Atvērt kļūdu sarakstu</Link>
+      </section>
       <section className="card" style={{ marginTop: 40 }} aria-labelledby="demo-reset">
         <h2 id="demo-reset">Demo konts</h2>
         <p className="small muted">

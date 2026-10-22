@@ -4,6 +4,7 @@ import { deleteUserData } from "@/lib/db";
 import { endSession, requireWritableUser, verifyPassword } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { reportServerError } from "@/lib/monitoring/errors";
 
 const Body = z.object({ password: z.string().min(1) });
 
@@ -21,7 +22,8 @@ export async function DELETE(req: Request) {
   }
   try {
     await deleteUserData(user);
-  } catch {
+  } catch (err) {
+    await reportServerError(err, "/api/account (delete)", user.id);
     return NextResponse.json({ error: d.legal.deleteAccount.failed }, { status: 500 });
   }
   await endSession();

@@ -11,6 +11,8 @@ import I18nOverrides from "@/components/I18nOverrides";
 import DictProvider from "@/components/i18n/DictProvider";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
+import ErrorReporter from "@/components/monitoring/ErrorReporter";
+import AnalyticsClient from "@/components/monitoring/AnalyticsClient";
 import { NURSE_RULES, REGISTER_URL, RULES } from "@/lib/rules";
 
 // self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
@@ -114,6 +116,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <AppFooter
               locale={locale}
               signedIn={signedIn}
+              demo={demo}
               note={note}
               labels={{
                 brand: d.brand.name,
@@ -135,6 +138,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             />
           </DictProvider>
         </I18nOverrides>
+        {/* uncaught browser errors to /api/errors (lib/monitoring); cookieless page views to Vercel Web Analytics */}
+        <ErrorReporter />
+        <AnalyticsClient />
       </body>
     </html>
   );

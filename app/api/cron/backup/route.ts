@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBackup } from "@/lib/backup";
+import { reportServerError } from "@/lib/monitoring/errors";
 
 // reads only new or changed files from Blob, copies the rest inside R2, then reads every copy back
 export const maxDuration = 300;
@@ -14,6 +15,7 @@ export async function GET(req: Request) {
     return NextResponse.json(await runBackup());
   } catch (err) {
     console.error("backup", err);
+    await reportServerError(err, "/api/cron/backup");
     return NextResponse.json({ error: err instanceof Error ? err.message : "Backup failed" }, { status: 500 });
   }
 }
