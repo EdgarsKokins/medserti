@@ -1,5 +1,6 @@
 import type { Course, CourseFormat } from "../types";
-import { cityOf, dmy, fetchText, textOf, tipIn, titleKey, todayIso } from "../util";
+import { cityOf, dmy, fetchText, textOf, tipIn, titleKey } from "../util";
+import { todayLv } from "../../format";
 
 /**
  * LUMPII (Medicīniskās pēcdiploma izglītības institūts) lists its doctor courses in one hand-edited Joomla
@@ -30,7 +31,7 @@ function titleOf(lines: string[]): string | null {
   return null;
 }
 
-export function parseLumpii(html: string, today = todayIso()): Course[] {
+export function parseLumpii(html: string, today = todayLv()): Course[] {
   const start = html.indexOf('itemprop="articleBody"');
   if (start < 0) return [];
   const article = html.slice(start, html.indexOf("</article>", start) > 0 ? html.indexOf("</article>", start) : undefined);

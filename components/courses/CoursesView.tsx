@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatDate, formatNumber, swapUnit, type Locale } from "@/lib/locale";
+import { swapUnit, type Locale } from "@/lib/locale";
 import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
-import { applyEmail, courseStrings, type CourseStrings } from "./strings";
+import { useDict } from "@/components/i18n/DictProvider";
+import type { Dict } from "@/lib/i18n/en";
 import styles from "./courses.module.css";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { specialtyLabel } from "@/lib/specialties";
+import { formatDate, formatNumber, round1 } from "@/lib/format";
+
+type CourseStrings = Dict["courses"];
+
+/** Email to an organiser: always Latvian, whatever the UI language, since the organisers are Latvian. `date` is an LV date. */
+const applyEmail = {
+  subject: (title: string, date: string | null) => `Pieteikšanās: ${title}${date ? ` (${date})` : ""}`,
+  body: (title: string, date: string | null) =>
+    `Labdien!\n\nVēlos pieteikties pasākumam „${title}”${date ? ` (${date})` : ""}.\n\nVārds, uzvārds:\nTālrunis:\n\nPaldies!`,
+};
 
 /** What the list renders and filters on; the rest (CourseExtra) loads when a course is opened */
 export type CourseRow = Omit<Course, keyof CourseExtra> & { forMe: boolean };
@@ -63,7 +74,7 @@ export default function CoursesView({
   /** the linked course's details, sent with the page so it opens without a request */
   openExtra?: CourseExtra | null;
 }) {
-  const s = courseStrings(locale);
+  const s = useDict().courses;
   const target = useMemo(() => (openId ? rows.find((r) => r.id === openId) ?? null : null), [rows, openId]);
   const [kind, setKind] = useState<CourseKind>(target?.kind ?? "event");
   const [q, setQ] = useState("");
@@ -147,7 +158,7 @@ export default function CoursesView({
           <h1>{s.title}</h1>
           <p className="muted">{nurse ? s.nurseLead : s.lead}</p>
         </div>
-        {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, locale, 1)), hoursUnit) : s.needLine(formatNumber(remaining, locale, 1))}</div>}
+        {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, 1)), hoursUnit) : s.needLine(formatNumber(remaining, 1))}</div>}
       </div>
 
       <div className={styles.tabs} role="tablist">
@@ -270,7 +281,7 @@ export default function CoursesView({
 }
 
 function hoursOf(minutes: number | null, locale: Locale) {
-  return minutes ? formatNumber(Math.round((minutes / 60) * 10) / 10, locale, 1) : null;
+  return minutes ? formatNumber(round1(minutes / 60), 1) : null;
 }
 
 /** Audience badge: yours, all specialties, the named specialties, or honestly "not stated" */
@@ -289,7 +300,7 @@ function audienceBadge(r: CourseRow, s: CourseStrings, locale: Locale) {
 }
 
 function CourseCard({ r, locale, linked = false, preloaded = null }: { r: CourseRow; locale: Locale; linked?: boolean; preloaded?: CourseExtra | null }) {
-  const s = courseStrings(locale);
+  const s = useDict().courses;
   const [open, setOpen] = useState(linked);
   // undefined: not loaded yet; null: the request failed
   const [extra, setExtra] = useState<CourseExtra | null | undefined>(preloaded ?? undefined);
@@ -355,8 +366,8 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
             {r.price && !r.free && <span className="tag">{r.price}</span>}
           </span>
         </span>
-        <span className={styles.tip} aria-label={r.tip != null ? `${formatNumber(r.tip, locale, 1)} TIP` : s.tipUnknown}>
-          {r.tip != null ? `+${formatNumber(r.tip, locale, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
+        <span className={styles.tip} aria-label={r.tip != null ? `${formatNumber(r.tip, 1)} TIP` : s.tipUnknown}>
+          {r.tip != null ? `+${formatNumber(r.tip, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
         </span>
         <span className={styles.chevron} aria-hidden>{open ? "−" : "+"}</span>
       </button>
@@ -368,7 +379,7 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
             <Fact k={s.details.format} v={s.formats[r.format]} />
             {(venue || place) && <Fact k={s.details.place} v={[venue, place && venue?.includes(place) ? null : place].filter(Boolean).join(", ")} />}
             {hours && <Fact k={s.details.duration} v={`${s.hours(hours)} (${r.minutes} min)`} />}
-            {r.kind === "ongoing" && r.tip != null && <Fact k={s.details.tip} v={s.details.tipWhole(formatNumber(r.tip, locale, 1))} />}
+            {r.kind === "ongoing" && r.tip != null && <Fact k={s.details.tip} v={s.details.tipWhole(formatNumber(r.tip, 1))} />}
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
             {r.price && <Fact k={s.details.price} v={r.free ? s.free : r.price} />}
@@ -383,7 +394,8 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
 
 /** The one thing a doctor needs from an opened course: how to sign up */
 function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | null | undefined; locale: Locale }) {
-  const a = courseStrings(locale).apply;
+  const cs = useDict().courses;
+  const a = cs.apply;
   if (extra === undefined)
     return (
       <section className={styles.apply} aria-label={a.title} aria-busy="true">
@@ -434,7 +446,7 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
       ) : (
         <p className="small muted" style={{ margin: 0 }}>
           {a.noContact}{" "}
-          <a href={url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : courseStrings(locale).open} ↗</a>
+          <a href={url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : cs.open} ↗</a>
         </p>
       )}
     </section>
@@ -453,7 +465,8 @@ function Fact({ k, v }: { k: string; v: string }) {
 const SHOW_LECTURES = 6;
 
 function Programme({ detailRef, locale }: { detailRef: string; locale: Locale }) {
-  const s = courseStrings(locale).details;
+  const cs = useDict().courses;
+  const s = cs.details;
   const [state, setState] = useState<{ status: "loading" | "ok" | "error"; lectures: Lecture[] }>({ status: "loading", lectures: [] });
   const [all, setAll] = useState(false);
 
@@ -476,7 +489,7 @@ function Programme({ detailRef, locale }: { detailRef: string; locale: Locale })
   const total = hoursOf(state.lectures.reduce((n, l) => n + (l.minutes ?? 0), 0), locale);
   return (
     <div className="stack" style={{ gap: 6 }}>
-      <h3 className={styles.progTitle}>{s.programme}{total && state.lectures.length > 1 ? ` · ${courseStrings(locale).hours(total)}` : ""}</h3>
+      <h3 className={styles.progTitle}>{s.programme}{total && state.lectures.length > 1 ? ` · ${cs.hours(total)}` : ""}</h3>
       <ol className={styles.lectures}>
         {list.map((l, i) => (
           <li key={i}>

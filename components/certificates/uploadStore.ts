@@ -1,7 +1,7 @@
 "use client";
 
 import type { Worker as OcrWorker } from "tesseract.js";
-import type { CmeCertificate } from "@/lib/types";
+import { FILE_TYPES, type CmeCertificate } from "@/lib/types";
 import type { Dict } from "@/lib/i18n";
 import { ocrPdfIfScanned } from "./pdfOcr";
 
@@ -13,7 +13,7 @@ import { ocrPdfIfScanned } from "./pdfOcr";
 /** Vercel caps request bodies at ~4.5 MB; photos are downscaled in the browser to fit */
 const MAX_BYTES = 4 * 1024 * 1024;
 const MAX_IMAGE_INPUT_BYTES = 30 * 1024 * 1024;
-const OK_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+const OK_TYPES = new Set<string>(FILE_TYPES);
 export const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
 
 export type UploadState = "queued" | "reading" | "uploading" | "done" | "failed";

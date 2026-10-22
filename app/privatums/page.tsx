@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Controller from "@/components/legal/Controller";
-import { formatDate, t } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { DVI_URL, LEGAL_UPDATED } from "@/lib/legal";
 import { CONTACT_EMAIL } from "@/lib/site";
 import s from "@/components/legal/legal.module.css";
+import { formatDate } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).legal.privacy.title };

@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "crypto";
 
 /** bcrypt ignores everything after 72 bytes, so a longer password would silently match its own prefix */
-export const MAX_PASSWORD_BYTES = 72;
+const MAX_PASSWORD_BYTES = 72;
 
 export const passwordTooLong = (password: string) => Buffer.byteLength(password, "utf8") > MAX_PASSWORD_BYTES;
 

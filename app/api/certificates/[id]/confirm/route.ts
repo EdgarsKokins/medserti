@@ -3,10 +3,11 @@ import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
 import { getCertificate, listCertificates, saveCertificate } from "@/lib/db";
 import { rowConfirmEligible } from "@/lib/parse/confidence";
-import { certificateWindow, todayLv } from "@/lib/rules";
+import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { todayLv } from "@/lib/format";
 
 type Ctx = { params: Promise<{ id: string }> };
 

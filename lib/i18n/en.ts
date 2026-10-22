@@ -1,6 +1,7 @@
 import type { Check } from "../rules";
 import { RULES } from "../rule-constants";
 import type { CertStatus, CmeCategory, NurseTopic, Profession } from "../types";
+import type { CourseFormat, CourseKind, CourseSource } from "../courses/types";
 import type { ProgressChartLabels } from "@/components/dashboard/ProgressChart";
 import { capPct, enPl, fieldList, fmtList, fmtN, specialtyPct, type NoteP } from "./shared";
 
@@ -12,7 +13,7 @@ export const en = {
     tagline: "Your CME points (TIP) and recertification in one place",
   },
   lang: { label: "Language" },
-  common: { loading: "Loading...", home: "Go to the start page", retry: "Try again" },
+  common: { loading: "Loading...", home: "Go to the start page", retry: "Try again", networkError: "Could not reach the server. Check your connection and try again." },
   notFound: { title: "Page not found", body: "This page doesn't exist or has moved." },
   error: { title: "Something went wrong", body: "This page could not be loaded. Please try again in a moment." },
   nav: {
@@ -287,18 +288,12 @@ export const en = {
     start: "Start for free",
     login: "Log in",
     freeNote: "Free during the pilot. No card needed.",
-    mockLabel: "Example of the Medserti dashboard",
-    mockSpecialty: "Family medicine",
-    mockValidUntil: "certificate valid until 14 Mar 2029",
-    mockNote: "Example. Your dashboard shows your own certificates.",
-    stepsTitle: "How it works",
     steps: [
       { title: "Upload a certificate", body: "A PDF, or a photo taken with your phone. You can upload several at once." },
       { title: "Check what we read", body: "We read the date, TIP points and category. You check them against the file, correct anything, and confirm." },
       { title: "See what is missing", body: "Your dashboard shows how many points you still need, which requirements are not met yet, and approved courses that fit." },
     ],
     rulesTitle: "What we check",
-    rulesLead: "The requirements of Cabinet Regulation No. 391 (point 51 and Annex 4), in plain words.",
     rules: [
       { value: "250 TIP", body: "over five years for doctors, dentists and functional specialists. 150 TIP for other medical practitioners, 100 TIP for a treatment or diagnostic method certificate." },
       { value: `${specialtyPct}%`, body: "of the points must come from your own specialty." },
@@ -306,12 +301,7 @@ export const en = {
       { value: `${capPct}%`, body: "is the most that supervised practical training can count toward the requirement." },
       { value: `${RULES.validityYears} years`, body: "is how long a certificate is valid. Only points from this period count." },
     ],
-    rulesSource: "Read the regulation on likumi.lv",
-    rulesNote: "Medserti is a planning aid. The certification body makes the final decision on your recertification.",
     coursesTitle: "Approved courses, in one list",
-    coursesLead: "Upcoming TIP-approved events from LĀB, LUMPII, kursiarstiem.lv and medicinaskursi.lv. The list is refreshed every day.",
-    coursesUpcoming: "Coming up",
-    coursesMore: "After you sign up you see the full list and the courses that match your specialty.",
     online: "Online",
     faqTitle: "Questions",
     faq: [
@@ -575,9 +565,9 @@ export const en = {
     ocr: () => "Read from the image with text recognition: check every field.",
     ects: () => "Credits on the certificate (ECTS/ECMEC) counted 1:1 as TIP, as set by the organiser (Annex 4 item 3 of Regulation No. 391).",
     foreignRatio: (p: NoteP) =>
-      `The organiser gives ${fmtN(p.points, "en")} points for ${fmtN(p.h, "en")} h. Annex 4 footnote 1: when foreign points are not 1 per academic hour, you must submit a justified recalculation.`,
+      `The organiser gives ${fmtN(p.points)} points for ${fmtN(p.h)} h. Annex 4 footnote 1: when foreign points are not 1 per academic hour, you must submit a justified recalculation.`,
     dailyCap: (p: NoteP) =>
-      `${fmtN(p.points, "en")} TIP over ${p.days} ${enPl(Number(p.days), "day", "days")} is above the 8 TIP per day limit for events in Latvia (Annex 4 items 1 and 2).`,
+      `${fmtN(p.points)} TIP over ${p.days} ${enPl(Number(p.days), "day", "days")} is above the 8 TIP per day limit for events in Latvia (Annex 4 items 1 and 2).`,
     noPoints: () => "No points found in the uploaded file. Enter them manually.",
     noTitle: () => "No title found.",
     noDate: () => "No date found.",
@@ -587,19 +577,19 @@ export const en = {
       `Points not printed; calculated as ${p.days} ${enPl(Number(p.days), "day", "days")} x 8 TIP for practical training (Annex 4 item 10).`,
     derivedInterdisciplinary: () => "Points not printed; an interdisciplinary conference of a certifying body counts 12 TIP (Annex 4 item 4 of Regulation No. 391).",
     derivedAbroad: (p: NoteP) =>
-      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h, "en")} h). Abroad, the organiser sets the points (Annex 4 item 3).`,
+      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h). Abroad, the organiser sets the points (Annex 4 item 3).`,
     derivedElearning: (p: NoteP) =>
-      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h, "en")} h), no daily cap for distance learning (Annex 4 items 7 and 9).`,
+      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h), no daily cap for distance learning (Annex 4 items 7 and 9).`,
     derivedLatvia: (p: NoteP) =>
-      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h, "en")} h)${
+      `Points not printed; calculated as 1 TIP per ${p.academic ? "academic hour" : "hour"} (${fmtN(p.h)} h)${
         p.days ? `, capped at 8 TIP a day over ${p.days} ${enPl(Number(p.days), "day", "days")}` : ""
       } (Annex 4 items 1 and 2).`,
     plainHours: () => `The certificate says "hours", not "academic hours"; we counted them 1:1.`,
     checkBeforeConfirming: () => "Check before confirming.",
     pdfOcr: () => "This PDF is a scan, so it was read with text recognition: check every field.",
-    pointsSummed: (p: NoteP) => `Points added up from several lectures or days: ${fmtList(p.list, "en")} = ${fmtList(p.total, "en")} TIP.`,
+    pointsSummed: (p: NoteP) => `Points added up from several lectures or days: ${fmtList(p.list)} = ${fmtList(p.total)} TIP.`,
     courseTotal: (p: NoteP) =>
-      `${fmtList(p.points, "en")} credits is the accreditation of the whole event. Claim only the hours you actually attended.`,
+      `${fmtList(p.points)} credits is the accreditation of the whole event. Claim only the hours you actually attended.`,
     lecturer: (p: NoteP): string =>
       p.international
         ? "You lectured at this event. A talk at an international event counts 30 TIP (Annex 4 item 22): add it as a separate lecture."
@@ -874,6 +864,105 @@ export const en = {
     company: "Company",
     regNo: "Registration number",
     address: "Address",
+  },
+  courses: {
+    title: "Courses and events",
+    loading: "Loading the course list...",
+    recordingShort: "ON DEMAND",
+    ongoingShort: "ON REQUEST",
+    lead: "Upcoming TIP-approved events from the Latvian Medical Association and its learning sites. Check the details before you register.",
+    needLine: (n: string) => `You still need ${n} TIP.`,
+    tabs: { event: "Upcoming events", recorded: "E-learning and recordings", ongoing: "Ongoing programmes" } as Record<CourseKind, string>,
+    tabHint: {
+      event: "Events with a set date.",
+      recorded: "Watch any time until the date shown.",
+      ongoing: "Longer courses run repeatedly over their approval period (often 2 years). TIP is for the whole course. Ask the organiser for dates.",
+    } as Record<CourseKind, string>,
+    search: "Search title or organiser",
+    searchShort: "Search courses",
+    mySpecialty: "For my specialty",
+    mySpecialtyHint: (s: string) => `Shows events for "${s}" and for doctors of all specialties.`,
+    noSpecialty: "Add your specialty in the profile to filter relevant events.",
+    format: "Format",
+    city: "Location",
+    period: "When",
+    minTip: "Min. TIP",
+    freeOnly: "Free only",
+    freeOnlyHint: "Hides only courses with a listed price. Courses with no listed price, including those in the LĀB subscription, count as free.",
+    anyFormat: "Any format",
+    anyCity: "Any location",
+    anyTip: "Any TIP",
+    wholeLatvia: "All of Latvia",
+    clearFilters: "Clear filters",
+    tipUnknown: "TIP not stated",
+    next30: "Next 30 days",
+    next90: "Next 90 days",
+    allDates: "All dates",
+    formats: { in_person: "In person", online_live: "Online", recorded: "Recording / e-learning", hybrid: "In person and remote" } as Record<CourseFormat, string>,
+    online: "Online",
+    results: (n: number) => `${n} ${n === 1 ? "event" : "events"}`,
+    showMore: "Show more",
+    loadError: "Could not load the course list. Please try again in a moment.",
+    none: "We found no courses matching the selected filters.",
+    availableUntil: "Available until",
+    approvedUntil: "Approved until",
+    free: "Free",
+    forAll: "All specialties",
+    noAudience: "Specialty not stated",
+    matches: "Your specialty",
+    open: "Open at source",
+    approval: "LĀB approval",
+    annex: (n: number) => `Annex 4 item ${n}`,
+    hours: (h: string) => `${h} h`,
+    apply: {
+      title: "How to apply",
+      online: "Apply online",
+      watch: "Open the course",
+      email: "Email the organiser",
+      call: "Call",
+      contactNote: "Contact details published by the Latvian Medical Association for registration.",
+      noContact: "The organiser hasn't published registration contacts.",
+      listLink: "Open in the LĀB list",
+    },
+    details: {
+      date: "Date",
+      format: "Format",
+      place: "Location",
+      duration: "Duration",
+      organizer: "Organiser",
+      audience: "Audience",
+      price: "Price",
+      approval: "LĀB approval",
+      approvalLma: "LMA approval",
+      programme: "Programme",
+      tip: "TIP",
+      tipWhole: (n: string) => `${n} for the whole course`,
+      loading: "Loading the programme...",
+      noProgramme: "No programme published.",
+      failed: "Could not load the programme.",
+      more: (n: number) => `+ ${n} more`,
+      expand: "Show details",
+      collapse: "Hide details",
+    },
+    updatedLine: (date: string) => `List updated: ${date}.`,
+    sources: "Sources",
+    sourceFailed: "unavailable",
+    nurseLead: "Courses for nurses from the Latvian Nurses Association (LMA) and other organisers. Check the details before you sign up.",
+    forNurses: "For nurses",
+    forNursesHint: "Shows the LMA list and events whose audience includes nurses.",
+    nurseMore: "LMA puts only some courses on its website. All approved courses:",
+    lmaRegister: "LMA register of approved programmes",
+    lmaCourses: "LMA conferences, seminars, courses",
+    sourceLabels: {
+      lab_tip: "LĀB-approved TIP events",
+      lab_courses: "LĀB courses",
+      kursiarstiem: "kursiarstiem.lv",
+      medicinaskursi: "medicinaskursi.lv",
+      lumpii: "LUMPII",
+      lma: "Latvian Nurses Association",
+    } as Record<CourseSource, string>,
+    disclaimer:
+      "Collected automatically from public pages and may be incomplete. Check TIP and dates with the organiser. Contact persons' details are not stored.",
   },
 };
 

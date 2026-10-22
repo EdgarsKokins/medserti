@@ -4,7 +4,7 @@ import { olderThanValidity } from "@/lib/rules";
 /** Fields the review panel checks, in the order they appear (the first invalid one gets focus) */
 export const CHECKED_FIELDS = ["title", "date", "endDate", "points", "academicHours", "practicalHours"] as const;
 export type CheckedField = (typeof CHECKED_FIELDS)[number];
-export type FieldErrorKey = "titleMissing" | "dateMissing" | "dateFuture" | "endFuture" | "endBeforeStart" | "pointsMissing" | "number";
+type FieldErrorKey = "titleMissing" | "dateMissing" | "dateFuture" | "endFuture" | "endBeforeStart" | "pointsMissing" | "number";
 
 type Values = Pick<CmeCertificate, "title" | "date" | "endDate" | "points" | "academicHours" | "practicalHours">;
 
@@ -29,7 +29,7 @@ export function fieldErrors(f: Values, today: string): Partial<Record<CheckedFie
   return out;
 }
 
-export type DateNotice = { kind: "older5" } | { kind: "beforePeriod" | "afterPeriod"; date: string };
+type DateNotice = { kind: "older5" } | { kind: "beforePeriod" | "afterPeriod"; date: string };
 
 /**
  * A warning under the date when the certificate cannot count: outside the user's certificate window (the same test as

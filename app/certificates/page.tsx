@@ -5,7 +5,8 @@ import CertificatesView from "@/components/certificates/CertificatesView";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { specialtyLabel } from "@/lib/specialties";
-import { certificateWindow, todayLv } from "@/lib/rules";
+import { certificateWindow } from "@/lib/rules";
+import { todayLv } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 

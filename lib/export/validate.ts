@@ -74,5 +74,3 @@ export function finalProblem(kind: "name" | "personalCode" | "practitionerId" | 
   }
 }
 
-/** Diacritic- and case-insensitive key for matching "rigas" to "Rīgas" */
-export const fold = (s: string) => s.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();

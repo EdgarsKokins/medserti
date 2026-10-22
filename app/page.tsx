@@ -11,11 +11,11 @@ import { isDemoUserId } from "@/lib/demo/id";
 import EndDemo from "@/components/EndDemo";
 import { readCourseIndex } from "@/lib/courses/store";
 import { SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types";
-import { courseStrings } from "@/components/courses/strings";
-import { MONTHS_SHORT } from "@/components/dashboard/Overview";
-import { formatDate, formatNumber, t, type Locale } from "@/lib/i18n";
+import { MONTHS_SHORT } from "@/components/dashboard/DateBlock";
+import { t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import s from "./landing.module.css";
+import { formatDate, formatNumber, todayLv } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
@@ -39,7 +39,7 @@ export async function generateMetadata(): Promise<Metadata> {
 async function upcomingEvents(): Promise<{ next: Course[]; total: number }> {
   try {
     const idx = await readCourseIndex();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLv();
     const all = idx?.courses ?? [];
     const next = all
       .filter((c) => c.kind === "event" && c.startDate && c.startDate >= today && c.tip != null)
@@ -199,7 +199,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
                           {(c.city === "Online" ? l.online : c.city) ?? c.organizer}
                         </span>
                       </span>
-                      <span className={s.eventTip}>+{formatNumber(c.tip!, locale, 1)} TIP</span>
+                      <span className={s.eventTip}>+{formatNumber(c.tip!, 1)} TIP</span>
                     </li>
                   ))}
                 </ul>

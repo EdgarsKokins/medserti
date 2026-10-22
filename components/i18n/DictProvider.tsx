@@ -63,11 +63,8 @@ function useDictContext() {
   return c;
 }
 
-/** Locale of the page, as the server resolved it */
-export const useLocale = (): Locale => useDictContext().locale;
-
 /** The current language's dictionary with the /admin overrides on top (set by components/I18nOverrides.tsx) */
 export function useDict(): Dict {
   const { locale, dict } = useDictContext();
-  return overlay("", locale, dict);
+  return overlay(locale, dict);
 }

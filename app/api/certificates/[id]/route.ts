@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireWritableUser } from "@/lib/auth";
 import { deleteCertificate, getCertificate, saveCertificate } from "@/lib/db";
-import type { CmeCertificate } from "@/lib/types";
+import { CME_CATEGORIES, NURSE_TOPICS, type CmeCertificate } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { todayLv } from "@/lib/rules";
+import { todayLv } from "@/lib/format";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -25,22 +25,12 @@ const bodySchema = (m: Dict["api"]) => {
       endDate: isoDate.nullable(),
       points: amount.nullable(),
       academicHours: amount.nullable(),
-      category: z.enum([
-        "professional_meeting",
-        "training_latvia",
-        "training_abroad",
-        "interdisciplinary_conference",
-        "e_learning",
-        "practical_training",
-        "lecture_or_publication",
-        "degree",
-        "other",
-      ]),
+      category: z.enum(CME_CATEGORIES),
       inSpecialty: z.boolean(),
       emergencyCare: z.boolean(),
       practicalHours: amount.nullable(),
       // nurses only; doctors' review panel does not send it
-      nurseTopic: z.enum(["emergency", "infection_control", "patient_safety", "nursing", "other"]).nullable().optional(),
+      nurseTopic: z.enum(NURSE_TOPICS).nullable().optional(),
       approvalId: z.string().trim().max(100).nullable(),
       country: z.string().trim().max(80).nullable(),
       status: z.enum(["confirmed", "needs_review"]).default("confirmed"),

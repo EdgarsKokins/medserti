@@ -56,7 +56,7 @@ type CertManifest = { v: 1; certs: Record<string, string> };
 
 const certPath = (userId: string, certId: string) => `users/${userId}/certs/${certId}.json`;
 const manifestPath = (userId: string) => `users/${userId}/certs.json`;
-export const certVersion = (cert: CmeCertificate) => createHash("sha256").update(JSON.stringify(cert)).digest("hex").slice(0, 20);
+const certVersion = (cert: CmeCertificate) => createHash("sha256").update(JSON.stringify(cert)).digest("hex").slice(0, 20);
 const isHash = (v: string) => /^[0-9a-f]{20}$/.test(v);
 
 /** id -> version from a listing of the certs/ folder: the listing's own version tags, which work just as well as hashes */

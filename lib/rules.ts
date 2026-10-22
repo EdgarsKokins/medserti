@@ -2,6 +2,7 @@ import type { CmeCertificate, NurseTopic, Profile } from "./types";
 import { findSpecialty, specialtyByCode } from "./specialties";
 import { nurseTopicOf } from "./nurse";
 import { NURSE_RULES, RULES } from "./rule-constants";
+import { round1, todayLv } from "./format";
 
 export { NURSE_RULES, RULES };
 
@@ -37,20 +38,10 @@ export function ruleRequiredPoints(p: RuleInput): number {
   return RULES.points.otherProfessions;
 }
 
-/** The profile's manual override (requiredPointsOverride) is no longer used: older stored values are ignored */
-export function requiredPoints(p: Profile): number {
-  return ruleRequiredPoints(p);
-}
-
 export function addYears(isoDate: string, years: number): string {
   const d = new Date(isoDate + "T00:00:00Z");
   d.setUTCFullYear(d.getUTCFullYear() + years);
   return d.toISOString().slice(0, 10);
-}
-
-/** Today's date in Latvia (YYYY-MM-DD). The server runs on UTC, which is a day behind after midnight in Riga. */
-export function todayLv(now = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
 /**
@@ -71,7 +62,7 @@ export function certificateWindow(
 }
 
 /** Days from one YYYY-MM-DD to another */
-export const daysBetween = (from: string, to: string) => Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86_400_000);
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(to + "T00:00:00Z") - Date.parse(from + "T00:00:00Z")) / 86_400_000);
 
 /**
  * The Reg. 391 Annex 4 16% cap on practical training (footnote 3, item 10). Points above the cap count nowhere,
@@ -155,13 +146,12 @@ export interface Progress {
   allMet: boolean;
 }
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
 /** For display: round to 0.1, but never up to the target while short of it, so 249.96 of 250 shows 249.9, not 250 */
 const shown = (have: number, need: number) => (have < need ? Math.min(round1(have), Math.floor(have * 10 + 1e-9) / 10) : round1(have));
 
 /** `today` is the moment the progress is for; the date used is Riga's (todayLv), on the server and in the browser */
 export function computeProgress(profile: Profile, certs: CmeCertificate[], today = new Date()): Progress {
-  const required = requiredPoints(profile);
+  const required = ruleRequiredPoints(profile);
   const todayIso = todayLv(today);
   const { start, end } = certificateWindow(profile, todayIso);
 

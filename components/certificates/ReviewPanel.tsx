@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CmeCategory, CmeCertificate, ConfidenceField, NurseTopic } from "@/lib/types";
-import { needsApprovalCheck, NURSE_TOPICS, nurseTopicOf } from "@/lib/nurse";
+import { NURSE_TOPICS, type CmeCategory, type CmeCertificate, type ConfidenceField, type NurseTopic } from "@/lib/types";
+import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
 import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
-import { COUNTRY_CODES, countryCode, countryName, formatDate, parseNoteLines, STATUS_CLASS } from "./format";
+import { COUNTRY_CODES, countryCode, countryName, parseNoteLines, STATUS_CLASS } from "./format";
+import { formatDate } from "@/lib/format";
 import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
 import styles from "./certificates.module.css";
 
@@ -141,9 +142,10 @@ export default function ReviewPanel({
       headers: { "Content-Type": "application/json" },
       // a nurse's emergency topic is the emergency-care flag too, so both views of the certificate agree
       body: JSON.stringify({ ...f, ...(nurse ? { emergencyCare: f.nurseTopic === "emergency" } : {}), status }),
-    });
-    const body = await res.json().catch(() => ({}));
+    }).catch(() => null);
+    const body = (await res?.json().catch(() => null)) ?? {};
     setBusy(false);
+    if (!res) return setError(dict.common.networkError);
     if (!res.ok) {
       if (typeof body.field === "string" && body.error) setServerField({ field: body.field, message: body.error });
       return setError(body.error ?? d.saveError);
@@ -155,8 +157,9 @@ export default function ReviewPanel({
     setBusy(true);
     setError(null);
     setAsk(null);
-    const res = await fetch(`/api/certificates/${cert.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/certificates/${cert.id}`, { method: "DELETE" }).catch(() => null);
     setBusy(false);
+    if (!res) return setError(dict.common.networkError);
     if (!res.ok) return setError(d.deleteError);
     onDeleted(cert.id);
   }

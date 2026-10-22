@@ -1,5 +1,5 @@
 import { RULES } from "../rule-constants";
-import { formatNumber, type Locale } from "../locale";
+import { formatNumber } from "../format";
 
 /* Helpers the three dictionaries share. */
 
@@ -10,9 +10,9 @@ export const lvPl = (n: number, one: string, many: string) => (Math.abs(n) % 10 
 
 /** Values carried by a parser note (lib/parse.ts) */
 export type NoteP = Record<string, string | number | boolean>;
-export const fmtN = (v: unknown, locale: Locale) => (typeof v === "number" ? formatNumber(v, locale) : String(v ?? ""));
-/** "1.3 + 1.3" stored by the parser -> "1,3 + 1,3" in Latvian */
-export const fmtList = (v: unknown, locale: Locale) => (locale === "lv" ? String(v ?? "").replace(/\./g, ",") : String(v ?? ""));
+export const fmtN = (v: unknown) => (typeof v === "number" ? formatNumber(v) : String(v ?? ""));
+/** "1.3 + 1.3" as the parser stored it: a decimal point in every language, like the rest of the UI */
+export const fmtList = (v: unknown) => String(v ?? "");
 /** "date,points" -> field names in the UI language */
 export const fieldList = (v: unknown, names: Record<string, string>) => String(v ?? "").split(",").filter(Boolean).map((f) => names[f] ?? f).join(", ");
 

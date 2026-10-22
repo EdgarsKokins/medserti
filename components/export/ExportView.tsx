@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { formatDate, type Locale } from "@/lib/locale";
+import { type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import type { ExportCertificateInfo, ExportPerson, ExportWorkplace } from "@/lib/export/docs";
 import { applyByDate } from "@/lib/export/dates";
@@ -13,6 +13,7 @@ import { FieldError, Label } from "./Field";
 import { useExportForm, type FieldSpec } from "./useExportForm";
 import { addCertificateFiles, extOf, slug } from "./zip";
 import s from "./export.module.css";
+import { formatDate } from "@/lib/format";
 
 export interface ExportRow {
   id: string;

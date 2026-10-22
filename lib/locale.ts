@@ -12,23 +12,6 @@ export const LOCALE_COOKIE = "lang";
 
 export const isLocale = (v: unknown): v is Locale => v === "lv" || v === "en" || v === "ru";
 
-const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** YYYY-MM-DD -> LV "27.11.2026.", RU "27.11.2026", EN "27 Nov 2026" (LV matches the chart's date style) */
-export function formatDate(iso: string, locale: Locale): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  if (!m) return iso;
-  const [, y, mo, d] = m;
-  if (locale === "lv") return `${d}.${mo}.${y}.`;
-  if (locale === "ru") return `${d}.${mo}.${y}`;
-  return `${d} ${MONTHS_EN[Number(mo) - 1] ?? mo} ${y}`;
-}
-
-/** Decimal point in both languages (1.3 TIP), no thousands separator; locale kept for call sites */
-export function formatNumber(n: number, _locale: Locale, maxDigits = 2): string {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: maxDigits, useGrouping: false }).format(n);
-}
-
 /** Russian: 1, 21 день; 2-4, 22-24 дня; 5-20, 25-30 дней. Fractions take the "few" form: 1,5 дня */
 export const ruPl = (n: number, one: string, few: string, many: string) => {
   const a = Math.abs(n);
@@ -47,11 +30,16 @@ const KEEP_TIP = new Set(["nurseRule", "functionalTransition"]);
 export const swapUnit = (text: string, unit: string) =>
   text.replace(/\bTIP\b(\.?)/g, (_, dot: string) => (unit.endsWith(".") ? unit : unit + dot));
 
+const HOURS_CACHE = new WeakMap<Dict, Dict>();
+
 /**
  * Nurses count academic hours, not TIP (Cabinet Regulation No. 630 Annex 6: "Viena akadēmiskā stunda, kuras ilgums ir
  * 45 minūtes, atbilst vienam tālākizglītības punktam"). Same numbers, so this only swaps the unit word in progress texts.
  */
 export function inHours(d: Dict): Dict {
+  // one copy per dictionary object: t() returns the same object per language until the /admin overrides change
+  const hit = HOURS_CACHE.get(d);
+  if (hit) return hit;
   const unit = d.dashboard.hoursUnit;
   const swap = (v: string) => swapUnit(v, unit);
   const map = (v: unknown, key = ""): unknown => {
@@ -64,5 +52,6 @@ export function inHours(d: Dict): Dict {
   };
   const out = { ...d };
   for (const s of HOURS_SECTIONS) (out as Record<string, unknown>)[s] = map(d[s]);
+  HOURS_CACHE.set(d, out);
   return out;
 }

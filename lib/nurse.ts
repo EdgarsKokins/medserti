@@ -1,11 +1,10 @@
 import type { CmeCertificate, NurseTopic } from "./types";
+import { fold } from "./text";
 
 /*
  * Nurse-only helpers (Cabinet Regulation No. 630, likumi.lv/ta/id/355331). No server-only imports, so the
  * certificate list, review panel and tests can all use them.
  */
-
-export const NURSE_TOPICS: NurseTopic[] = ["emergency", "infection_control", "patient_safety", "nursing", "other"];
 
 /** The topic a nurse's certificate counts toward; older certificates only carry the emergency-care flag */
 export const nurseTopicOf = (c: Pick<CmeCertificate, "nurseTopic" | "emergencyCare">): NurseTopic =>
@@ -31,19 +30,17 @@ export function suggestNurseTopic(fold: string, raw = ""): NurseTopic {
  * Ārstniecības personu profesionālo organizāciju savienība un Latvijas Māsu asociācija". Point 65 keeps courses up
  * to 31 Dec 2026 without that test.
  */
-export const APPROVAL_REQUIRED_FROM = "2027-01-01";
+const APPROVAL_REQUIRED_FROM = "2027-01-01";
 
 /** LĀB "TIP2026/9696", LMA "NTI/S-1170", "M5/NTI/P130_0826/05082026" */
 const APPROVAL_ID = /(?:^|[^a-z])(?:tip\s?(?:19|20)\d{2}\/\d+|nti\s*\/)/i;
 const APPROVAL_BODY =
   /latvijas\s+(?:arstu\s+biedrib|masu\s+asociacij|arstniecibas\s+personu\s+profesionalo\s+organizaciju\s+savienib)|(?<![\p{L}])(?:lab|lapos|lma)(?![\p{L}])/iu;
 
-const foldText = (s: string) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
 /** The certificate names an LĀB / LĀPOS / LMA approval: by approval number, or the body in organizer or title */
-export function approvalRecognised(c: Pick<CmeCertificate, "approvalId" | "organizer" | "title">): boolean {
+function approvalRecognised(c: Pick<CmeCertificate, "approvalId" | "organizer" | "title">): boolean {
   if (c.approvalId && APPROVAL_ID.test(c.approvalId)) return true;
-  return APPROVAL_BODY.test(foldText(`${c.organizer ?? ""} ${c.title ?? ""} ${c.approvalId ?? ""}`));
+  return APPROVAL_BODY.test(fold(`${c.organizer ?? ""} ${c.title ?? ""} ${c.approvalId ?? ""}`));
 }
 
 /** Flag only, never exclude: a dated 2027+ certificate with no recognisable approval */

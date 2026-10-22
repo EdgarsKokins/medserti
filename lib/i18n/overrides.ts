@@ -5,7 +5,7 @@ import type { Locale } from "../locale";
  *
  * Runtime form (already compiled on the server by lib/i18n/overrides-server.ts):
  *   { lv: { "dashboard.chartTitle": "…", "courses.needLine": "Jums vēl jāsavāc {0} TIP." }, en: {…} }
- * Dot paths, array items by index ("landingA.steps.0.title"). Keys under "courses." apply to courseStrings().
+ * Dot paths, array items by index ("landingA.steps.0.title").
  * For a function entry the value is a template: "{0}" is the first argument, "{0.points}" a field of it.
  */
 export type RuntimeOverrides = Partial<Record<Locale, Record<string, string>>>;
@@ -22,10 +22,6 @@ export function setI18nOverrides(o: RuntimeOverrides | null | undefined): void {
   current = next;
   currentKey = key;
   cache = new Map();
-}
-
-export function getI18nOverrides(): RuntimeOverrides {
-  return current;
 }
 
 const TOKEN = /\{(\d+)(?:\.([A-Za-z_]\w*))?\}/g;
@@ -68,26 +64,20 @@ function apply(node: unknown, path: string, flat: Record<string, string>, prefix
   return out ?? node;
 }
 
-/**
- * Overlay the active overrides on a dictionary. ns "" for the main dictionary, "courses" for courseStrings.
- * Memoized per (ns, locale); returns `base` itself when nothing applies.
- */
-export function overlay<T>(ns: string, locale: Locale, base: T): T {
+/** Overlay the active overrides on a language's dictionary. Memoized per locale; returns `base` itself when nothing applies. */
+export function overlay<T>(locale: Locale, base: T): T {
   const all = current[locale];
   if (!all) return base;
-  const id = `${ns}|${locale}`;
-  if (cache.has(id)) return cache.get(id) as T;
-  const pre = ns ? `${ns}.` : "";
+  if (cache.has(locale)) return cache.get(locale) as T;
   const flat: Record<string, string> = {};
   const prefixes = new Set<string>();
   for (const [k, v] of Object.entries(all)) {
-    if (!k.startsWith(pre) || typeof v !== "string") continue;
-    const rel = k.slice(pre.length);
-    flat[rel] = v;
-    const parts = rel.split(".");
+    if (typeof v !== "string") continue;
+    flat[k] = v;
+    const parts = k.split(".");
     for (let i = 1; i < parts.length; i++) prefixes.add(parts.slice(0, i).join("."));
   }
   const out = Object.keys(flat).length ? (apply(base, "", flat, prefixes) as T) : base;
-  cache.set(id, out);
+  cache.set(locale, out);
   return out;
 }

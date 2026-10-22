@@ -18,7 +18,7 @@ const DICTS: Record<Locale, Dict> = { lv, en, ru };
 /** Dictionary accessor: t(locale).nav.dashboard. Admin text overrides (lib/i18n/overrides.ts) are applied on top. */
 export const t = (locale: Locale): Dict => {
   const l = isLocale(locale) ? locale : DEFAULT_LOCALE;
-  return overlay("", l, DICTS[l]);
+  return overlay(l, DICTS[l]);
 };
 
 /** The dictionary as written in code, without overrides (for /admin) */

@@ -1,13 +1,13 @@
-export type Profession =
-  | "doctor"
-  | "dentist"
-  | "functional_specialist"
-  | "physician_assistant"
-  | "nurse"
-  | "midwife"
-  | "other_practitioner";
+/* Each enum is one array, so the types and the API validation (z.enum(ARR)) cannot drift apart. */
 
-export type CertificationKind = "specialty" | "method";
+export const PROFESSIONS = ["doctor", "dentist", "functional_specialist", "physician_assistant", "nurse", "midwife", "other_practitioner"] as const;
+export type Profession = (typeof PROFESSIONS)[number];
+
+export const CERTIFICATION_KINDS = ["specialty", "method"] as const;
+export type CertificationKind = (typeof CERTIFICATION_KINDS)[number];
+
+/** Certificate files we accept and parse */
+export const FILE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"] as const;
 
 export interface UserRecord {
   id: string;
@@ -37,24 +37,25 @@ export interface Profile {
   certificateIssued: string | null;
   /** YYYY-MM-DD, defaults to issued + 5 years, editable */
   certificateExpires: string | null;
-  /** Former manual override of required points. No longer edited or read by the rules; saves store null */
-  requiredPointsOverride: number | null;
 }
 
 /** Annex 4 of Cabinet Regulation No. 391 (No. 487 version, 18 Aug 2026) grouped into the buckets that matter for counting */
-export type CmeCategory =
-  | "professional_meeting" // Annex 4 item 1
-  | "training_latvia" // item 2, 5, 6, 8
-  | "training_abroad" // item 3
-  | "interdisciplinary_conference" // item 4, 4.1
-  | "e_learning" // item 7, 9
-  | "practical_training" // item 10, capped at 16%
-  | "lecture_or_publication" // items 22-27
-  | "degree" // items 11-13
-  | "other"; // items 14-21, 28-30
+export const CME_CATEGORIES = [
+  "professional_meeting", // Annex 4 item 1
+  "training_latvia", // item 2, 5, 6, 8
+  "training_abroad", // item 3
+  "interdisciplinary_conference", // item 4, 4.1
+  "e_learning", // item 7, 9
+  "practical_training", // item 10, capped at 16%
+  "lecture_or_publication", // items 22-27
+  "degree", // items 11-13
+  "other", // items 14-21, 28-30
+] as const;
+export type CmeCategory = (typeof CME_CATEGORIES)[number];
 
 /** Reg. 630 point 26.3 topics a nurse's hours count toward from 01 Jan 2027; "nursing" = nurse competence topics */
-export type NurseTopic = "emergency" | "infection_control" | "patient_safety" | "nursing" | "other";
+export const NURSE_TOPICS = ["emergency", "infection_control", "patient_safety", "nursing", "other"] as const;
+export type NurseTopic = (typeof NURSE_TOPICS)[number];
 
 export type CertStatus = "parsing" | "needs_review" | "confirmed" | "failed";
 
@@ -91,7 +92,7 @@ export interface CmeCertificate {
   confidence: number | null;
   /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */
   fieldConfidence?: FieldConfidence | null;
-  /** confirmed by the parser without the user (lib/parse/confidence.ts autoConfirm); cleared when the user saves */
+  /** confirmed by the parser without the user (lib/parse/confidence.ts autoConfirmBlocks); cleared when the user saves */
   autoConfirmed?: boolean;
   /** sha256 of the uploaded file, to spot the same file uploaded twice */
   fileHash?: string | null;

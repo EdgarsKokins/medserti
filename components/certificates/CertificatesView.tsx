@@ -8,7 +8,8 @@ import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { exclusionReason, type ExclusionReason } from "@/lib/rules";
-import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
+import { displayOrganizer, STATUS_CLASS } from "./format";
+import { formatDate, formatNumber } from "@/lib/format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
@@ -175,7 +176,7 @@ export default function CertificatesView({
           {nurse && needsApprovalCheck(c) && <span className="badge badge-warn">{d.approvalCheckShort}</span>}
         </span>
         <span className={styles.points}>
-          {c.points != null && <>+{formatNumber(c.points, locale)} <span className={styles.unit}>{nurse ? dict.dashboard.hoursUnit : "TIP"}</span></>}
+          {c.points != null && <>+{formatNumber(c.points)} <span className={styles.unit}>{nurse ? dict.dashboard.hoursUnit : "TIP"}</span></>}
         </span>
         <span className={styles.status}>
           <span className={outside || duplicate ? "badge badge-bad" : STATUS_CLASS[c.status]}>
@@ -259,7 +260,7 @@ export default function CertificatesView({
       <section aria-labelledby="certs-title">
         <div className={styles.listHead}>
           <h2 id="certs-title">{d.allTitle}</h2>
-          <span className="small muted">{d.summary(certs.length, formatNumber(confirmedPoints, locale))}</span>
+          <span className="small muted">{d.summary(certs.length, formatNumber(confirmedPoints))}</span>
         </div>
         {certs.length === 0 ? (
           <p className="muted">{d.empty}</p>

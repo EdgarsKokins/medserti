@@ -70,10 +70,10 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(Object.fromEntries(form)),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      setError(body.error ?? a.genericError);
+    }).catch(() => null);
+    const body = (await res?.json().catch(() => null)) ?? {};
+    if (!res?.ok) {
+      setError(res ? (body.error ?? a.genericError) : d.common.networkError);
       setBusy(false);
       return;
     }

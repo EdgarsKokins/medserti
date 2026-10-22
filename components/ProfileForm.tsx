@@ -3,14 +3,15 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
-import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES, todayLv } from "@/lib/rules";
+import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
-import { formatDate, inHours, type Locale } from "@/lib/locale";
+import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import { profileComplete } from "@/lib/profile";
 import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
+import { formatDate, todayLv } from "@/lib/format";
 
 type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "certNo" | "issued" | "expires", string>>;
 
@@ -127,16 +128,16 @@ export default function ProfileForm({
       ...p,
       specialtyCode: spec.code,
       specialty: listed ? listed.lv : spec.code === OTHER_SPECIALTY ? spec.text.trim() : "",
-      requiredPointsOverride: null,
     };
     setBusy(true);
     const res = await fetch("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-    });
-    const data = await res.json().catch(() => ({}));
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) ?? {};
     setBusy(false);
+    if (!res) return setMsg({ ok: false, text: dict.common.networkError });
     if (!res.ok) return setMsg({ ok: false, text: data.error ?? d.saveError });
     if (onboarding && profileComplete(data.profile)) return router.push("/dashboard");
     setP(data.profile);

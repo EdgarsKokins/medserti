@@ -2,10 +2,10 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
+import { fold } from "@/lib/text";
 import { OTHER_SPECIALTY, specialtyByCode, type Specialty } from "@/lib/specialties";
 import s from "./profile.module.css";
 
-const norm = (v: string) => v.toLocaleLowerCase("lv").normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 /**
  * Searchable specialty list: type to filter (LV and EN names both match), pick with click, Enter or arrows.
@@ -38,11 +38,11 @@ export default function SpecialtyPicker({
     [list, locale],
   );
   const options = useMemo(() => {
-    const q = norm(query ?? "").trim();
+    const q = fold(query ?? "").trim();
     // names that start with the typed text come first ("kard" -> Kardiologs before Bērnu kardiologs)
-    const starts = (sp: (typeof sorted)[number]) => norm(sp.lv).startsWith(q) || norm(sp.en).startsWith(q);
+    const starts = (sp: (typeof sorted)[number]) => fold(sp.lv).startsWith(q) || fold(sp.en).startsWith(q);
     const hits = q
-      ? sorted.filter((sp) => norm(sp.lv).includes(q) || norm(sp.en).includes(q)).sort((a, b) => Number(starts(b)) - Number(starts(a)))
+      ? sorted.filter((sp) => fold(sp.lv).includes(q) || fold(sp.en).includes(q)).sort((a, b) => Number(starts(b)) - Number(starts(a)))
       : sorted;
     return [...hits.map((sp) => ({ code: sp.code, label: sp[locale] })), { code: OTHER_SPECIALTY, label: labels.other }];
   }, [query, sorted, locale, labels.other]);

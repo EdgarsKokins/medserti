@@ -5,10 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
-import { PASSWORD_MAX, validPassword } from "@/lib/validation";
+import { EMAIL, PASSWORD_MAX, validPassword } from "@/lib/validation";
 import s from "./auth.module.css";
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Brand header and card, same frame as the login page */
 function Frame({ locale, title, lead, children }: { locale: Locale; title: string; lead: string; children: React.ReactNode }) {

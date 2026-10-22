@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { courseStrings } from "@/components/courses/strings";
-import { useDict, useLocale } from "@/components/i18n/DictProvider";
+import { useDict } from "@/components/i18n/DictProvider";
 
 export default function CoursesError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => console.error("courses page failed", error), [error]);
-  const locale = useLocale();
   const d = useDict();
-  const s = courseStrings(locale);
+  const s = d.courses;
   return (
     <main className="container stack">
       <h1>{s.title}</h1>

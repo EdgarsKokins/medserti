@@ -1,24 +1,15 @@
-import { cappedPoints, exclusionReason, RULES, todayLv, type Progress } from "@/lib/rules";
+import { cappedPoints, exclusionReason, RULES, type Progress } from "@/lib/rules";
 import type { CmeCategory, CmeCertificate } from "@/lib/types";
-import { formatDate, formatNumber, inHours, t, type Dict, type Locale } from "@/lib/i18n";
+import { inHours, t, type Dict, type Locale } from "@/lib/i18n";
+import { formatDate, formatNumber, round1 } from "@/lib/format";
 
 /* Pure view-model helpers for the dashboard. No server-only imports, so they can be tested with tsx. */
 
-const round1 = (n: number) => Math.round(n * 10) / 10;
+/** "2028-03-14" -> EN "14 Mar 2028", LV "14.03.2028."; "-" for no date */
+export const fmtDate = (iso: string | null | undefined, locale: Locale = "en"): string => formatDate(iso, locale) || "-";
 
-/** "2028-03-14" -> EN "14 Mar 2028", LV "14.03.2028." */
-export function fmtDate(iso: string | null | undefined, locale: Locale = "en"): string {
-  if (!iso) return "-";
-  return formatDate(iso.slice(0, 10), locale);
-}
-
-/** Up to one decimal, no trailing ".0"; LV uses a decimal comma */
-export function fmtNum(n: number, locale: Locale = "en"): string {
-  return formatNumber(round1(n), locale, 1);
-}
-
-/** The date in Riga at this moment, the same "today" the rules use */
-export const isoDay = (d: Date) => todayLv(d);
+/** Up to one decimal, no trailing ".0", decimal point in every language */
+export const fmtNum = (n: number): string => formatNumber(round1(n), 1);
 export const dayMs = (iso: string) => Date.parse(iso.slice(0, 10) + "T00:00:00Z");
 
 export const certTitle = (c: CmeCertificate) => c.title?.trim() || c.fileName;
@@ -38,8 +29,8 @@ const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 /** The dictionary for this profile: nurses see academic hours where others see TIP */
 export const dictFor = (locale: Locale, hours = false): Dict => (hours ? inHours(t(locale)) : t(locale));
 
-export function headline(p: Progress, locale: Locale = "en", hours = false): Headline {
-  const d = dictFor(locale, hours);
+/** `d` is the page's dictionary (dictFor), `locale` formats the dates in it */
+export function headline(p: Progress, d: Dict, locale: Locale): Headline {
   const pct = p.required > 0 ? Math.min(100, Math.floor((p.total / p.required) * 100)) : 0;
   const unmet = p.checks.filter((c) => !c.met && c.id !== "total").map((c) => lowerFirst(d.checks[c.id]));
 
@@ -60,7 +51,7 @@ export function headline(p: Progress, locale: Locale = "en", hours = false): Hea
     return {
       tone: "warn",
       pct,
-      message: d.dashboard.lateMsg(fmtNum(p.remaining, locale)),
+      message: d.dashboard.lateMsg(fmtNum(p.remaining)),
     };
   }
   return { tone: "neutral", pct, message: null };
@@ -122,7 +113,7 @@ export function categoryBreakdown(p: Progress, locale: Locale = "en"): CategoryR
     .sort((a, b) => b.points - a.points);
 }
 
-export interface Exclusions {
+interface Exclusions {
   outsideWindow: number;
   missingData: number;
   failed: number;
@@ -151,13 +142,4 @@ export const needsReviewCount = (p: Progress) => p.counted.filter((c) => c.statu
 
 export function recent(p: Progress, n = 8): CmeCertificate[] {
   return [...p.counted].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, n);
-}
-
-/** Points you would have by today if collecting evenly across the window */
-export function onTrackToday(p: Progress, today: Date): number | null {
-  if (!p.windowStart || !p.windowEnd) return null;
-  const span = dayMs(p.windowEnd) - dayMs(p.windowStart);
-  if (span <= 0) return null;
-  const share = Math.min(1, Math.max(0, (today.getTime() - dayMs(p.windowStart)) / span));
-  return round1(p.required * share);
 }

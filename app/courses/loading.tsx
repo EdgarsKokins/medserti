@@ -1,9 +1,9 @@
 import { getLocale } from "@/lib/i18n/server";
-import { courseStrings } from "@/components/courses/strings";
+import { t } from "@/lib/i18n";
 
 /** Shown instantly on navigation; the first build of the course list can take ~25 s */
 export default async function Loading() {
-  const s = courseStrings(await getLocale());
+  const s = t(await getLocale()).courses;
   return (
     <main className="container stack" aria-busy="true">
       <div className="page-head">

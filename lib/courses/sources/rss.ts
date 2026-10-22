@@ -1,5 +1,6 @@
 import type { Course, CourseSource } from "../types";
-import { decodeEntities, dmy, fetchText, lvLongDate, sleep, textOf, tipIn, todayIso } from "../util";
+import { decodeEntities, dmy, fetchText, lvLongDate, sleep, textOf, tipIn } from "../util";
+import { todayLv } from "../../format";
 
 /**
  * kursiarstiem.lv and medicinaskursi.lv are WordPress LMS sites whose REST APIs are broken,
@@ -38,7 +39,7 @@ async function fetchFeed(site: string, pages: number): Promise<FeedItem[]> {
 }
 
 /** kursiarstiem.lv: LĀB's paid e-learning shop - conference recordings and pre-sales of upcoming conferences */
-export function toKursiarstiem(items: FeedItem[], today = todayIso()): Course[] {
+export function toKursiarstiem(items: FeedItem[], today = todayLv()): Course[] {
   const out: Course[] = [];
   for (const it of items) {
     const date = lvLongDate(it.title);
@@ -76,7 +77,7 @@ export function toKursiarstiem(items: FeedItem[], today = todayIso()): Course[] 
 }
 
 /** medicinaskursi.lv: free recorded lectures, TIP in the title, "Lekcija būs pieejama līdz dd.mm.yyyy" */
-export function toMedicinaskursi(items: FeedItem[], today = todayIso()): Course[] {
+export function toMedicinaskursi(items: FeedItem[], today = todayLv()): Course[] {
   const out: Course[] = [];
   for (const it of items) {
     const until = dmy(/pieejama\s+līdz\s+([\d.]+)/i.exec(it.description)?.[1] ?? "");

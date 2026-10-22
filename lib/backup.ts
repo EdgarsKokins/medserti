@@ -17,7 +17,7 @@ import { getBytes, listVersions } from "./storage";
  * never used as a copy source. The last KEEP prefixes are kept; older ones are deleted whole, so deleted
  * accounts drop out within KEEP weeks.
  */
-export const KEEP = 8;
+const KEEP = 8;
 /** objects copied or verified in parallel */
 const CONCURRENCY = 8;
 
@@ -99,7 +99,7 @@ async function pool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
 }
 
-export interface ManifestEntry {
+interface ManifestEntry {
   path: string;
   /** listVersions tag (`<uploadedAt ms>:<size>`) the copy was taken at; absent in pre-incremental manifests */
   version?: string;
@@ -108,7 +108,7 @@ export interface ManifestEntry {
   contentType: string;
 }
 
-export interface Manifest {
+interface Manifest {
   createdAt: string;
   files: ManifestEntry[];
 }
@@ -129,7 +129,7 @@ async function datedPrefixes(c: Client) {
   return prefixes.map((p) => p.replace(/\/$/, "")).filter((p) => DATED.test(p)).sort();
 }
 
-export interface BackupResult {
+interface BackupResult {
   date: string;
   /** snapshot unchanged files were copied from; null on a full run */
   base: string | null;

@@ -3,14 +3,12 @@ import type { Progress } from "@/lib/rules";
 import { t, type Locale } from "@/lib/i18n";
 import type { RuleBasis } from "@/lib/rules";
 import type { Course } from "@/lib/courses/types";
-import { courseStrings } from "@/components/courses/strings";
 import { specialtyLabel } from "@/lib/specialties";
 import { dayMs, dictFor, fmtDate, fmtNum, type Headline } from "./model";
 import { DateBlock } from "./DateBlock";
 import styles from "./overview.module.css";
 
 // in their own file so client components (CoursesView) can use them without the dictionaries
-export { DateBlock, MONTHS_SHORT } from "./DateBlock";
 
 const toneClass = { ok: styles.toneOk, warn: styles.toneWarn, bad: styles.toneBad, neutral: "" };
 
@@ -38,7 +36,7 @@ export function Hero({
 }) {
   const dict = dictFor(locale, nurse);
   const d = dict.dashboard;
-  const n = (v: number) => fmtNum(v, locale);
+  const n = (v: number) => fmtNum(v);
   // floored like the headline, so 249.9 of 250 never reads 100%
   const pointsPct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
   let timePct: number | null = null;
@@ -148,8 +146,8 @@ export function Requirements({ p, locale, hours = false }: { p: Progress; locale
               <span className="sr-only">: {c.met ? dict.dashboard.met : dict.dashboard.notMet}</span>
             </span>
             <span className={styles.checkVal}>
-              {fmtNum(c.have, locale)}
-              <span className="muted"> / {fmtNum(c.need, locale)}</span>
+              {fmtNum(c.have)}
+              <span className="muted"> / {fmtNum(c.need)}</span>
             </span>
           </li>
         ))}
@@ -164,7 +162,7 @@ export function Requirements({ p, locale, hours = false }: { p: Progress; locale
 /** Next upcoming events that match the specialty (or are for all specialties) */
 export function CoursePicks({ courses, locale }: { courses: Course[]; locale: Locale }) {
   const d = t(locale).dashboard;
-  const cs = courseStrings(locale);
+  const cs = t(locale).courses;
   return (
     <section aria-labelledby="picks-title">
       <div className={styles.sectionHead}>
@@ -181,12 +179,12 @@ export function CoursePicks({ courses, locale }: { courses: Course[]; locale: Lo
               <span className={styles.pickMain}>
                 <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={styles.pickTitle}>{c.title}</Link>
                 <span className="small muted">
-                  {[c.city === "Online" ? cs.online : c.city === "Latvija" ? cs.wholeLatvia : c.city, c.minutes ? cs.hours(fmtNum(c.minutes / 60, locale)) : null]
+                  {[c.city === "Online" ? cs.online : c.city === "Latvija" ? cs.wholeLatvia : c.city, c.minutes ? cs.hours(fmtNum(c.minutes / 60)) : null]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
               </span>
-              {c.tip != null && <span className={styles.pickTip}>+{fmtNum(c.tip, locale)} TIP</span>}
+              {c.tip != null && <span className={styles.pickTip}>+{fmtNum(c.tip)} TIP</span>}
             </li>
           ))}
         </ul>
