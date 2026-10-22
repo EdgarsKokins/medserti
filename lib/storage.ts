@@ -17,8 +17,11 @@ function localPath(pathname: string) {
   return p;
 }
 
-/** STORAGE_TRACE=1 logs every store read, to measure how many reads a page makes */
-const trace = (op: string, path: string) => {
+/**
+ * STORAGE_TRACE=1 logs every store operation, to measure what a page costs against the Blob quota:
+ * get = simple operation; put and list = advanced operation; del = free
+ */
+const trace = (op: "get" | "put" | "list" | "del", path: string) => {
   if (process.env.STORAGE_TRACE) console.log(`[storage] ${op} ${path}`);
 };
 
@@ -27,6 +30,7 @@ async function streamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffe
 }
 
 export async function putBytes(pathname: string, data: Buffer, contentType: string): Promise<void> {
+  trace("put", pathname);
   if (useBlob) {
     await put(pathname, data, { access: "private", contentType, addRandomSuffix: false, allowOverwrite: true });
     return;
@@ -64,13 +68,18 @@ export async function remove(pathname: string): Promise<void> {
     // page through: a prefix (a whole user folder) can hold more than one page of blobs
     let cursor: string | undefined;
     do {
+      trace("list", pathname);
       const page = await list({ prefix: pathname, cursor, limit: 1000 });
       const urls = page.blobs.map((b) => b.url);
+      if (urls.length) trace("del", `${pathname} (${urls.length})`);
       if (urls.length) await del(urls);
       cursor = page.hasMore ? page.cursor : undefined;
     } while (cursor);
     return;
   }
+  // local mode mirrors what the Blob branch costs: one list, then a delete
+  trace("list", pathname);
+  trace("del", pathname);
   await fs.rm(localPath(pathname), { recursive: true, force: true });
 }
 
