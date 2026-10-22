@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
 import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES, todayLv } from "@/lib/rules";
 import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
-import { formatDate, inHours, t, type Locale } from "@/lib/i18n";
+import { formatDate, inHours, type Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { profileComplete } from "@/lib/profile";
 import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
@@ -28,7 +29,7 @@ export default function ProfileForm({
   readOnly?: boolean;
   onboarding?: boolean;
 }) {
-  const dict = t(locale);
+  const dict = useDict();
   const professions = dict.professions;
   const router = useRouter();
   const [p, setP] = useState<Profile>(initial);

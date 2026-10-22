@@ -1,5 +1,6 @@
 import type { CertStatus, CmeCertificate, ParseNote } from "@/lib/types";
-import { formatDate as fmtDate, formatNumber as fmtNum, type Dict, type Locale } from "@/lib/i18n";
+import { formatDate as fmtDate, formatNumber as fmtNum, type Locale } from "@/lib/locale";
+import type { Dict } from "@/lib/i18n";
 
 /** YYYY-MM-DD -> LV "27.11.2026.", EN "27 Nov 2026"; "" for no date */
 export const formatDate = (iso: string | null, locale: Locale): string => (iso ? fmtDate(iso, locale) : "");

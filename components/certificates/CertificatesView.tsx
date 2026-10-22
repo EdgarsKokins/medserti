@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { rowConfirmEligible } from "@/lib/parse/confidence";
 import { useRouter } from "next/navigation";
 import type { CmeCertificate } from "@/lib/types";
-import { inHours, t, type Locale } from "@/lib/i18n";
+import { inHours, type Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { exclusionReason, type ExclusionReason } from "@/lib/rules";
 import { displayOrganizer, formatDate, formatNumber, STATUS_CLASS } from "./format";
@@ -41,7 +42,8 @@ export default function CertificatesView({
   /** nurses: hours instead of TIP, the Reg. 630 topic instead of the Annex 4 category, and the point 47 approval flag */
   nurse?: boolean;
 }) {
-  const dict = nurse ? inHours(t(locale)) : t(locale);
+  const base = useDict();
+  const dict = nurse ? inHours(base) : base;
   const d = dict.certs;
   const router = useRouter();
   const [certs, setCerts] = useState(() => sortCerts(initial));

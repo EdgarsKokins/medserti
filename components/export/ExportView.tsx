@@ -2,22 +2,16 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import JSZip from "jszip";
-import { formatDate, t, type Locale } from "@/lib/i18n";
-import {
-  applyByDate,
-  buildApplication,
-  buildChecklist,
-  buildRecertificationSheet,
-  toBlob,
-  type ExportCertificateInfo,
-  type ExportPerson,
-  type ExportWorkplace,
-} from "@/lib/export/docs";
-import { FILE_ACCEPT, MAX, MAX_FILE_BYTES, finalProblem, formatPersonalCode, liveProblem, type Problem } from "@/lib/export/validate";
+import { formatDate, type Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
+import type { ExportCertificateInfo, ExportPerson, ExportWorkplace } from "@/lib/export/docs";
+import { applyByDate } from "@/lib/export/dates";
+import { FILE_ACCEPT, MAX, MAX_FILE_BYTES, finalProblem } from "@/lib/export/validate";
 import { suggestCountries, suggestInstitutions } from "@/lib/export/suggest";
 import Autocomplete from "./Autocomplete";
-import { addCertificateFiles, extOf, saveBlob, slug } from "./zip";
+import { FieldError, Label } from "./Field";
+import { useExportForm, type FieldSpec } from "./useExportForm";
+import { addCertificateFiles, extOf, slug } from "./zip";
 import s from "./export.module.css";
 
 export interface ExportRow {
@@ -37,8 +31,7 @@ type Work = ExportWorkplace & { now: boolean };
 const emptyWork = (): Work => ({ name: "", position: "", from: "", to: "", now: true });
 
 type TextKey = "firstName" | "lastName" | "personalCode" | "practitionerId" | "address" | "phone" | "email" | "commission";
-type Kind = "name" | "personalCode" | "practitionerId" | "phone" | "email" | "text";
-const SPEC: Record<TextKey, { kind: Kind; required: boolean; max: number }> = {
+const SPEC: Record<TextKey, FieldSpec> = {
   firstName: { kind: "name", required: true, max: MAX.name },
   lastName: { kind: "name", required: true, max: MAX.name },
   personalCode: { kind: "personalCode", required: true, max: MAX.personalCode },
@@ -62,8 +55,12 @@ export default function ExportView({
   cert: ExportCertificateInfo;
   prefill: { firstName: string; lastName: string; email: string };
 }) {
-  const d = t(locale).exportDocs;
-  const [f, setF] = useState({
+  const d = useDict().exportDocs;
+  const { f, set, errors, setErr, formError, checkFields, report, textField, state, files, build, downloadFiles } = useExportForm({
+    spec: SPEC,
+    rows,
+    d,
+    initial: () => ({
     firstName: prefill.firstName.slice(0, MAX.name),
     lastName: prefill.lastName.slice(0, MAX.name),
     personalCode: "",
@@ -82,37 +79,13 @@ export default function ExportView({
     delivery: "pickup" as "pickup" | "post",
     deliveryAddress: "",
     declarations: false,
+    }),
   });
   const [work, setWork] = useState<Work[]>([emptyWork()]);
   const [abroad, setAbroad] = useState<{ country: string; w: Work }[]>([]);
   const [noMisconduct, setNoMisconduct] = useState(true);
   const [langFile, setLangFile] = useState<File | null>(null);
-  const [errors, setErrors] = useState<Record<string, Problem | "file" | "fileSize" | "declarations">>({});
-  const [formError, setFormError] = useState(false);
-  const [state, setState] = useState<{ busy: boolean; done: number; total: number; msg: string | null; warn: boolean }>({
-    busy: false,
-    done: 0,
-    total: 0,
-    msg: null,
-    warn: false,
-  });
-  const [files, setFiles] = useState<{ busy: boolean; done: number; msg: string | null; warn: boolean }>({ busy: false, done: 0, msg: null, warn: false });
   const by = applyByDate(cert.validUntil);
-
-  const setErr = (k: string, p: (typeof errors)[string] | null) =>
-    setErrors((e) => {
-      const n = { ...e };
-      if (p) n[k] = p;
-      else delete n[k];
-      return n;
-    });
-
-  const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => {
-    setF((prev) => ({ ...prev, [k]: v }));
-    const spec = SPEC[k as TextKey];
-    // wrong characters show red at once; missing or incomplete values only after "Download"
-    setErr(k, spec && spec.kind !== "email" && spec.kind !== "text" ? liveProblem(spec.kind, String(v)) : null);
-  };
 
   const updateWork = (i: number, w: Work) => {
     setWork((ws) => ws.map((x, j) => (j === i ? w : x)));
@@ -124,11 +97,7 @@ export default function ExportView({
   };
 
   function validate() {
-    const e: typeof errors = {};
-    for (const k of Object.keys(SPEC) as TextKey[]) {
-      const p = finalProblem(SPEC[k].kind, f[k], SPEC[k].required, SPEC[k].max);
-      if (p) e[k] = p;
-    }
+    const e = checkFields();
     work.forEach((w, i) => {
       const p = finalProblem("text", w.name, i === 0, MAX.workplace);
       if (p) e[`w${i}name`] = p;
@@ -141,15 +110,7 @@ export default function ExportView({
     if (f.paperCertificate && f.delivery === "post" && !f.deliveryAddress.trim()) e.deliveryAddress = "required";
     if (f.otherDocsOn && !f.otherDocs.trim()) e.otherDocs = "required";
     if (!f.declarations) e.declarations = "declarations";
-    setErrors(e);
-    const first = Object.keys(e)[0];
-    setFormError(!!first);
-    if (first) {
-      const el = document.getElementById(first);
-      el?.focus();
-      el?.scrollIntoView({ block: "center" });
-    }
-    return !first;
+    return report(e);
   }
 
   async function download(ev: React.FormEvent) {
@@ -166,76 +127,19 @@ export default function ExportView({
       abroad: abroad.map((a) => ({ country: a.country, workplace: { ...a.w, to: a.w.now ? "" : a.w.to } })),
       abroadNoMisconduct: noMisconduct,
     };
-    setState({ busy: true, done: 0, total: rows.length, msg: null, warn: false });
-    const zip = new JSZip();
     const folder = `Medserti_resertifikacija_${slug(f.lastName)}`;
     const langName = person.languageDoc && langFile ? `4_Valsts_valodas_prasme${extOf(langFile.name)}` : undefined;
-    zip.file(`${folder}/1_Iesniegums.docx`, await toBlob(buildApplication(person, cert, rows.length)));
-    zip.file(`${folder}/2_Resertifikacijas_lapa.docx`, await toBlob(buildRecertificationSheet(person, cert, rows)));
-    zip.file(`${folder}/Pirms_iesniegsanas.txt`, buildChecklist(cert, rows.length, unconfirmed, langName));
-    if (langName && langFile) zip.file(`${folder}/${langName}`, langFile);
-    const failed = await addCertificateFiles(zip, `${folder}/3_Sertifikati`, rows, (done) => setState((st) => ({ ...st, done })));
-    saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
-    setState({ busy: false, done: rows.length, total: rows.length, msg: failed ? d.failed : d.done, warn: failed > 0 });
+    await build(folder, async (zip, docs, onProgress) => {
+      zip.file(`${folder}/1_Iesniegums.docx`, await docs.toBlob(docs.buildApplication(person, cert, rows.length)));
+      zip.file(`${folder}/2_Resertifikacijas_lapa.docx`, await docs.toBlob(docs.buildRecertificationSheet(person, cert, rows)));
+      zip.file(`${folder}/Pirms_iesniegsanas.txt`, docs.buildChecklist(cert, rows.length, unconfirmed, langName));
+      if (langName && langFile) zip.file(`${folder}/${langName}`, langFile);
+      return addCertificateFiles(zip, `${folder}/3_Sertifikati`, rows, onProgress);
+    });
   }
 
-  /** Only the certificate files, no personal details needed */
-  async function downloadFiles() {
-    setFiles({ busy: true, done: 0, msg: null, warn: false });
-    const zip = new JSZip();
-    const folder = "Medserti_sertifikati";
-    const failed = await addCertificateFiles(zip, folder, rows, (done) => setFiles((st) => ({ ...st, done })));
-    saveBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
-    setFiles({ busy: false, done: rows.length, msg: failed ? d.failed : d.filesDone, warn: failed > 0 });
-  }
-
-  const message = (p: (typeof errors)[string] | undefined) =>
-    p === "required" ? d.required
-    : p === "letters" ? d.errLetters
-    : p === "digits" ? d.errDigits
-    : p === "personalCode" ? d.errPersonalCode
-    : p === "practitionerId" ? d.errPractitionerId
-    : p === "phone" ? d.errPhone
-    : p === "email" ? d.errEmail
-    : p === "tooLong" ? d.errTooLong
-    : p === "file" ? d.languageFileMissing
-    : p === "fileSize" ? d.languageFileTooBig
-    : p === "declarations" ? d.declarationsRequired
-    : null;
-
-  const err = (k: string) =>
-    errors[k] ? (
-      <span id={`${k}-err`} className={s.err} role="alert">
-        {message(errors[k])}
-      </span>
-    ) : null;
-
-  const label = (htmlFor: string, text: string, required: boolean) => (
-    <label htmlFor={htmlFor}>
-      {text}
-      {required && <span className={s.req} aria-hidden="true"> *</span>}
-    </label>
-  );
-
-  const input = (k: TextKey, text: string, placeholder: string, extra: { hint?: string; auto?: string; mode?: "numeric" | "tel" | "email"; wide?: boolean } = {}) => (
-    <div className={extra.wide ? `field ${s.wide}` : "field"}>
-      {label(k, text, SPEC[k].required)}
-      <input
-        id={k}
-        value={f[k]}
-        onChange={(e) => set(k, (k === "personalCode" ? formatPersonalCode(e.target.value) : e.target.value) as never)}
-        placeholder={placeholder}
-        maxLength={SPEC[k].max}
-        required={SPEC[k].required}
-        autoComplete={extra.auto ?? "off"}
-        inputMode={extra.mode}
-        aria-invalid={!!errors[k] || undefined}
-        aria-describedby={errors[k] ? `${k}-err` : undefined}
-      />
-      {extra.hint && <span className="small muted">{extra.hint}</span>}
-      {err(k)}
-    </div>
-  );
+  const err = (k: string) => <FieldError id={k} problem={errors[k]} d={d} />;
+  const label = (htmlFor: string, text: string, required: boolean) => <Label htmlFor={htmlFor} text={text} required={required} />;
 
   const institutions = useCallback((q: string) => suggestInstitutions(q), []);
   const countries = useCallback((q: string) => suggestCountries(q, locale), [locale]);
@@ -339,14 +243,14 @@ export default function ExportView({
         <fieldset className={s.group}>
           <legend>{d.you}</legend>
           <div className={s.personal}>
-            {input("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
-            {input("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
-            {input("personalCode", d.personalCode, d.phPersonalCode, { mode: "numeric" })}
-            {input("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
-            {input("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
-            {input("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
-            {input("address", d.address, d.phAddress, { auto: "street-address", wide: true })}
-            {input("commission", d.commission, d.phCommission, { wide: true })}
+            {textField("firstName", d.firstName, d.phFirstName, { auto: "given-name" })}
+            {textField("lastName", d.lastName, d.phLastName, { auto: "family-name" })}
+            {textField("personalCode", d.personalCode, d.phPersonalCode, { mode: "numeric" })}
+            {textField("practitionerId", d.practitionerId, d.phPractitionerId, { hint: d.practitionerIdHint, mode: "numeric" })}
+            {textField("phone", d.phone, d.phPhone, { auto: "tel", mode: "tel" })}
+            {textField("email", d.email, d.phEmail, { auto: "email", mode: "email" })}
+            {textField("address", d.address, d.phAddress, { auto: "street-address", wide: true })}
+            {textField("commission", d.commission, d.phCommission, { wide: true })}
           </div>
           <div className={s.radios} role="radiogroup" aria-label={d.notifyBy}>
             <span className="small muted">{d.notifyBy}:</span>

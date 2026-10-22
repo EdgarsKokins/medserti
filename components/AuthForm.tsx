@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { t, type Locale } from "@/lib/i18n";
+import type { Locale } from "@/lib/locale";
+import { useDict } from "@/components/i18n/DictProvider";
 import type { Profession } from "@/lib/types";
 import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, validEmail, validName, validPassword } from "@/lib/validation";
 import DemoButton from "./DemoButton";
@@ -19,7 +20,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({});
   const [busy, setBusy] = useState(false);
-  const d = t(locale);
+  const d = useDict();
   const a = d.auth;
   const m = d.api;
 
