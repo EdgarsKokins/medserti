@@ -8,6 +8,8 @@ import { canvasEngine, imageCanvas, type GetWorker } from "./ocrCanvas";
 import { ocrPages, type OcrLang } from "@/lib/parse/ocr";
 import { checkImageFile, checkRenderedPage } from "./imageCheck";
 import { ocrUnreadable, type QualityIssue } from "@/lib/parse/imageQuality";
+import { reportError, reportFailure } from "@/components/monitoring/report";
+import { trackEvent } from "@/components/monitoring/track";
 
 /**
  * Upload queue that lives outside any page: it keeps running when the user moves from the dashboard to /certificates
@@ -222,15 +224,19 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       const res = await fetch("/api/certificates", { method: "POST", body });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        reportFailure("certUpload", res);
         update(item.key, { state: "failed", message: data.error ?? d.uploadFailed(res.status) });
         continue;
       }
       const certs: CmeCertificate[] = data.certificates ?? [];
+      if (data.first) trackEvent("First certificate uploaded");
       emit({ stored: [...snap.stored, ...certs] });
       storedListeners.forEach((l) => l(certs));
       const unread = certs.find((c) => !c.title && c.points == null);
       update(item.key, { state: "done", message: unread ? d.notRead : d.checkBelow });
-    } catch {
+    } catch (err) {
+      reportFailure("certUpload", null);
+      if (!(err instanceof TypeError)) reportError({ source: "client", message: err instanceof Error ? err.message : err, stack: err instanceof Error ? err.stack : undefined });
       update(item.key, { state: "failed", message: d.network });
     }
   }

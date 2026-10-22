@@ -108,6 +108,17 @@ export async function removeWhere(prefix: string, match: (pathname: string) => b
   for (const { path: p } of await listLocal(prefix)) if (match(p)) await fs.rm(localPath(p), { force: true });
 }
 
+/** Delete files by exact pathname, without listing first (deletes cost no operation; a missing file is not an error) */
+export async function removeExact(pathnames: string[]): Promise<void> {
+  if (!pathnames.length) return;
+  trace("del", `${pathnames[0]} (${pathnames.length})`);
+  if (useBlob) {
+    await del(pathnames);
+    return;
+  }
+  for (const p of pathnames) await fs.rm(localPath(p), { force: true });
+}
+
 /* ---------- conditional writes: read-modify-write without losing a concurrent update ---------- */
 
 const sha1 = (b: Buffer) => createHash("sha1").update(b).digest("hex");

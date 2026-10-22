@@ -9,10 +9,12 @@ const dev = process.env.NODE_ENV !== "production";
  *   lav/eng language data from jsDelivr, and runs the worker from a blob: URL.
  * - blob:/data: images: OCR and PDF pages are rendered to canvas in the browser.
  * - 'unsafe-eval' only in dev, for React's dev tooling.
+ * - Vercel Web Analytics needs nothing extra in production: its script and beacon are same-origin (/_vercel/insights/*).
+ *   In dev it loads its debug script from va.vercel-scripts.com, which only dev allows.
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net${dev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net${dev ? " 'unsafe-eval' https://va.vercel-scripts.com" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",

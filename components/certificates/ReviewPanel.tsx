@@ -9,6 +9,9 @@ import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { isUnsure } from "@/lib/parse/confidence";
 import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
+import ReportProblem from "@/components/monitoring/ReportProblem";
+import { reportFailure } from "@/components/monitoring/report";
+import { trackEvent } from "@/components/monitoring/track";
 import { COUNTRY_CODES, countryCode, countryName, parseNoteLines, STATUS_CLASS } from "./format";
 import { formatDate, formatNumber } from "@/lib/format";
 import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
@@ -148,11 +151,13 @@ export default function ReviewPanel({
     }).catch(() => null);
     const body = (await res?.json().catch(() => null)) ?? {};
     setBusy(false);
+    if (!res || !res.ok) reportFailure("certSave", res);
     if (!res) return setError(dict.common.networkError);
     if (!res.ok) {
       if (typeof body.field === "string" && body.error) setServerField({ field: body.field, message: body.error });
       return setError(body.error ?? d.saveError);
     }
+    if (status === "confirmed") trackEvent("Certificate confirmed");
     onSaved(body.certificate);
   }
 
@@ -162,6 +167,7 @@ export default function ReviewPanel({
     setAsk(null);
     const res = await fetch(`/api/certificates/${cert.id}`, { method: "DELETE" }).catch(() => null);
     setBusy(false);
+    if (!res || !res.ok) reportFailure("certDelete", res);
     if (!res) return setError(dict.common.networkError);
     if (!res.ok) return setError(d.deleteError);
     onDeleted(cert.id);
@@ -471,6 +477,9 @@ export default function ReviewPanel({
             </button>
           </div>
         )}
+        <div className={styles.footReport}>
+          <ReportProblem certId={cert.id} demo={readOnly} />
+        </div>
       </div>
     </dialog>
   );

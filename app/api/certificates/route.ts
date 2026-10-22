@@ -13,6 +13,7 @@ import { stripMarks } from "@/lib/text";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { todayLv } from "@/lib/format";
+import { reportServerError } from "@/lib/monitoring/errors";
 
 export const maxDuration = 60;
 
@@ -97,6 +98,7 @@ export async function POST(req: Request) {
     await putBytes(cert.filePath, bytes, type);
   } catch (err) {
     console.error("certificate upload", err);
+    await reportServerError(err, "/api/certificates (store file)", user.id);
     return fail(m.storeFailed);
   }
 
@@ -104,8 +106,11 @@ export async function POST(req: Request) {
   // A parser error still stores the file, as "failed" with a note, so the user can enter the details by hand.
   const fileHash = createHash("sha256").update(bytes).digest("hex");
   let done: CmeCertificate;
+  // the account's first certificate: the browser counts it as a funnel step (Vercel Analytics, no personal data)
+  let first = false;
   try {
     const [parsed, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText), listCertificates(user.id)]);
+    first = all.length === 0;
     // no points printed on a Latvian event: look it up in the LĀB register (filled in for the user to confirm, never confirmed)
     const result = applyTipLookup(parsed, needsLookup(parsed) ? await lookupTip({
       title: parsed.fields.title,
@@ -138,6 +143,7 @@ export async function POST(req: Request) {
     };
   } catch (err) {
     console.error("certificate parse", err);
+    await reportServerError(err, "/api/certificates (parse)", user.id);
     done = { ...cert, status: "failed", fileHash, parseNotes: unreadableNote(type) };
   }
 
@@ -145,8 +151,9 @@ export async function POST(req: Request) {
     await saveCertificate(done);
   } catch (err) {
     console.error("certificate save", err);
+    await reportServerError(err, "/api/certificates (save)", user.id);
     await remove(`users/${user.id}/files/${id}/`).catch(() => {});
     return fail(m.storeFailed);
   }
-  return NextResponse.json({ certificates: [done], errors: [] });
+  return NextResponse.json({ certificates: [done], errors: [], first });
 }

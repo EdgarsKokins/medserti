@@ -12,6 +12,8 @@ import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlai
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./profile.module.css";
 import { formatDate, todayLv } from "@/lib/format";
+import { reportFailure } from "@/components/monitoring/report";
+import { trackEvent } from "@/components/monitoring/track";
 
 type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "certNo" | "issued" | "expires", string>>;
 
@@ -137,9 +139,13 @@ export default function ProfileForm({
     }).catch(() => null);
     const data = (await res?.json().catch(() => null)) ?? {};
     setBusy(false);
+    if (!res || !res.ok) reportFailure("profileSave", res);
     if (!res) return setMsg({ ok: false, text: dict.common.networkError });
     if (!res.ok) return setMsg({ ok: false, text: data.error ?? d.saveError });
-    if (onboarding && profileComplete(data.profile)) return router.push("/dashboard");
+    if (onboarding && profileComplete(data.profile)) {
+      trackEvent("Profile completed");
+      return router.push("/dashboard");
+    }
     setP(data.profile);
     setSpec(resolveSpecialty(data.profile));
     setMsg({ ok: true, text: d.saved });

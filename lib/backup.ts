@@ -152,7 +152,8 @@ export async function runBackup(now = new Date()): Promise<BackupResult> {
   if (!c) throw new Error("Backup is not configured (BACKUP_S3_* env vars)");
   const date = now.toISOString().slice(0, 10);
 
-  const current = await listVersions("");
+  // error and feedback logs are kept 30 days (lib/monitoring); a backup kept 8 weeks would outlive that
+  const current = (await listVersions("")).filter(({ path }) => !/^(errors|feedback)\//.test(path));
   const prev = await previousSnapshot(c, await datedPrefixes(c), date);
 
   const files: ManifestEntry[] = [];

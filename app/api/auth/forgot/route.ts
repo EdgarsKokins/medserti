@@ -6,6 +6,7 @@ import { clientIp, createResetToken, rateLimit } from "@/lib/password-reset";
 import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { reportServerError } from "@/lib/monitoring/errors";
 
 const Body = z.object({ email: z.string().email() });
 const HOUR = 60 * 60 * 1000;
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       await sendEmail({ to: user.email, subject: d.reset.emailSubject, text: d.reset.emailBody(link) });
     } catch (e) {
       console.error("[forgot] failed to send reset email", e);
+      await reportServerError(e, "/api/auth/forgot");
     }
   });
   return NextResponse.json({ ok: true });

@@ -3,10 +3,14 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { useDict } from "@/components/i18n/DictProvider";
+import { reportBoundary } from "@/components/monitoring/report";
 
 /** App-wide error screen; /courses has its own with a course-specific message */
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => console.error("page failed", error), [error]);
+  useEffect(() => {
+    console.error("page failed", error);
+    reportBoundary(error);
+  }, [error]);
   const d = useDict();
   return (
     <main className="container status-page">

@@ -9,6 +9,8 @@ export const SPECIALTY_MAX = 120;
 export const CERT_NO_MAX = 30;
 const MESSAGE_MIN = 10;
 export const MESSAGE_MAX = 2000;
+/** "Report a problem" message */
+export const FEEDBACK_MAX = 1000;
 
 /** Letters of any alphabet (Latvian ā, č, Russian ж), joined by single spaces, hyphens or apostrophes: "Anna-Marija O'Brien" */
 const NAME = /^[\p{L}\p{M}]+(?:[ '’-][\p{L}\p{M}]+)*$/u;

@@ -9,6 +9,7 @@ import type { Profession } from "@/lib/types";
 import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, validEmail, validName, validPassword } from "@/lib/validation";
 import DemoButton from "./DemoButton";
 import s from "./auth.module.css";
+import { trackEvent } from "@/components/monitoring/track";
 
 type Field = "fullName" | "profession" | "email" | "password" | "consent";
 
@@ -77,6 +78,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
       setBusy(false);
       return;
     }
+    if (mode === "register") trackEvent("Signup completed");
     router.push(mode === "register" ? "/profile?welcome=1" : "/dashboard");
     router.refresh();
   }

@@ -778,6 +778,8 @@ export const en = {
             "Account: your email address, your password (only as a one-way hash, never in plain text), the date you created the account and the date you agreed to these terms.",
             "Profile: full name, profession, specialty, certificate type, certificate number if you enter it, certificate issue and expiry dates, and a TIP target if you set one yourself.",
             "Certificates: the files you upload (PDF or photo) and the data read from them or entered by you: course title, organizer, dates, points, hours, category, country and approval number.",
+            "Error logs: when something breaks, we record the error message, the page path (without any query string), the browser and device type, and a one-way code derived from your account ID, so we can see how many people one error affects. Before saving, we remove email addresses, personal codes, numbers and quoted text from error messages. Certificate contents are never logged.",
+            "Problem reports: what you write in the \"Report a problem\" form, your account email address (so we can reply), the language, the browser and device type and, if you tick \"Include this page\", the page path and the open certificate's ID. The report is emailed to info@medserti.lv and a copy is kept in our storage.",
           ],
         },
         {
@@ -785,7 +787,7 @@ export const en = {
           items: [
             "Your personal code, address and workplaces. You enter them only when you export recertification documents. The documents are built in your browser, and these fields never reach our server.",
             "Text in photos is recognized in your browser. We receive the photo and the recognized text, nothing else from your device.",
-            "No analytics, advertising or tracking tools.",
+            "No advertising or tracking tools, and no cookies for statistics.",
           ],
         },
         {
@@ -800,6 +802,7 @@ export const en = {
           items: [
             "Contract (GDPR Article 6(1)(b)): we need this data to provide the service you signed up for.",
             "Consent (GDPR Article 6(1)(a)): you agree to this policy when you register. You can withdraw consent at any time by deleting your account.",
+            "Legitimate interest (GDPR Article 6(1)(f)): error logs and cookieless usage statistics, to keep the service working and to see which parts people use.",
           ],
         },
         {
@@ -808,6 +811,7 @@ export const en = {
             "Vercel Inc. (USA) hosts the site. Our server and the private Vercel Blob store with your data and files are in Vercel's Frankfurt (Germany, EU) region. Vercel is a US company, so access from outside the EU (for example by its support staff) is possible; that is covered by Vercel's data processing addendum, which includes the EU Standard Contractual Clauses.",
             "jsDelivr (a public file network): when you upload a photo, your browser downloads the text recognition program from cdn.jsdelivr.net. That service sees your IP address, not your files.",
             "Resend (USA) sends our emails, such as password reset links. It receives your email address and the message text.",
+            "Vercel Web Analytics counts page views and a few steps in the app (for example, a certificate uploaded or documents exported) without cookies. It receives the page address without query strings, the referring site, and your country, browser, operating system and device type. It cannot recognise you from one day to the next and receives no names, email addresses or certificate data.",
             "Cloudflare (USA) stores our weekly encrypted backup copy in its EU jurisdiction (Cloudflare R2, EU).",
           ],
         },
@@ -823,6 +827,7 @@ export const en = {
             "Until you delete your account. Deleting it in your profile removes your account, profile, all certificate records and all uploaded files at once.",
             "Weekly backup copies are kept for 8 weeks, so after you delete your account, your data leaves the backups within 8 weeks. Backups are only used to restore the service after a failure.",
             "Password reset links expire after 1 hour.",
+            "Error logs and stored problem reports: 30 days, then deleted automatically. They are not included in backups. A problem report also stays in our email inbox for as long as we need it to answer you.",
             "Vercel keeps short-lived technical logs (for example, IP addresses of requests) under its own rules.",
           ],
         },
@@ -882,6 +887,24 @@ export const en = {
       failed: "Could not delete the account. Please try again.",
       done: "Your account and all its data have been deleted.",
     },
+  },
+  feedback: {
+    button: "Report a problem",
+    title: "Report a problem",
+    lead: "Tell us what happened or what doesn't look right. We read every message.",
+    messageLabel: "What happened?",
+    emailLabel: "Your email for a reply (optional)",
+    includePage: "Include this page",
+    includeCert: "Include this page and the open certificate",
+    note: "We also send your account email, language and browser type, so we can reply and reproduce the problem.",
+    noteDemo: "We also send the language and browser type. Leave an email if you want a reply.",
+    send: "Send",
+    sending: "Sending...",
+    cancel: "Cancel",
+    close: "Close",
+    thanks: "Thank you! Your message has been sent. If we need more details, we will reply by email.",
+    invalid: "Describe what happened (up to 1000 characters).",
+    failed: "Could not send the report. Please try again or write to info@medserti.lv.",
   },
   contact: {
     title: "Contact us",

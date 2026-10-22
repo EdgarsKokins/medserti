@@ -15,6 +15,8 @@ import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
 import { mergeStored } from "./merge";
 import { forgetStored, getUploadSnapshot, subscribeUploads } from "./uploadStore";
+import { reportFailure } from "@/components/monitoring/report";
+import { trackEvent } from "@/components/monitoring/track";
 import styles from "./certificates.module.css";
 
 /** how long "Apstiprināts · Atsaukt" stays after an in-row confirm */
@@ -96,6 +98,7 @@ export default function CertificatesView({
     setAskDelete(null);
     const name = c.title || c.fileName;
     if (!res?.ok) {
+      reportFailure("certDeleteRow", res);
       setLive(d.rowDeleteError);
       return;
     }
@@ -110,11 +113,13 @@ export default function CertificatesView({
     setBusyId(null);
     const name = c.title || c.fileName;
     if (!res?.ok || !body.certificate) {
+      reportFailure(method === "POST" ? "certConfirmRow" : "certUnconfirmRow", res);
       setLive(d.rowConfirmError);
       return;
     }
     setCerts((prev) => sortCerts(prev.map((p) => (p.id === c.id ? body.certificate : p))));
     window.clearTimeout(undoTimer.current);
+    if (method === "POST") trackEvent("Certificate confirmed");
     if (method === "POST") {
       setUndo(c.id);
       setLive(d.rowConfirmed(name));
