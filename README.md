@@ -39,9 +39,11 @@ npm install
 npm run dev
 ```
 
-Without Redis env vars the app keeps records in `./.data-records.json`, and without `BLOB_READ_WRITE_TOKEN` files in `./.data`, so you can run it with no accounts or keys. `vercel env pull .env.local` brings in the production Redis and Blob credentials: a dev server or script started with them reads and writes live data and uses the free-tier quotas. Test locally without them.
+Without Redis env vars the app keeps records in `./.data-records.json`, and without `BLOB_READ_WRITE_TOKEN` files in `./.data`, so you can run it with no accounts or keys. Previews have no Redis on purpose and keep records in a temp file per instance (they start empty). `vercel env pull .env.local` can bring in the production Blob token: a dev server or script started with it reads and writes live files and uses the free-tier quota. Test locally without it.
 
-Env vars in production: `AUTH_SECRET`, `KV_REST_API_URL` + `KV_REST_API_TOKEN` (set by the Upstash integration in the Vercel Marketplace; `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` also work), `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_PASSWORD`, `RESEND_API_KEY`.
+Until the one-off migration (`POST /api/cron/migrate-records`, see `lib/migrate-records.ts`) has run, a record missing in Redis is read from its old Blob JSON and written through (`lib/records.ts`). Locally, `RECORDS_BLOB_FALLBACK=1` turns that on against `./.data`.
+
+Env vars in production: `AUTH_SECRET`, `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (from the Upstash console, Production only; `KV_REST_API_*` also work), `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `ADMIN_PASSWORD`, `RESEND_API_KEY`.
 
 Email (password reset) goes through Resend's REST API in `lib/email.ts`. Without `RESEND_API_KEY` the email, including the reset link, is printed to the server console. Optional: `EMAIL_FROM` (default `Medserti <noreply@medserti.lv>`), `EMAIL_REPLY_TO` (default `info@medserti.lv`), `SITE_URL` (base for links in emails; default `https://medserti.lv` in production, the request origin locally).
 

@@ -1,7 +1,10 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "fs";
+import os from "os";
 import path from "path";
+import { certsHashUser, certsLoadedKey, classifyLegacy, legacyTtl, MIGRATION_DONE_KEY, READ_THROUGH } from "./legacy";
+import { getBytes, listVersions } from "./storage";
 
 /**
  * JSON records: accounts, certificates, settings, caches and logs. Files stay in Vercel Blob (lib/storage.ts).
@@ -9,7 +12,11 @@ import path from "path";
  * Production: Upstash Redis over REST (env KV_REST_API_URL + KV_REST_API_TOKEN from the Vercel Marketplace
  * integration, or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN). Every function below is one Redis command,
  * except deleteRecordsUnder / listRecordKeys (one SCAN per 1000 keys, plus one DEL).
- * Local without those vars: one JSON file, ./.data-records.json (RECORDS_FILE overrides), with the same semantics.
+ * Without those vars: one JSON file with the same semantics, ./.data-records.json locally (RECORDS_FILE overrides), and
+ * a temp file on Vercel preview deployments (empty per instance). Production without them throws.
+ *
+ * Until the Blob-to-Redis migration has run (lib/migrate-records.ts), a record missing in Redis is read from its old
+ * Blob JSON and written through, so no page shows missing data between the deploy and the migration.
  *
  * Keys mirror the old Blob paths (users/<id>/user.json, courses/index.json, ...). A record is a Redis string holding
  * JSON, except hashes (setHashFields): a user's certificates live in one hash users/<id>/certs, field = certificate id,
@@ -130,9 +137,11 @@ type LocalEntry = { s: string; exp?: number } | { h: Record<string, string>; exp
  * process (a script, the dev server) changed it.
  */
 function localFile(): Backend {
-  // a deployment without the Redis env vars must fail loudly, not keep records in a file the next instance never sees
-  if (process.env.VERCEL) throw new Error("Records store: KV_REST_API_URL and KV_REST_API_TOKEN are not set on this deployment");
-  const file = path.resolve(/*turbopackIgnore: true*/ process.env.RECORDS_FILE || path.join(process.cwd(), ".data-records.json"));
+  // production without the Redis env vars must fail loudly, not keep records in a file the next instance never sees
+  if (process.env.VERCEL_ENV === "production") throw new Error("Records store: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are not set");
+  // previews have no Redis on purpose (it would be the live data): a throwaway file per instance
+  const fallback = process.env.VERCEL ? path.join(os.tmpdir(), "medserti-records.json") : path.join(process.cwd(), ".data-records.json");
+  const file = path.resolve(/*turbopackIgnore: true*/ process.env.RECORDS_FILE || fallback);
   let data = new Map<string, LocalEntry>();
   let mtime = -1;
 
@@ -244,7 +253,7 @@ function localFile(): Backend {
 }
 
 /* one backend per process: route bundles can hold separate copies of this module, and the local one caches the file */
-type Holder = { backend?: Backend };
+type Holder = { backend?: Backend; migrated?: boolean; loaded?: Set<string> };
 const holder: Holder = ((globalThis as { __medsertiRecords?: Holder }).__medsertiRecords ??= {});
 const db = (): Backend => (holder.backend ??= url && token ? upstash() : localFile());
 
@@ -258,20 +267,90 @@ const trace = (cmd: string, key: string) => {
 
 const parse = <T>(s: string | null): T | null => (s === null ? null : (JSON.parse(s) as T));
 
+/* ---------- read-through from the old Blob JSON, until the migration is done ---------- */
+
+/**
+ * On in production (Redis + Blob token) until the migration sets MIGRATION_DONE_KEY; RECORDS_BLOB_FALLBACK=1 or 0
+ * forces it (local tests read ./.data). Only keys that existed in Blob are read through (READ_THROUGH and the
+ * certificate hashes), so a miss on a key that never existed (a rate limit, an unknown email) costs one Redis command
+ * for the done flag and one Blob read, and only until the migration has run.
+ */
+const readThroughOn = () =>
+  process.env.RECORDS_BLOB_FALLBACK ? process.env.RECORDS_BLOB_FALLBACK === "1" : recordsBackend() === "redis" && !!process.env.BLOB_READ_WRITE_TOKEN;
+
+async function migrationDone(): Promise<boolean> {
+  if (holder.migrated) return true;
+  trace("get", MIGRATION_DONE_KEY);
+  if ((await db().get(MIGRATION_DONE_KEY)) !== null) holder.migrated = true;
+  return !!holder.migrated;
+}
+
+/** The old Blob JSON of a string record missing in Redis, written through create-only (a newer write always wins) */
+async function readThrough(key: string): Promise<string | null> {
+  const { kind } = classifyLegacy(key);
+  if (!readThroughOn() || !READ_THROUGH.includes(kind) || (await migrationDone())) return null;
+  const file = await getBytes(key);
+  if (!file) return null;
+  const parsed = JSON.parse(file.data.toString("utf8")) as Record<string, unknown>;
+  const ttl = legacyTtl(kind, key, parsed);
+  if (ttl !== undefined && ttl <= 0) return null;
+  const value = JSON.stringify(parsed);
+  trace("cas", key);
+  if (await db().setIfEquals(key, value, null, ttl)) return value;
+  return db().get(key);
+}
+
+/**
+ * A user's certificates from Blob into the hash, once per user: the records the manifest lists (or, for accounts from
+ * before the manifest, a listing of the folder), each field create-only, then a marker so it never runs again.
+ * Runs before any read of the hash, so a certificate saved before the first listing does not hide the older ones.
+ */
+async function loadCertsThrough(key: string): Promise<void> {
+  const userId = certsHashUser(key);
+  if (!userId || !readThroughOn() || (await migrationDone())) return;
+  const loaded = (holder.loaded ??= new Set());
+  if (loaded.has(userId)) return;
+  const marker = certsLoadedKey(userId);
+  trace("get", marker);
+  if ((await db().get(marker)) === null) {
+    const manifest = await getBytes(`users/${userId}/certs.json`);
+    const prefix = `users/${userId}/certs/`;
+    const ids = manifest
+      ? Object.keys((JSON.parse(manifest.data.toString("utf8")) as { certs?: Record<string, string> }).certs ?? {})
+      : (await listVersions(prefix)).map((e) => e.path.slice(prefix.length)).filter((n) => /^[^/]+\.json$/.test(n)).map((n) => n.slice(0, -5));
+    await Promise.all(
+      ids.map(async (id) => {
+        const file = await getBytes(`${prefix}${id}.json`);
+        // gone: deleted since (lib/db.ts removes the old copy on delete)
+        if (file) await db().hsetIfEquals(key, id, JSON.stringify(JSON.parse(file.data.toString("utf8"))), null);
+      }),
+    );
+    await db().set(marker, "1");
+  }
+  loaded.add(userId);
+}
+
+/** A new account has nothing in Blob: mark its certificates as loaded so no read looks there */
+export async function markCertsLoaded(userId: string): Promise<void> {
+  if (!readThroughOn() || (await migrationDone())) return;
+  await db().set(certsLoadedKey(userId), "1");
+}
+
 /* ---------- plain records ---------- */
 
 export type RecordOpts = { ttlSec?: number };
 
 export async function getRecord<T>(key: string): Promise<T | null> {
   trace("get", key);
-  return parse<T>(await db().get(key));
+  return parse<T>((await db().get(key)) ?? (await readThrough(key)));
 }
 
 /** Several records in one command (MGET); null where missing */
 export async function getRecords<T>(keys: string[]): Promise<(T | null)[]> {
   if (!keys.length) return [];
   trace("mget", `${keys[0]} (${keys.length})`);
-  return (await db().mget(keys)).map((s) => parse<T>(s));
+  const raw = await db().mget(keys);
+  return Promise.all(raw.map(async (s, i) => parse<T>(s ?? (await readThrough(keys[i])))));
 }
 
 export async function setRecord(key: string, value: unknown, opts: RecordOpts = {}): Promise<void> {
@@ -302,7 +381,7 @@ export async function deleteRecordsUnder(prefix: string): Promise<void> {
 /** A record plus an opaque tag of the version read, for setRecordIfMatch */
 export async function getRecordTagged<T>(key: string): Promise<{ value: T; tag: string } | null> {
   trace("get", key);
-  const s = await db().get(key);
+  const s = (await db().get(key)) ?? (await readThrough(key));
   return s === null ? null : { value: JSON.parse(s) as T, tag: s };
 }
 
@@ -335,12 +414,14 @@ export async function updateRecord<T>(key: string, change: (cur: T | null) => T 
 /* ---------- hashes: many small records under one key, each field written on its own ---------- */
 
 export async function getHash<T>(key: string): Promise<Record<string, T>> {
+  await loadCertsThrough(key);
   trace("hgetall", key);
   const h = await db().hgetall(key);
   return Object.fromEntries(Object.entries(h).map(([f, s]) => [f, JSON.parse(s) as T]));
 }
 
 export async function getHashField<T>(key: string, field: string): Promise<T | null> {
+  await loadCertsThrough(key);
   trace("hget", `${key} ${field}`);
   return parse<T>(await db().hget(key, field));
 }

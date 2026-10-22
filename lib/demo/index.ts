@@ -186,7 +186,8 @@ export async function ensureDemo(today = new Date()): Promise<void> {
 
 /** Wipe the demo account and write it again from the canonical data */
 export async function resetDemo(today = new Date()): Promise<void> {
-  await remove(`users/${DEMO_USER_ID}/files/`);
+  // files and any old JSON copy in Blob, so the read-through cannot bring the old account back
+  await remove(`users/${DEMO_USER_ID}/`);
   await deleteRecordsUnder(`users/${DEMO_USER_ID}/`);
   await seedDemo(today);
 }

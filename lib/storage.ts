@@ -79,6 +79,17 @@ export async function remove(pathname: string): Promise<void> {
   await fs.rm(localPath(pathname), { recursive: true, force: true });
 }
 
+/** Delete files by exact pathname, without listing first (deletes cost no operation; a missing file is not an error) */
+export async function removeExact(pathnames: string[]): Promise<void> {
+  if (!pathnames.length) return;
+  trace("del", `${pathnames[0]} (${pathnames.length})`);
+  if (useBlob) {
+    await del(pathnames);
+    return;
+  }
+  for (const p of pathnames) await fs.rm(localPath(p), { force: true });
+}
+
 /** Pathnames under a prefix with a version tag that changes whenever the file is rewritten */
 export async function listVersions(prefix: string): Promise<{ path: string; version: string }[]> {
   trace("list", prefix);

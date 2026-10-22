@@ -94,6 +94,8 @@ assert.ok(!Object.keys(s).some((k) => k.startsWith("rate-limits/")));
 const run2 = await migrate();
 assert.match(run2, /Copied 0 records/);
 assert.match(run2, /Blob 1 list \(advanced\) \+ 0 reads/);
+assert.match(run2, /Complete: true\. Read-through off \(done flag set\): true/);
+assert.ok(store()["meta/blob-migration-done"], "done flag set");
 
 /* ---------- 4. the deploy gap: the old app and the new app both wrote ---------- */
 // old app (Blob): edits A's c1, adds a user, deletes A's c2 (manifest first), edits B's c1
@@ -112,7 +114,7 @@ writeFileSync(RECORDS, JSON.stringify(st));
 const run3 = await migrate();
 assert.match(run3, /Copied 2 records/, "A's c1 and the new user");
 assert.match(run3, /Removed from Redis: 1/, "A's c2, deleted in Blob");
-assert.match(run3, /conflict: users\/bbbbbbbb-0000-4000-8000-000000000002\/certs\/bbbbbbbb-c1\.json: changed in Blob and changed in Redis/);
+assert.match(run3, /conflict: users\/bbbbbbbb-0000-4000-8000-000000000002\/certs\/bbbbbbbb-c1\.json: changed in Blob and in Redis since the last run; Redis kept/);
 assert.equal(hash(`users/${A}/certs`)[`${A.slice(0, 8)}-c1`].title, "edited in Blob");
 assert.equal(hash(`users/${A}/certs`)[`${A.slice(0, 8)}-c2`], undefined);
 assert.equal(str(`users/${C}/user.json`).id, C);
@@ -122,10 +124,13 @@ assert.equal(store()[`reset-tokens/${"r".repeat(64)}.json`], undefined, "deleted
 assert.match(run3, /Blob 1 list \(advanced\) \+ 4 reads/, "only the changed records and the changed manifest");
 
 /* ---------- 5. a lost state file: nothing is overwritten, matching records are adopted ---------- */
-rmSync(path.join(tmp, ".migrate-blob-to-redis.state.json"));
+const lost = store();
+delete lost["meta/blob-migration-state"];
+writeFileSync(RECORDS, JSON.stringify(lost));
 const before = readFileSync(RECORDS, "utf8");
 const run4 = await migrate();
 assert.match(run4, /Copied 1 records/, "only the token the new app deleted is a free slot again");
+assert.match(run4, /already written by the app \(kept\)/);
 const after = store();
 assert.equal(JSON.parse(after["i18n/overrides.json"].s!).lv.k, "no jaunās lietotnes");
 assert.equal(JSON.parse(after[`users/${B}/certs`].h![`${B.slice(0, 8)}-c1`]).title, "edited in Redis");

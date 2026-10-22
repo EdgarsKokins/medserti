@@ -19,6 +19,5 @@ next-env.d.ts
 # Claude's own working files
 Working for Claude/
 
-# local record store (lib/records.ts without Redis env vars) and the Blob-to-Redis migration state
+# local record store (lib/records.ts without Redis env vars)
 .data-records.json*
-.migrate-blob-to-redis.state.json*

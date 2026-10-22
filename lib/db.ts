@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "crypto";
-import { deleteHashFields, deleteRecords, deleteRecordsUnder, getHash, getHashField, getRecord, setHashFields, setRecord } from "./records";
-import { remove } from "./storage";
+import { deleteHashFields, deleteRecords, deleteRecordsUnder, getHash, getHashField, getRecord, markCertsLoaded, setHashFields, setRecord } from "./records";
+import { remove, removeExact } from "./storage";
 import type { CmeCertificate, UserRecord } from "./types";
 
 /*
@@ -14,6 +14,10 @@ import type { CmeCertificate, UserRecord } from "./types";
  *
  * One hash per user: a page lists every certificate with one command (HGETALL), and a save or delete writes only its
  * own field, so two concurrent saves cannot drop each other.
+ *
+ * Deletes also remove the record's old JSON copy in Blob (users/<id>/certs/<certId>.json, users/<id>/user.json, the
+ * email index; deletes cost no Blob operation), so neither the read-through (lib/records.ts) nor the migration can
+ * bring deleted data back, and a deleted account leaves nothing behind.
  */
 const emailKey = (email: string) => createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
 const indexKey = (email: string) => `users/index/${emailKey(email)}.json`;
@@ -32,6 +36,7 @@ export async function getUser(userId: string): Promise<UserRecord | null> {
 export async function createUser(user: UserRecord): Promise<void> {
   await setRecord(userKey(user.id), user);
   await setRecord(indexKey(user.email), { userId: user.id });
+  await markCertsLoaded(user.id);
 }
 
 export async function saveUser(user: UserRecord): Promise<void> {
@@ -73,8 +78,9 @@ export async function saveCertificates(certs: CmeCertificate[]): Promise<void> {
   await setHashFields(certsKey(userId), Object.fromEntries(certs.map((c) => [c.id, c])));
 }
 
-/** The record first, so no page lists it while its files go; then the files */
+/** The old Blob copy first, then the record, so no page lists it while its files go; then the files */
 export async function deleteCertificate(userId: string, certId: string): Promise<void> {
+  await removeExact([`users/${userId}/certs/${certId}.json`]);
   await deleteHashFields(certsKey(userId), [certId]);
   await remove(`users/${userId}/files/${certId}/`);
 }
@@ -86,7 +92,9 @@ export async function deleteCertificate(userId: string, certId: string): Promise
 export async function deleteUserData(user: UserRecord): Promise<void> {
   // ids are UUIDs; anything else could reach outside the user's own records (e.g. users/index/)
   if (!/^[0-9a-f-]{36}$/i.test(user.id)) throw new Error("Unexpected user id");
-  await remove(`users/${user.id}/files/`);
+  // the whole Blob folder: files and the old JSON records, in one listing
+  await remove(`users/${user.id}/`);
+  await removeExact([indexKey(user.email)]);
   await deleteRecords([certsKey(user.id)]);
   await deleteRecords([indexKey(user.email)]);
   await deleteRecordsUnder(`users/${user.id}/`);

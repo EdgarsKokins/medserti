@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, randomBytes } from "crypto";
 import { deleteRecords, getRecord, incrementWindow, setRecord } from "./records";
+import { removeExact } from "./storage";
 
 /*
  * Records (lib/records.ts), both expiring on their own:
@@ -40,6 +41,8 @@ export async function readResetToken(token: string): Promise<ResetToken | null> 
 }
 
 export async function deleteResetToken(token: string): Promise<void> {
+  // and its old Blob copy (free), so the migration cannot bring a used token back
+  await removeExact([tokenPath(token)]);
   await deleteRecords([tokenPath(token)]);
 }
 
