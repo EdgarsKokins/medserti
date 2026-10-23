@@ -3,8 +3,9 @@ import { canvasEngine, type GetWorker } from "./ocrCanvas";
 
 /**
  * Browser side of reading scanned PDFs: when a PDF's text layer is thin or its page is a scanned image,
- * render the pages and OCR them with the shared tesseract workers. Returns null when the text layer is enough,
- * so the server reads that as before. Steps shared with the tests live in lib/parse/ocr.ts.
+ * render the pages and OCR them with the shared tesseract workers. `ocr` is null when the text layer is enough,
+ * so the server reads that as before; `layer` is that text, for the "is this a certificate?" check.
+ * Steps shared with the tests live in lib/parse/ocr.ts.
  * `checkFirstPage` sees page 1 as rendered, before OCR (the blurry-photo check); returning false stops.
  */
 export async function ocrPdfIfScanned(
@@ -12,7 +13,7 @@ export async function ocrPdfIfScanned(
   getWorker: GetWorker,
   onStart: () => void,
   checkFirstPage?: (page: HTMLCanvasElement) => Promise<boolean>,
-): Promise<OcrPdfResult | null> {
+): Promise<{ layer: string; ocr: OcrPdfResult | null }> {
   const { extractText, getDocumentProxy, getResolvedPDFJS } = await import("unpdf");
   const pdf = await getDocumentProxy(new Uint8Array(await file.arrayBuffer()));
   const { OPS } = await getResolvedPDFJS();
@@ -20,10 +21,10 @@ export async function ocrPdfIfScanned(
   const first = await pdf.getPage(1);
   const [x0, y0, x1, y1] = first.view;
   const share = largestImageShare(await first.getOperatorList(), OPS as unknown as Record<string, number>, (x1 - x0) * (y1 - y0));
-  if (!pdfNeedsOcr(text.replace(/\s/g, "").length, share)) return null;
+  if (!pdfNeedsOcr(text.replace(/\s/g, "").length, share)) return { layer: text, ocr: null };
 
   onStart();
-  return ocrPages<HTMLCanvasElement>({
+  const ocr = await ocrPages<HTMLCanvasElement>({
     pageCount: pdf.numPages,
     async render(p) {
       const page = await pdf.getPage(p);
@@ -40,4 +41,5 @@ export async function ocrPdfIfScanned(
     },
     ...canvasEngine(getWorker),
   }, undefined, checkFirstPage);
+  return { layer: text, ocr };
 }

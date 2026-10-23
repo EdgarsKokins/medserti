@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import {
   ACCEPT,
-  decideQuality,
+  decideCheck,
   getServerUploadSnapshot,
   getUploadSnapshot,
   onCertificatesStored,
@@ -148,33 +148,45 @@ export default function UploadZone({
               <span className={styles.uploadState}>
                 {it.message && <span className="small muted">{it.message}</span>}
                 <span className={STATE_CLASS[it.state]}>
-                  {d.states[it.state]}
+                  {it.state === "check" && it.ask && it.ask.kind !== "quality" ? d.checkFile : d.states[it.state]}
                   {it.state === "reading" && it.progress ? ` ${it.progress}%` : ""}
                 </span>
               </span>
-              {it.state === "check" && it.issues && (
+              {it.state === "check" && it.ask && (
                 <div className={styles.quality} role="alert">
-                  <strong className={styles.qualityTitle}>{qualityTitle(it.issues)}</strong>
-                  <ul className={styles.qualityTips}>
-                    <li>{d.qualityTip1}</li>
-                    <li>{d.qualityTip2}</li>
-                    <li>{d.qualityTip3}</li>
-                  </ul>
+                  {it.ask.kind === "quality" ? (
+                    <>
+                      <strong className={styles.qualityTitle}>{qualityTitle(it.ask.issues)}</strong>
+                      <ul className={styles.qualityTips}>
+                        <li>{d.qualityTip1}</li>
+                        <li>{d.qualityTip2}</li>
+                        <li>{d.qualityTip3}</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <strong className={styles.qualityTitle}>{it.ask.kind === "noText" ? d.noText : d.notCertificate}</strong>
+                  )}
                   <div className={styles.qualityActions}>
                     <button
                       type="button"
                       className="btn btn-primary"
                       onClick={() => {
-                        decideQuality(it.key, "another");
+                        decideCheck(it.key, "another");
                         // opened from the click itself: browsers only allow a picker on a user gesture
                         (lastSource.current === "camera" ? camera : input).current?.click();
                       }}
                     >
-                      {d.chooseAnother}
+                      {it.ask.kind === "quality" ? d.chooseAnother : d.chooseAnotherFile}
                     </button>
-                    <button type="button" className="btn" onClick={() => decideQuality(it.key, "upload")}>
+                    <button type="button" className="btn" onClick={() => decideCheck(it.key, "upload")}>
                       {d.uploadAnyway}
                     </button>
+                    {/* the wrong file: never a hard block, but one click to drop it */}
+                    {it.ask.kind !== "quality" && (
+                      <button type="button" className="btn btn-danger" onClick={() => decideCheck(it.key, "remove")}>
+                        {d.remove}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

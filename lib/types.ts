@@ -140,7 +140,10 @@ export type ParseNoteCode =
   | "tipRegistry"
   | "tipCandidates"
   | "tipNoMatch"
-  | "abroadRecalc";
+  | "abroadRecalc"
+  // added Oct 2026: the "is this a certificate?" check (lib/parse/isCertificate.ts); the file was uploaded anyway
+  | "notCertificate"
+  | "noText";
 
 /** One event in the LĀB approved-TIP register (is.arstubiedriba.lv/tip_list_approved) */
 export interface RegistryEvent {

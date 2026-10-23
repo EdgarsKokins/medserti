@@ -1,4 +1,5 @@
-import type { CmeCertificate, ConfidenceField } from "../types";
+import type { CmeCertificate, ConfidenceField, ParseNote } from "../types";
+import type { CertificateKind } from "./isCertificate";
 import { foldKey } from "../text";
 
 /** A parsed field with lower confidence is named in a "lowConfidence" note and marked in the review panel */
@@ -21,7 +22,8 @@ export type AutoConfirmBlock =
   | "pointsNotPrinted" // derived from hours, ECTS 1:1, summed or a course total
   | "future"
   | "outsideWindow"
-  | "duplicate";
+  | "duplicate"
+  | "notCertificate"; // the "is this a certificate?" check said no text, or not a certificate
 
 export interface AutoConfirmInput {
   source: "text" | "ocr" | "none";
@@ -34,6 +36,8 @@ export interface AutoConfirmInput {
   fileHash: string | null;
   /** YYYY-MM-DD */
   today: string;
+  /** the "is this a certificate?" verdict (lib/parse/isCertificate.ts); undefined when it was not judged */
+  content?: CertificateKind;
 }
 
 const KEY_FIELDS = ["date", "points", "title", "organizer"] as const;
@@ -48,6 +52,7 @@ export function autoConfirmBlocks(x: AutoConfirmInput): AutoConfirmBlock[] {
   const out: AutoConfirmBlock[] = [];
   const f = x.fields;
   if (x.source !== "text") out.push("ocr");
+  if (x.content && x.content !== "certificate") out.push("notCertificate");
   if (!f.title || !f.organizer || !f.date || f.points == null) out.push("missing");
   if (KEY_FIELDS.some((k) => (f.fieldConfidence?.[k] ?? 0) < AUTO_CONFIRM_CONFIDENCE)) out.push("unsure");
   if (x.pointsKind !== "printed") out.push("pointsNotPrinted");
@@ -90,13 +95,30 @@ export function findDuplicate(
  * Shared by the row and the server.
  */
 export function rowConfirmEligible(
-  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash" | "duplicateOf">,
+  cert: Pick<CmeCertificate, "id" | "status" | "title" | "organizer" | "date" | "points" | "fieldConfidence" | "fileHash" | "duplicateOf"> &
+    Partial<Pick<CmeCertificate, "parseNotes">>,
   all: Pick<CmeCertificate, "id" | "title" | "organizer" | "date" | "fileHash">[],
   window: { start: string | null; end: string | null },
   today: string,
 ): boolean {
   if (cert.status !== "needs_review" || !cert.date || cert.points == null) return false;
+  if (contentFlag(cert.parseNotes)) return false;
   if (isUnsure(cert, "date") || isUnsure(cert, "points")) return false;
   if (dateBlocks(cert.date, window, today).length) return false;
   return !(cert.duplicateOf && all.some((o) => o.id === cert.duplicateOf));
+}
+
+/**
+ * The "is this a certificate?" note on a record uploaded anyway ("noText" or "notCertificate"), or null.
+ * Such a record is never confirmed for the user: not on upload, not from its row.
+ */
+export function contentFlag(parseNotes: string | null | undefined): "noText" | "notCertificate" | null {
+  if (!parseNotes) return null;
+  try {
+    const notes = JSON.parse(parseNotes) as ParseNote[];
+    const hit = Array.isArray(notes) ? notes.find((n) => n?.code === "noText" || n?.code === "notCertificate") : undefined;
+    return hit ? (hit.code as "noText" | "notCertificate") : null;
+  } catch {
+    return null; // older certificates hold plain text notes
+  }
 }

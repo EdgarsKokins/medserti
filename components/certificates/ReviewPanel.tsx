@@ -6,7 +6,8 @@ import { registryUrl } from "@/lib/parse/tipMatch";
 import { daysBetween, estimateAbroad } from "@/lib/abroad";
 import { AbroadResult } from "@/components/courses/AbroadEstimate";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
-import { isUnsure } from "@/lib/parse/confidence";
+import { contentFlag, isUnsure } from "@/lib/parse/confidence";
+import { ACCEPT, startUpload } from "./uploadStore";
 import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import ReportProblem from "@/components/monitoring/ReportProblem";
@@ -161,16 +162,26 @@ export default function ReviewPanel({
     onSaved(body.certificate);
   }
 
-  async function remove() {
+  async function remove(): Promise<boolean> {
     setBusy(true);
     setError(null);
     setAsk(null);
     const res = await fetch(`/api/certificates/${cert.id}`, { method: "DELETE" }).catch(() => null);
     setBusy(false);
     if (!res || !res.ok) reportFailure("certDelete", res);
-    if (!res) return setError(dict.common.networkError);
-    if (!res.ok) return setError(d.deleteError);
+    if (!res) return (setError(dict.common.networkError), false);
+    if (!res.ok) return (setError(d.deleteError), false);
     onDeleted(cert.id);
+    return true;
+  }
+
+  // uploaded anyway although it had no text or did not look like a certificate: offer to swap the file
+  const flag = cert.status === "confirmed" ? null : contentFlag(cert.parseNotes);
+  const [kept, setKept] = useState(false);
+  const replaceInput = useRef<HTMLInputElement>(null);
+  async function replaceWith(files: FileList | null) {
+    const picked = files ? Array.from(files) : [];
+    if (picked.length && (await remove())) void startUpload(picked, dict.upload);
   }
 
   // a register event the user picked: its points and approval number, and its days when the certificate gave none
@@ -275,6 +286,22 @@ export default function ReviewPanel({
 
         {cert.duplicateOf && !confirmed && (
           <div className={`alert small ${styles.notes}`} role="note">{d.duplicateNote}</div>
+        )}
+
+        {flag && !kept && (
+          <div className={`alert small ${styles.notes} ${styles.quality}`} role="note">
+            <strong className={styles.qualityTitle}>{flag === "noText" ? dict.upload.noText : dict.upload.notCertificate}</strong>
+            {!readOnly && (
+              <div className={styles.qualityActions}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={() => replaceInput.current?.click()}>
+                  {dict.upload.chooseAnotherFile}
+                </button>
+                <button type="button" className="btn" onClick={() => setKept(true)}>{d.keepAnyway}</button>
+                <button type="button" className="btn btn-danger" disabled={busy} onClick={() => setAsk("delete")}>{d.delete}</button>
+                <input ref={replaceInput} type="file" accept={ACCEPT} hidden onChange={(e) => void replaceWith(e.target.files)} />
+              </div>
+            )}
+          </div>
         )}
 
         {nurse && needsApprovalCheck(f) && (
