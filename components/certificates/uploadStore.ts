@@ -7,7 +7,8 @@ import { ocrPdfIfScanned } from "./pdfOcr";
 import { canvasEngine, imageCanvas, type GetWorker } from "./ocrCanvas";
 import { ocrPages, type OcrLang } from "@/lib/parse/ocr";
 import { checkImageFile, checkRenderedPage } from "./imageCheck";
-import { ocrUnreadable, type QualityIssue } from "@/lib/parse/imageQuality";
+import type { QualityIssue } from "@/lib/parse/imageQuality";
+import { classifyCertificate, uploadQuestion, type UploadQuestion } from "@/lib/parse/isCertificate";
 import { reportError, reportFailure } from "@/components/monitoring/report";
 import { trackEvent } from "@/components/monitoring/track";
 
@@ -22,7 +23,7 @@ const MAX_IMAGE_INPUT_BYTES = 30 * 1024 * 1024;
 const OK_TYPES = new Set<string>(FILE_TYPES);
 export const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
 
-/** "check": the photo may be blurry, dark or too small; waiting for the user to upload anyway or choose another */
+/** "check": the photo may be blurry, or the file may not be a certificate; waiting for the user's choice */
 export type UploadState = "queued" | "check" | "reading" | "uploading" | "done" | "failed";
 export interface UploadItem {
   key: string;
@@ -31,8 +32,8 @@ export interface UploadItem {
   message: string | null;
   /** OCR progress 0-100 while reading an image */
   progress?: number;
-  /** what the blurry-photo check found ("check" state) */
-  issues?: QualityIssue[];
+  /** what the file is asked about ("check" state): photo quality, no text, or not a certificate */
+  ask?: UploadQuestion;
 }
 
 export interface UploadSnapshot {
@@ -70,18 +71,18 @@ export function onCertificatesStored(l: (certs: CmeCertificate[]) => void) {
   return () => void storedListeners.delete(l);
 }
 
-// ---- blurry-photo check: a file that fails waits here for the user's choice; never a hard block ----
-type Choice = "upload" | "another";
+// ---- the file checks (blurry photo, no text, not a certificate): a file that fails waits here for the user; never a hard block ----
+type Choice = "upload" | "another" | "remove";
 const waiting = new Map<string, (c: Choice) => void>();
-/** The user's answer to the "photo may be blurry" callout of one file ("another" drops it; the area opens the picker) */
-export function decideQuality(key: string, choice: Choice) {
+/** The user's answer to the callout of one file ("another" and "remove" drop it; for "another" the area opens the picker) */
+export function decideCheck(key: string, choice: Choice) {
   const resolve = waiting.get(key);
   if (!resolve) return;
   waiting.delete(key);
   resolve(choice);
 }
-function askQuality(key: string, issues: QualityIssue[]): Promise<Choice> {
-  update(key, { state: "check", issues, progress: undefined });
+function askUser(key: string, ask: UploadQuestion): Promise<Choice> {
+  update(key, { state: "check", ask, progress: undefined });
   return new Promise((resolve) => waiting.set(key, resolve));
 }
 const dropItem = (key: string) => emit({ items: snap.items.filter((it) => it.key !== key) });
@@ -150,12 +151,16 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
     }
     let ocrText = "";
     let ocrConfidence: number | null = null;
-    // what the user uploaded despite the blurry-photo check; the server notes it on the certificate
+    // what the browser read (a PDF's text layer, or OCR), for the "is this a certificate?" check; null when reading failed
+    let text: string | null = null;
+    // the photo checks before OCR: measured first, asked about once the text is in (see uploadQuestion)
+    let issues: QualityIssue[] = [];
+    // what the user uploaded anyway; the server notes it on the certificate
     let flagged: QualityIssue[] = [];
-    let skip = false;
+    let content: "noText" | "notCertificate" | null = null;
     const isPdf = !isImage(file) && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
     if (isPdf) {
-      // scanned PDFs have no usable text layer: read them like photos, after the same check on page 1
+      // scanned PDFs have no usable text layer: read them like photos, with the same check on page 1
       currentKey = item.key;
       try {
         const r = await ocrPdfIfScanned(
@@ -163,54 +168,48 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
           getWorker,
           () => update(item.key, { state: "reading", progress: 0 }),
           async (page) => {
-            const issues = checkRenderedPage(page);
-            if (!issues.length) return true;
-            if ((await askQuality(item.key, issues)) === "another") return false;
-            flagged = issues;
-            update(item.key, { state: "reading", progress: 0, issues: undefined });
+            issues = checkRenderedPage(page);
             return true;
           },
         );
-        if (r && !r.completed) skip = true;
-        else if (r) {
-          ocrText = r.text;
-          ocrConfidence = r.confidence;
+        if (r.ocr) {
+          ocrText = r.ocr.text;
+          ocrConfidence = r.ocr.confidence;
         }
+        text = r.ocr ? r.ocr.text : r.layer;
       } catch (err) {
         console.error("PDF OCR failed", err); // upload anyway; the server reads the text layer or asks for manual entry
       }
       currentKey = "";
     } else if (isImage(file)) {
-      const issues = await checkImageFile(file);
-      if (issues.length) {
-        if ((await askQuality(item.key, issues)) === "another") skip = true;
-        else flagged = issues;
+      issues = await checkImageFile(file);
+      update(item.key, { state: "reading", progress: 0 });
+      currentKey = item.key;
+      try {
+        // a photo is a one-page document: same orientation and language steps as a scanned PDF
+        const page = await imageCanvas(file);
+        const r = await ocrPages<HTMLCanvasElement>({ pageCount: 1, render: async () => page, ...canvasEngine(getWorker) });
+        ocrText = r.text;
+        ocrConfidence = r.confidence;
+        text = r.text;
+      } catch (err) {
+        console.error("OCR failed", err); // upload anyway; the user enters the details
       }
-      if (!skip) {
-        update(item.key, { state: "reading", progress: 0, issues: undefined });
-        currentKey = item.key;
-        try {
-          // a photo is a one-page document: same orientation and language steps as a scanned PDF
-          const page = await imageCanvas(file);
-          const r = await ocrPages<HTMLCanvasElement>({ pageCount: 1, render: async () => page, ...canvasEngine(getWorker) });
-          ocrText = r.text;
-          ocrConfidence = r.confidence;
-        } catch (err) {
-          console.error("OCR failed", err); // upload anyway; the user enters the details
+      currentKey = "";
+    }
+    // one question per file: photo quality, no text, or not a certificate, in the order of lib/parse/isCertificate.ts
+    if (text != null) {
+      const ask = uploadQuestion({ check: classifyCertificate(text, null, ocrConfidence), issues, ocrConfidence, text });
+      if (ask) {
+        if ((await askUser(item.key, ask)) !== "upload") {
+          dropItem(item.key);
+          continue;
         }
-        currentKey = "";
+        if (ask.kind === "quality") flagged = ask.issues;
+        else content = ask.kind;
       }
     }
-    // after OCR: almost nothing read, or read with low confidence, means the photo was likely unreadable
-    if (!skip && !flagged.length && ocrConfidence != null && ocrUnreadable(ocrConfidence, ocrText)) {
-      if ((await askQuality(item.key, ["unreadable"])) === "another") skip = true;
-      else flagged = ["unreadable"];
-    }
-    if (skip) {
-      dropItem(item.key);
-      continue;
-    }
-    update(item.key, { state: "uploading", progress: undefined });
+    update(item.key, { state: "uploading", progress: undefined, ask: undefined });
     try {
       const upload = isImage(file) ? await shrinkImage(file).catch(() => file) : file;
       if (upload.size > MAX_BYTES) {
@@ -220,7 +219,9 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       const body = new FormData();
       body.append("files", upload);
       if (ocrText) body.append("ocrText", ocrText);
+      if (ocrConfidence != null) body.append("ocrConfidence", String(Math.round(ocrConfidence)));
       if (flagged.length) body.append("imageQuality", flagged.join(","));
+      if (content) body.append("contentCheck", content);
       const res = await fetch("/api/certificates", { method: "POST", body });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

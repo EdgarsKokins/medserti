@@ -1,0 +1,276 @@
+[
+ {
+  "file": "blank-white.png",
+  "text": "",
+  "ocrConfidence": 0,
+  "issues": [
+   "bright",
+   "blurry"
+  ]
+ },
+ {
+  "file": "boarding-pass.png",
+  "text": "BOARDING PASS\n\nPassenger SMITH/ALEX MR\n\nFrom RIGA (RIX) To TALLINN (TLL)\nFlight XY 123 Date 140CT\nBoarding 07:25 Gate A12\n\nSeat 14A Zone 2\n\nGate closes 20 minutes before departure\nSeguence 087\n",
+  "ocrConfidence": 94,
+  "issues": []
+ },
+ {
+  "file": "chat-lv-family.png",
+  "text": "9:41\n\nĢimene\n\nVai nopirksi pienu pa ceļam?\nJā, kaut ko vēl?\n\nMaizi un olas\n\nLabi, būšu mājās ap septiņiem\nBērni grib picu vakariņās\n\nVar arī picu, pasūtīšu\n\nSuper, paldies!\n",
+  "ocrConfidence": 95,
+  "issues": []
+ },
+ {
+  "file": "chat-ru.png",
+  "text": "9:41\n\nMapus\n\nMpueeT! Thi 3aBTpa cBOGOAHA?\n\nLa, nocne o6ena\n\n[Nolraém B KMHo?\n\n[asan! Bo ckonbko?\n\nB 19:30, a kynnto 6uneTsl\n\nOTnuyHo, 40 3aBTpa\n\nHe 3abyab 30HTUK, oGeLlļaroT oXab\nXopowwo [1\n",
+  "ocrConfidence": 58,
+  "issues": []
+ },
+ {
+  "file": "dark-pocket-photo.jpg",
+  "text": "SFP eel ates Tia ats dh A a a i il pas eR a a a a Cr A a as as\nEe he ee aE a\nm\nm m GLE a ay a a M m a —\nm a Ca a\n. : ls a Do ae a = a\noo oo oo a a ee aE\na m .\nLs 0 i\naa ar oo $0 Th ee K So oe os i —— _ a i o Lo\na a\nm — m na Bh rl . a Dea iem es\ni — aa m SRE Sse be Ha : a i ae SE a Goi ol a ie -\nEo a i hn sa ay : oe Glens Pa ma ne m\nao hs m on Aes ed Woe ne is eh — i\n— m ja or a LL m a ms m m i -\noo a Ce a a\na Le i a me aa i a — Lae i oe\n- ee a Le\n= oo - Ls Le oo eae - ge 0 Re . es ey Ea —\nSEES Se aan a Sorel ae Ku ee on i Sa is a m a eo =\nau ie a. Shen a =z Sed ae - a oe\nm pe —— aa a a\n— a 2 Ge ala le eas bo m mm i ——\naiza _ m ja ma oe & a aa a oo\n. a m i\na i\n.. a\n. m a :\nLL CE A — m m\ni Se baa i ae aE LL a\nm a . ee az\nSmeal a a pe kas a m m a m\n. oC - - . .\na i —\ni a oo\nSan Sed se ae ce no a\ni . a he =a = g. su ei ma cu bima\nse i nes ni a U Hoi a de — i\na ; i ea Ge 1 — A oe ae\na . oo = 0 ee a Lol Me a\nnen aa a ne Le ea Ly us m M ie ma\n| :. i — —\nm m He\na e - a co an\n. am i —\noo eo Ca oe os\nCe oe Fone ee ae na es\noo . Ce =\n=. oe os os\n. a a\na . ce ean a =\nae - m — ji g oe i a a Se a\n= a ee = a\noe = Seal i i oo ms — : — os oy a — —\nLe os . .\n. ce oe a o\na. a\nee ss as =\n. oo 4 m = 2 a a ce pa :\nSe a Ge nd oe A el oo m\nno oe m a ci aja m in he — ao\na. on oo i m\ni EL oo m a oo Ce a ao a\nCe oe Ede a a 0\noo . a — HH ma a a ag\n— ska 3 i SER ey he a SE as - : a . =\nLa 0 hE m an 5 — Sams — us ; a ee - i . Se\n=. - oo\noo a: i i —\n— a LL Lae al we ee\na oo Le : =\nTe RARE R Sa Sad se i fe Re Be pe pe iE Ge SEE NEE aR ev da eli hemi si Mos ka ma\na\nSUR Ent Se G0 0 LAST (30 a LE RR ESR Sd tol lh ER RR iia Se SEE Tak Le fina EA 4 AU\n",
+  "ocrConfidence": 14,
+  "issues": [
+   "dark",
+   "blurry"
+  ]
+ },
+ {
+  "file": "email-en.png",
+  "text": "9:41\n\nInbox\n\nFrom: Mark Taylor\n\nTo: Team\n\nSubject: Office move next week\n\nHi all,\n\nGuick reminder that we move to the new\noffice on Monday. Please pack your desks\nby Friday evening and label every box\nwith your name and floor number.\nParking passes will be handed out at\nreception. Coffee is on me!\n\nBest,\n\nMark\n",
+  "ocrConfidence": 95,
+  "issues": []
+ },
+ {
+  "file": "email-lv.png",
+  "text": "9:41\n\nPastkaste\n\nNo: Jānis Ozols\n\nKam: Anna\n\nTemats: Tikšanās otrdien\n\nSveika, Anna!\n\nVai otrdien pulksten 15:00 tev der?\nVaram satikties kafejnīcā pie tirgus.\nPaņemšu līdzi dokumentus par dzīvokli\nun rēķinus par oktobri.\n\nJa nevari, uzraksti, sarunāsim citu laiku.\nAr cieņu,\n\nJānis\n",
+  "ocrConfidence": 95,
+  "issues": []
+ },
+ {
+  "file": "holiday-beach.jpg",
+  "text": "| Mm\n| ņ-\n| | | |\nBau\n| |\n| |\nim\nCa |\n| |\n|| |\n8 |\n| |\n|| |\n|| 6\n| |\n| |\n",
+  "ocrConfidence": 55,
+  "issues": []
+ },
+ {
+  "file": "holiday-city-sunset.jpg",
+  "text": "H - A Ms\neu 5 ma ae Va\n- - -\n- - m va ju jo\n. La\niL\n- i\n- 2 - - w=\ni. - ms = x os\n.n 2 au i\n=a - \" His\nFy vinu\nko\n",
+  "ocrConfidence": 44,
+  "issues": []
+ },
+ {
+  "file": "holiday-forest.jpg",
+  "text": "ma mē\n\nNi ti” ga\nen Be, BBS 8 men, al\n| \"T hl 1 Ķ \"11\n| | 13 8 S m 1\n1 | 171 10 a 1 -\noo Ls i ol | “PN a\nLe | Lo TSE |\na . a 110177 jj\na gi Ee Le |\nO i aE a a Šo\na k= oo 2 No\noo wo m S 4 1 eo\n| M = 4 ys do |\n—— x S a\nM — og No\n> =  -_ —\n4 4 —\n¢ maa a |\n\na\n\nA m A ma a a mo S A -\na i ee... a\n- gis i m m\nI ga m m a\ni Ee Ku 0 m — m\nA we _ a a oo\na A m :\n",
+  "ocrConfidence": 26,
+  "issues": [
+   "blurry"
+  ]
+ },
+ {
+  "file": "holiday-mountains.jpg",
+  "text": "a... a a\na a\nLL LG a\nLe a ae\na ee es Ses a Se ae hie New a\nm as da a Ha ee Ssh a sen ae En es a\nCo Ce a\nee a\npr ag „a mu,\n\na a pe.\nga a ff 7% di\npy A g a\ng — - — 8 ga „\nA rN =\ndo 4 rr\nre: ŠĀ g = Go\neri La aja Pro am n aaa an Tao Poo es\naden ane Li Ren Sl Dee eae aa a Ae\ng N FN a\n» i a wl N _ 5 a = a : re =\n- alii a WL eRe a K\nSame (8 os ©“ me EL BE ss\nem a EE Gn a Sa\na Eo . Ee We\na ys x\n. —— i og Ww.\niem — mm m A A\nEg Se =\na ss ui\n4 — A eres,\nco = WP :\n",
+  "ocrConfidence": 21,
+  "issues": [
+   "blurry"
+  ]
+ },
+ {
+  "file": "holiday-photo-scan.pdf",
+  "text": "EEK IA IRN\naE MR aA :\noh ARS de\nHed Baas Sa 0\nFr rane SA\ngua m\nae 4 eRe er\nma a 2108 % aly Shes\nAy 5 SR Ba us\nRe m\nRnd, bo Roe\nm Na INR S ge ee Sn\nTREE A ae i\nkada ER Na ie iy\nARG RE i i ee sau\nRSE ša oh | gas EET ee\nSDR tava ET AE gh Rs ee Bots. iene\nDG RAL EE Sa Ve ga SANG er\nURES Le AYA za ?\nYoffa ne a Sain elt\nGRRE SR a: aaa ee\nar i\nmas Ma ua\nGea i ES par maa :\nCEE hr ASE EE Rae Sx\nRa R oe aie Sd Be 2\nGr i mas eu\na nea a\nSe za ie\na wa\nA Za saktas auras ha, 2 AE ir\nSRR) eel kkas 3 J amu Sat st)\nau mai x Ho 7\n3 SEFC Cras Sen oi S 7a\nRana pa Se S en Gr CLR Es\n",
+  "ocrConfidence": 23,
+  "issues": [
+   "blurry"
+  ]
+ },
+ {
+  "file": "invoice-clinic-en.pdf",
+  "text": "INVOICE 2026-0457\nDate: 12 October 2026\nNorthside Family Clinic\nBill to: Patient account 88213\nDescription Qty Amount\nConsultation, general practitioner 1 45.00\nBlood test panel 1 28.00\nPhysiotherapy session 2 60.00\nTotal due: EUR 133.00\nPayment by bank transfer within 14 days.\nThank you for choosing our clinic.",
+  "ocrConfidence": null,
+  "issues": []
+ },
+ {
+  "file": "invoice-lv.pdf",
+  "text": "RĒĶINS Nr. 2026/104\nDatums: 2026. gada 15. oktobris\nApmaksas termiņš: 2026. gada 30. oktobris\nPiegādātājs: SIA Tīrs Logs, reģ. Nr. 40000000001\nBanka: AS Banka, LV00BANK0000000000000\nSaņēmējs: SIA Birojs\nNr. Apraksts Daudz. Cena Summa\n1 Logu mazgāšana, birojs 2. stāvs 1 120,00 120,00\n2 Žalūziju tīrīšana 6 8,00 48,00\nSumma bez PVN: 168,00 EUR\nPVN 21%: 35,28 EUR\nKopā apmaksai: 203,28 EUR\nSumma vārdiem: divi simti trīs eiro, 28 centi\nRēķins sagatavots elektroniski un derīgs bez paraksta.",
+  "ocrConfidence": null,
+  "issues": []
+ },
+ {
+  "file": "letter-scan-lv.pdf",
+  "text": "Cienījamā kaimiņiene!\n\nInformējam, ka nākamnedēļ, no 3. līdz 7. novembrim,\nmūsu mājā tiks remontētas kāpņu telpas.\n\nLūdzam šajā laikā neatstāt velosipēdus un ratus\n\npie ieejas durvīm.\n\nAtvainojamies par sagādātajām neērtībām.\n\nMājas pārvaldnieks\n\nRīgā, 2026. gada 20. oktobrī\n",
+  "ocrConfidence": 95,
+  "issues": []
+ },
+ {
+  "file": "meme-en-1.jpg",
+  "text": ">= . il BL\ney if Ty ~. 5\n\na\n— — -\n\na vu - oo — “5 [7]\n\nU i sd : = - <\n| — / : = SO . [8 =\n= Sol\n= , 2\n(0) - / ~\n\n' < : r\n2 he = A =\n4 - =\nPg ; © Ly .\n\nR eg =\n2x oo <)\n# (=) = = i . — . (=) :\n\nu 6\n> - 1 - S\n\nS a ®\n/ T |\n",
+  "ocrConfidence": 35,
+  "issues": []
+ },
+ {
+  "file": "meme-en-doctor.jpg",
+  "text": "WHENSTHE re\nHE ALREADY GOOGLED IT\n",
+  "ocrConfidence": 75,
+  "issues": []
+ },
+ {
+  "file": "meme-lv-1.jpg",
+  "text": "KAD im Va\nATCERIES PARVATS KITT\n",
+  "ocrConfidence": 47,
+  "issues": []
+ },
+ {
+  "file": "meme-lv-2.png",
+  "text": "ESIPĒCĪŅĀKISĪMAINAS\n; O 0 )\nZE KAE I ĀNELĪDZ\n",
+  "ocrConfidence": 33,
+  "issues": []
+ },
+ {
+  "file": "meme-ru-1.jpg",
+  "text": "KOGOAMPHLEN HA ē\nATAM ONATb:COBELĻAHME:\n",
+  "ocrConfidence": 62,
+  "issues": []
+ },
+ {
+  "file": "meme-ru-2.jpg",
+  "text": "ARHIOXISAANAHONYH\nd3h38 VIIUHLEL\n",
+  "ocrConfidence": 20,
+  "issues": []
+ },
+ {
+  "file": "meme-small-en.jpg",
+  "text": "Deva ie a SONS ne DONE En\nļ | FY af = = 4\nHORA Rae\nCo jj)\n| 1h wo. Aq A L\n„m\nM yd 0 Ap Vs b\nN sre ON Se\n2 + / X ha v io 1\nm4\n/ Sd XO\n© wvedvaw\n",
+  "ocrConfidence": 33,
+  "issues": [
+   "small"
+  ]
+ },
+ {
+  "file": "menu-restaurant.png",
+  "text": "EDIENKARTE / MENU\nUzkodas / Starters\nTomātu zupa ar baziliku ........ 5,50\nGriléts halloumi ar salātiem .... 7,90\nSilke ar kartupeļiem ............ 6,50\nPamatēdieni / Mains\nCūkgaļas karbonade ar kapostiem . 12,90\nLasis ar dārzeņiem .............. 15,50\nSēņu risoto ..................... 11,00\nDeserti / Desserts\nMedus kūka ....................... 4,90\nSaldējums ar ogām ................ 4,20\nDarba laiks: P-Sv 12:00-22:00\nOpening hours: Mon-Sun 12:00-22:00\n",
+  "ocrConfidence": 90,
+  "issues": []
+ },
+ {
+  "file": "parking-ticket-lv.jpg",
+  "text": "STĀVVIETAS BIĻETE\n\nZona A\n\nIeeja: 14.10.2026 09:12\n\nIzejas 16411009026 11:40\n\nTaiksi Z eža min\n\nSamaksats: 3,00 EUR\n\nPaldies, ka izmantojat mūsu stāvvietu!\n",
+  "ocrConfidence": 71,
+  "issues": []
+ },
+ {
+  "file": "photo-cat.jpg",
+  "text": "\\ > NY Ne / /\ny x X jj 1 } N\n/ X | ; (\nEo | A Eo XN X\nK N : / ~ A m ~ A m\n— 7 > | \\ a: : : N am\n| — 4\n- : = N A N \\ \\\n| ~~ N V { MS '\n\\ | | 7 = 3 - x LRA F /\n* | 4 \\\n. = — m r : m: ; \\\nS ‘ M '\na - N 9 |\ni J 7 t | / ge £\n| ! 7 4\n| | \\\n- > : / | i :\n—\n5 2 , X\n1) x V a\n{ 4 : v\nN /- - |\njj - — — a\n—\n/ Lo S i\nt NO x A /\nhe = ~ | =\nCo LE : XS\n| \\ = i =\n1 oo\n/ X / : .\n: 1 | ! : :\n- - % rs\nN 7 / < i ' \\ /\n| J Na = :\n/- | z | | /\n— \\ < | J\nN / i J 7 /\nm — | - wo ;\n\\ A / oi S \\ | |\n\\ / bo LL\n~ 54 = ~ U \\ \\ S 4\n7 3 m \\ 2 - \\\n",
+  "ocrConfidence": 40,
+  "issues": []
+ },
+ {
+  "file": "random-noise.png",
+  "text": "SEARO eS he Bs SR RAE aa\nSe SRR i ua S\na DELI te pf Bint eas BER FA\na es m\nos\nsa oo - m m Caen\nSe Coed a leh daa ee a ea a oe ae il\na m m a\na m m m m -\noo a oo =.\n: a a Ce oe a\nLo a a a\nee se Fl SE a Se ee oes Dl\na a — m\na Le m Co\nSn m m m a\nLe = m m m a\nm oo a a\nos a as m\nSe oe =\n. a se a =\npo m m mm a O\n_— m i i a -\nCs m = a Le\nm m i m\nos a oe Lr Fe m co\nm mr a — — m i i\ni 8 Se a a ee\nm za an Cm ne hs a a\ni i i a a\n. a ee a Lo\n= m Le Le ea\n- Ls Lo — i i a i\n=e oo ee\nm m — i 1 —\n_ m a Co\na i i ee\nLn a M m S O .\na Ghee CE a gani\na ss a = —\nCoa a oe Wo m a\nCo ae m a i\ng m m a Hu TE m\ni =. A S\ni a m a m\nm m a a oe\n= aE 1 oo ah a\nss a co ea ca\na i i Le\ni i i es oe\nm a a Ha ma\nm m m a a\neee ee a m m\n: m m m m\naL a el\n— a a wo\nSe a ss a :\naa m a nes a me a SEN\ni m m\nm i m a i\nco a — m\nm Da ra a a ena a a Shinai aan sale is\ni m i i m i\nm Le a m a\ni a ss a\na m i\nm m m m\nm i Ku — mm m m mi a a ou\nm i a\nos oe a m =\n. ao a ee a a\n= a a\na m i\n= oe a a - :\nm i i\n= ii i m a\nm m m —\nm m O i\ni a a a — m\nss mm i m ou m Ta m\nuk m Le a Coe m CL\na ca a a\nCs a i : ss m\na a m i\nm a Ha m ae a\na 0 Kr 0 ce\nm m m ku m m i a a\na Se Bo a\nee m m a aa\noe m a wa Se\nTe ee 0 m m ae ma\nCte ju m a m m ae a mm\noo 0 m ss oe a\nMa g a _ du a am aie a we\nSa m m m i es =\noe m a Loe\n5 ee en m a a\na m m i oo a + a\na mo a a m m Le\n— - i a oe m\nm i Ao Le\na a i -\nm — i i\ni — a i T\nm a oo 0 a m\nm m a ne ma\na oo a a Fa m\nA m i\nm a a a a a\nnn as m a m i Waa Cee m\na Sh ae =~ co ay\nmu ee a a se a a add Gaon un _ na os\nFes Se ma kia m m —\nm i Gian Fa a\na es a -\nm m a m m\ni m = oo Seid ra\nLa Ls as a\nm m S\nmm am a A\nm ma m S m i S\nEel ie a a he i i Lo\nee a a m a\nM Lo Do i i\niu O _ Le a oo He\nm ae m m m Ho\nae Ce a ao i Ca\nnnd m i a he Cs mu\nm a a a So\noe Been Hers a < a\nm a a\na Ha a a ee\nae m | S\na i i\nm so oo 1 i\na ce ee .\nLo oo a Pa\n= a 0 U\na a Tn a\na i a a a a i\noo m m oe oo Le\nLa a a a a\neas a Lo oo\nm S i i oo\na ss mia m a m m a\na A 2 a m\nm = wa m m a a oo\nmu m m i m So\nm m i m m m\n— ee . a\nVan ee Lo Le =\na a\n",
+  "ocrConfidence": 13,
+  "issues": []
+ },
+ {
+  "file": "real-photo-1.jpg",
+  "text": "M\na RAE yrs\nBH NE Ke En Pi\nBERL A RR AAT wy\" a Rg, TRS\n\\ MM EA NE i EL Sah FR RARE OR 200\nIH Non A AR, 1 en SHAH\n\\ NN M TAR ks Sh Rg Nel ad i isk A \"a |.\naaa ok f pi ERR a 3 Tk EN\nPA nl N fhe JiR Eu jr RA OR Loar Led :\nva AR Mk ps aa ANG aa i\ni A AS Thad \\ Sh EER REED a\nPAA SRR AYER Red As mid mu\n\\ M Da kus Na, eas\n\\ ol WR M da Ma ku | „m Ey on 3 i\naaa Du a\nM Kon WATE\n| M Na iy | i m inf 4\nBB IRA 4,499 4 |\nN a Ma kaa ji % GE Ec X:\n9 \\ ku 3 Ed i WW Ah 7 SALE 4, :\nM ALS Gn SR JIA % : ma: tas\nMu A au i Ne rad\nM aa 2 9 mā ļ\nNu to i VR ih Sle es si\nRE FUN Mk aa Tautai ; i, |\nRN NER ku bu dy Fake S i\nALT a A | A io A\nA Kalāna, TNS\n: (RRL AUR tt rag \"m\n: a N ka va ka io Bic i) va Fr a AT\nM ua ) āū 5 m\nMu aa DLA\nAU ki! RYN MAG 4 5) m\nvi NLS Lt kumu A TE\na. nh M i RI A he\nSed W RRR A io Ny A \"i 3\nM HR RSNA A 4 a\nRR it al : SP\nRR RSL OL a * ph\nANE CG ee fi AR ag 2:\nm. ju 12. ur\nN RRR ad SL re J ee ey\nARN ku a V i V Ku. hl {hi tg i A\nLI ERI {0 (ER a eT gr\nio ME gi Eo\nPA iE RR PORE PL”\nSIE bu wa iia \" ad\n— a Mu m ap\nMPRA Hh er a\nJ (KS, Mi AM re re\n\" M WV M» oy Mu frien % % [Ty\nBa 19), hh Mi | A ¥ Sr\n: 2 i aid || AR\n: LR Nuu Mars\n3 [RY M Ts red Lh kugi fe | va :\ni AT IT | RE\n- rE po | Yay\nSAE Y Fh BN V vaka 2 TH F:\n) una vai Aa eh Eo E.\n= Ju BE fp pein co | CA NĒ a\nC HT HET a | Eat gr\n=: Tron ju hi NH | ku\npuma N a FE\nHL . LTE RT we Jd Rn | \" A us\nERAT 4 he 4 kika fl fia? Wigan wr NL\nyl iy AAG i hag b oid «a\n; iy matt Bhs da Ka a\nPN ma A jo a fe a Th\n[X Li TARE Wg drm ia | : 4 a.\n§ i? sta EN bhi m th cA ,\nKini ess. | SV\nQAR wipe el k Kau\n0 oli or 2 ;\niy JIA ge aiid og Wi\npe f) ily AN \"T vau ši dā\n: I A ME | See &\nR dili aa EY Pare hi i\nhl Eh] jus Tart\nBh Ph LS ie i\nRL il i a Ell Le 5 i 2 RG SLY od\n1 Re Pie boy Go ua i eee X\nvo ea i i bir kom || AE ra” Bea J\n: (iv J) Wt namā | | Bs Ka oR a: |\nog pte nH || RY Puce Zt\nyi “AU T akta % sa 3 :\nVi ike (i fi we || a i Eh a 0 Tau\nN A ee Saino i“\nTn Joie of < i fp hae 5 4\ndynos: 1 gos kK 7\n\"po a aja\nSM Jo i a ha Ra\nI rk, IOS šas] : Ca ti\n\"4 ATR al sl Fs Wo. 24 bū i\n: / WA ou JHE a EN\nil (hh LEC LRA Eg\n\"1 al jā | akas Ad\nHn iE aa by fo 5 SHR oe hs \\\ni Ili WERENT Ni ZU am :\n| oi SV Sy\n",
+  "ocrConfidence": 29,
+  "issues": []
+ },
+ {
+  "file": "real-photo-10.jpg",
+  "text": "( i 4\nf\nŽ\nF\nId\ny\ni m\n8 4 :\n2\n",
+  "ocrConfidence": 49,
+  "issues": [
+   "blurry"
+  ]
+ },
+ {
+  "file": "real-photo-2.jpg",
+  "text": ") / / 4\ny 4\n| | y 4 4\nerry. 10\n[1 || | / ju 8\n\\ N i ‘ d / / m J” |\n| <a / Z >\n' Lo 2 fF 7 ~\n\\ IL CY 2 EN\ncn Rhee Aa\ni | | Eder as Pa A aaa\nļ {iu | — kt di = A or % BT\n| 1) =\" = = (oA % Wii by Bram 2\nVA == ore ime\nLY I Lr Fa šo: Ads > TE 2 a\nDa : TOO CEA SE a EA\nMu i g: Fa me S\ni M ¢ lo Thea LCE TE\nRy ET m |\nnll 1 Sadie LT\ndE | aga fy a BE\nA Sw ds RT Cr i el\nof bas ANC eg wi : |\nLA =e Kis 78 Gol |\nSam Bl A Me eT\nņ REE ie as T\nJ j at J = |\n„Vv 8\n5 I\npl | per | Ny\n| i CNH =.\n| LA \"a\n- | \\ ® |] ~\n| ) \\ 1 .\nI\n|\n1 i )\n| |\n\\ N\n",
+  "ocrConfidence": 43,
+  "issues": []
+ },
+ {
+  "file": "real-photo-3.jpg",
+  "text": "% ši. ow, MN\nwr Ross. 4 EN : i\ngc fred\nec\nif\na. !\nJ UN\n| RE\nPaka 5 i fl\nHy\n(HI it\nPa i\nBas Tks: HE\nN { Ef i\"\nI Be | ;\n® RX i\nAVL\nĶ\n: :\noy\n' m 2 $ :\nRCA Te ptu\nNe gn EAE\nhe yar vau 5 ;\nTA CRE BREE a & 4 i:\nNc TREE fe :\n“tog. PRR < ct ali vi ;\nPor Ae FAY Ke fo ,\nie TR XR ER LS\nVER NG TR dl :\nm 233 RET hgh PERE N Re Sein]\n",
+  "ocrConfidence": 31,
+  "issues": []
+ },
+ {
+  "file": "real-photo-4.jpg",
+  "text": "N ) = SS Fe] —— Ws ap\n} as Ti ek ra RT A a a\ny , 3 cal TREES PT BE he\n; SN ERNE a A HB vas\npv M 5s 2 a\n© a TREE SP ERNE 1)»\ni RT ERE CR joti\nGi Sy BE ROS\nTRS RE SR LL Te Boe SE\n„x he af ed adu : Ea\nara 5 BF RT 5 0 ;, fia ad\ni * LAN \"+ Ai 7 . od\nDi, wr TT AER $5\nfa RA\nFax Go RE ON\n. yu mē 24 Hp id: me\nS 4 ESF a N AE RT a\nS ' afer To AE TES CREE\nRE ) ARR Ta SRR BET a\n| S T WT nd\nEY) op “oo SEY Z “sg\nAW KS i ti RAY a\nEN % ua Šu a Ko 5\n\\ : Hos Sg Be\n? i NE “oth pe\nSade % :: e24”\n: EO eat [COE FE yes\n: Kid TO Gaga oie\nLRN Fe Fgh a wo\ni Met Bap css dE 5\n\\ ) aka\nei as Ca\nSl Si\nell 5%\nFo aan\nah wet\noo\n4 Oy\n- En Das\neyes\n; y %\nShe\nPet ® ne i No\n: i PT RS i\nwa ote gigas\n¥ 3 Fide = ESE Šš b\nNa %. če 0 3\n% We. Vig Sa FAG\nki ES oT ; 3\n¢ ” % As: ker ~~ To ķ. V)\n3 3 Se a NA DAS 4\nA > REE 7 Fd BL Ee Bs RR Ee gi?\ni 5- Ew TE REN a CN\n: \" Ke Sa oA\ng BOs “uno 7 pe AOR A A Eke INE ra <8\n- X Set % BER, 4 CRE Te = 5 =:\nDEA, ART N K si era ai S ts Ld\n\"va Nee SR SN > 21550 < m)\n3 RAR TR | ME RO SUR \"4 4 2\nIRE kas 5 ALY hed NER $y i NI Š Ww Si\nSay 9 k 4 R < A SR TR [Hu y BRL 3\nSis : LIME Vis he aT SE PS =:\n, wi Pos J oa IE a Be 24 5 2 TAR\nLUŅI NN SS a N ik J de I\n: 7 : Slay Agr 3 3 HMS mm ma.\nj <> hs (Fotis er Nhe Del BE,\n’ ce AE { Mežā Rp te FLT wi\nZ : = a Tal Z Y Voor MPE Mu\nRE = HR a ETL EE NAN\nae Po, Soa V1 RN aa S\n",
+  "ocrConfidence": 27,
+  "issues": []
+ },
+ {
+  "file": "real-photo-5.jpg",
+  "text": "i\ntF 4\nA “hp\nWake. al high\nr 271 Hof Sate x\nSER Ka a i lot\n4A Ss sais yess\n. ETT i :\nER SAE\nREIS ute Rg §\nhoes Z V m” tl\nJ\npS h TAY & AY\n3 id\nWANES ol A\nae\nA\nKY Āā ķ\n44 j Be YALL\nyo SEGAL og\n\\ ods jet\nps Le ai /\nRw gi\nM eg —\n% Dāvi a\nam < bē\n4 RS\nTia\n7\n«x Ru,\nIRA ig F.\nAE Bad\nRe a aa)\nSGT aA BN\nhe) ip)\njy: =k dies At A\ni er A ESP)\nJEN TRE ae ser, SE\n/ Bs SHE te TE\n4 Gd ERR. FR LE sv x\nRoa Lage Te\nyi CREA TA SUE \"\nV | SET rs a :\n7 / gu ein\n4 GE pa\nA EL a SR\nSoria a\nNNT EE rae he\n/ KA S T aE\n/ EINE ARE EA\nERT m TERR TY\nJO 4 EIA aR + Vt a\nJ ANI IEE 2 Ri er\nWON NET 2 Jihad fo ive\n/ FRE Sr QR RR eh us bt Mets\nV ay T WE eu : aatri TH io ez\nFaro) 2 M nde CES RR\n# kas ey SI yo fig ST gE oR FER vs\nSUITE 2 SECRET S\n0 = fog NA Ra be SEG. NTE\nSe Re %. STŪRI : Ge ¥ Be 4\nN C 7 LEAT A iat PR a =\nX > SR a 3 ¥ m ST a\nŠ 1 I Re T : SR Cb *\nS Eaten % Ce\na RETIN rē 2 2 oR\n",
+  "ocrConfidence": 28,
+  "issues": []
+ },
+ {
+  "file": "real-photo-6.jpg",
+  "text": "S Bgzicam nā ša A) 5 Wh Sg, SE\n. £8583 c māttumi FELLA | MS REZ! SeRges\nm Bee see EEE awe HH iki mat 2 Th\nREA LTE DEH VEEL\n¥ =3% SE Baa ide a ci EEE TANG\nTRE A ķi TAS a Wert a A m 3 =a) \\ 5 5 3\nTaa (GRNRRR) aa au\n2% cei eel Utāns BN B82 sent kau\n28 K: Kgs 3 M ITaR=e. dt all A 2 \\ a\n23 a, EET TRUER dERRSET BRE 42. BARE\n“2 SRh2o ie BBacll) A8R%2L0 182% RE! ERR\n1 & % = 2 = ESPs 7 T Ra 52 3 | m KA T M RB 1 REY\n* iem 6% % 7 IBEERpas MEEER \\ Tt\ntg: 53% =3 4% | 4 53 au 21 ea 4 8 ‘zg = mt. <3 :\nPe ES EEL 2 to = 4 BL ota AY TY EZR + 8% \\\nZ = 2 2 = % % % 5 # a : x] \\ rm ts X 3 142 8 % A :\naaa ML arā chp; 86\nas = zemas F he M ie 3 i 5 m 3 gat va Ee: re 2) : 3 of\n= i CL EF A ET ti “£33 te FLA ss a 30451 | | |\n: : = aC wg is +18 F Tēzītāt ATA TAA $a\ng FS S EEE == Ss ss = | 3 MA a ma NONON = ————\nZz 7 2 JET ERY \\ ARR Se—\nFAA JERE ERR AR RRR Su\n",
+  "ocrConfidence": 34,
+  "issues": []
+ },
+ {
+  "file": "real-photo-7.jpg",
+  "text": "N - \\1 A Ar, 1D 35 Re. a\nNEE a\n' Neša m X\nSk 5 fi\nA \\ PN Ak\nKader |\nA \\ voy J\nNN\n\\ 4\nNa\nJ ry\nf\nfl\npis )\na '7 Latu\n- ala,\n— (PV Lies\n| | mumu\nļ J Grīga\nTie 2\n7 Vila £0\nVA / if ļ ) Grau Be\nUNI ata am\n/ / Vy hil) magu dum !\nb NN Ae ij\n4 Ji) J i wd 4 Wl 0 JA ka Ap a\n2710100 fe ja i =\n/ 78 wil Ie ar 2 71 hil em at) 2\n/ J i | (tes i ARE\nJ jā A M0\". ld Sars\nVAL BE Ba =\n4 / (51) 1718 / ris kri 3 44: Ie ua g =\n7 JT | | mi vi ¢ f\n/ JA if Phd I\n1900 /]) ey 1 // V A of BEd | KY 41 = di\n(cy 17 le POM Mg, 4\n/ Wr Vi fon % 644 NESE 5 i Re\n4 ae Aid 7 BORGES INE ©, © a\nWee U & a REE Ap WM\nVIŅAM ay ARF NEE BY 3 - 1.49%\n/ gy | yi WSN A Us\n4 va JŪS i la ja\" I N a\n; 66H |/ fh maa pe ;\n/ vy J ASA RE Auld 4\na / V AU, m Se We A NN\n= J Ea er Yor SRE or RR 3 K\nEE] \"Z LKA LH < es . RNS\napm K M a 7 AA ai EA PR ——\nPS i R ST S js ES A \\ 3\n< I K T i ME S Col 18 S T S M 3 S\n§ = m ; \" 5 N\nK $ SN Ea \\\nsil Se ge Lo WE AA a N\n/ { or\ny ¢ Ee\nWERT Tat AT TET Ge 4 VE auaee m 5 —\nf mi TERE um.\n4 Li BSCR CE S, STS i ON 3 : Ra.\nj PART TNS, da i RAT] a ARR \"5 . i TEEN\nesa ās 2088 RR : EN ih 348\nCo i hem bs Ke i BE A Rr Lake UREN\nali] x AHR IE ig ET A ARR VEN\nKP TR oR TA S R a HE a SN CE au No\nA OS uz RIALS. aes — Kam\nFeds of CERES a. ey Ba hn Ha oh\nad TIPS S ta M rai C La ee Ro fe RAE Ph SLs ae\nBIR Tr TI fn as RTE Bi oH We fi Th Bn LE\nFar” apa SAT Sal BR) A BR 2 AT re Ē lle J NER va\nle TY ak Re SE So BR A ER\nJo ite, 52d Bo CP aD) giver Top SRS AE A SNR\nVt Wee Bw CT pa Ae Ee a ay is LS ARE\nFey 2 FHA BAY, RE gaa, vem ana SERGE PIR CE Sea\n0301 EE vs A 3 4 A VAS FATS fy 7 NA & REL el\nLR ERn dA EER SY: TRAE = Vogts 1 CSR; fh, EEE\nBolg Te ER mle T\nRe hy TRIS Si CME Oe Ny © ARE\nPY RE ek TRC Le CR le Se a m NA ts dam\nka a M ma\n; Bo ne a ES ee Coo A Fa\nhf S ERE ag ae ER KA m | 2 ie\nAES ARI a SEAR Pin\" SE Ea | ag 7 47 24\n",
+  "ocrConfidence": 31,
+  "issues": []
+ },
+ {
+  "file": "real-photo-8.jpg",
+  "text": "At | | | | | 654\nV : M 2 4\n08 11 |\nI Ny | | | i | u\nAB |\nN1 jū 18 p\n| | 7 :\n|4 (dl\n\"4 N\nHE CH\nSIR Ie\nf | . \\ . ļ | I! N Hl |\n/ dll\n\\ ki | j\nCTR TE) |\nMMA |\n+ ay m A |\nA ES\n",
+  "ocrConfidence": 57,
+  "issues": []
+ },
+ {
+  "file": "real-photo-9.jpg",
+  "text": "ARH ON PEAR ATEN CAE RE SE Ls CAN, i\nKS ET A S a het a m ea RRA:\n3 ROL: HONE PRAT as - LAE TRV DET INTE. rel ja NaC Ae: EE\na =. CANES FRO ARON VTP OM Ta) Wry WPA df Re ie Fe\nBAR TRA Fan dRR ae NN WR ABREU ae Ue ete\n; a NY LRH en SER i a dab SR © ER sg TT\nVo Ta SEARS AN pre ADRES BA | x EIN FY RE TE a\nyo wa ee a es i TR ARE wy fra Teds A a\n: j J Spo ym AK Porites i adi cig al\nNX Ld RR, Pos ie ERR TREC A ly.\n\"04 ae\" Pa Av a J T A\nS v 5 pe ACA CHE) Va\n3 N <» 3 6. cs m Karu bu eu\na ? ; \\ % 2 5 5 - by yor So! TKS 5\nIIR 4 on 5, ley Eg RF\nAte : ai Hedi a PT S AE\nS LOR Sja rā x SR Lh\n3 x Fy ; 2% — NXP CRM\nSd Tev YS Pray. Le | 2 RA\nSW Cr FEA BT he ET\ngi KM lg oh)\nŽ Ie LO aaa ; m vir 7 Se\na ES 3 DAAC el AE\n42 wo A Mae M «0\nE 7 i g i eh Ll K\n8 ¢ A R IAPR MA\n: 8 āū AE SE ud g\na PS i\n¥ Np Ey SER Ra md\nUTE ae 00\nERR WR 2. 2\n: Bo Se g\".\n3 < x ASS\n; 5 SNE,\nGora a\ni 3 og Laat\n: Ra\nA\nei\ng.\nŽ\n) Ma % m m\n| rH.\n- RE. © N\na ON\n: : AK, N\nKN NL\n\\ oN |\nCe\n: \\ AY\n3 = \\ \\ \\\n< \\\nES \\ |\n4\n\\ % V\nš * A\nNE % | A\n2 | \\ A A | %\n| % |\n1 | \\ % | ~\nA” \\ N X fe\nN \\ g 5\nA SN 3 )\n2 \\ \\ a or N\n1 \\ \\ ņ\nma\n\\ X (4 y\n| au)\nX Eo A\n§ = A M\n\\ ame\n",
+  "ocrConfidence": 34,
+  "issues": []
+ },
+ {
+  "file": "receipt-en-restaurant.jpg",
+  "text": "THE HARBOUR GRILL\n\n12 Ouay Street\n\nTable 1 Server: Anna\n\n2. x Fish and chips 29.00\n1 x Caesar salad 11400\n3 x Lemonade 9.00\n1 x Cheesecake Jea0\nSubtotal 2100\nVAT 20% 9.50\nTIE 6.00\nTOTAL 1250\nVISA 11234\n\n14/10/2026 20:15\n\nThank you, come again!\n",
+  "ocrConfidence": 79,
+  "issues": []
+ },
+ {
+  "file": "receipt-lv.jpg",
+  "text": "VEIKALS PIE STŪRA\n\nSTA stūra Prece\n\nBrīvības iela 100, Riga\n\nPVN reg. Nr. Lv40000000000\nCeks Nr. 0042 Kase 3\n\nPiens 2,5% 1L 1,29.A\nMaize rudzu ABB He;\nBanani 1,02 kg Arie 3\nSiers Krievijas 300g 3,49 A\nKafija malta 500g 6,100 NX\nŪdens 1,55 x2 1,38 A\nKOPĀ EUR 16,63\nMaksājumu karte 56, 65\nPVN 21% A 2,89\n\n2026-10-14 18:42\n\nPaldies par pirkumu!\n",
+  "ocrConfidence": 79,
+  "issues": []
+ },
+ {
+  "file": "receipt-pharmacy-lv.jpg",
+  "text": "APTIEKA VESELĪBA\n\nSIA Veselības Aptieka\nElizabetes iela 1, Rīga\nIbuprofēns 400 mg N20 3,93\nVitamīns D3 2000 SV 8,40\nPlāksteris 10 gab. 2:15\nDeguna aerosols 5,60\nKOPA EUR 20,10\nPVN 12% 9:15\nKarte 2.040\n2026-1017 09= 31\n\nFarmaceits: I. Bērziņa\n\nEsiet veseli!\n",
+  "ocrConfidence": 87,
+  "issues": []
+ },
+ {
+  "file": "receipt-ru.jpg",
+  "text": "000 «IPOIŅYKTH»\n\nT. Pura, ym. Matmca 5\nKACCOBHJ UEK N! 1187\n\nMojioko 1 J 15239:\nXJre6 pxaHOM 185\nCerp 300 r 3,49\nAēĒJJOKM 1,2 KI 2110\nMTOTO 8773\nOnnaTa KapToit 8,13\nHIC 21% 1,52\n14.10.2026 11:03\n\nCnacubo 3a HOoKynky!\n",
+  "ocrConfidence": 65,
+  "issues": []
+ },
+ {
+  "file": "recipe-ru.png",
+  "text": "Рецепт: Блины\n\nИнгредиенты:\n\nМолоко - 500 мл\n\nЯйца - 3 шт.\n\nМука - 250 г\n\nСахар - 2 ст. ложки\n\nСоль - щепотка\n\nСмешать яйца с сахаром и солью, добавить молоко,\nзатем постепенно ввести муку. Жарить на горячей\nсковороде по 1 минуте с каждой стороны.\n",
+  "ocrConfidence": 93,
+  "issues": []
+ },
+ {
+  "file": "rental-agreement-lv.pdf",
+  "text": "DZĪVOKĻA ĪRES LĪGUMS\nRīgā, 2026. gada 1. oktobrī\nIzīrētājs un īrnieks, turpmāk kopā Puses, noslēdz šo līgumu:\n1. Izīrētājs nodod īrniekam lietošanā dzīvokli Rīgā, Lāčplēša ielā 0-0.\n2. Īres maksa ir 450 EUR mēnesī, maksājama līdz katra mēneša 5. datumam.\n3. Komunālos maksājumus sedz īrnieks pēc skaitītāju rādījumiem.\n4. Līgums noslēgts uz 12 mēnešiem.\n5. Puses var izbeigt līgumu, rakstiski brīdinot otru pusi vienu mēnesi iepriekš.\nIzīrētājs: ____________ Īrnieks: ____________",
+  "ocrConfidence": null,
+  "issues": []
+ },
+ {
+  "file": "train-ticket-en.pdf",
+  "text": "E-TICKET\n\nRiga - Jelgava\n\nDeparture 14 Oct 2026 08:15 Arrival 08:57\n\nCarriage 3 Seat 41\n\nFare: Adult single EUR 2.10\n\nTicket number 7781 2234 0091\n\nValid only on the train and date shown. Show this ticket to the conductor.\n",
+  "ocrConfidence": 94,
+  "issues": []
+ }
+]

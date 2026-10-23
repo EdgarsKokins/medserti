@@ -7,6 +7,7 @@ import { estimateAbroad } from "../abroad";
 import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
 import { makeText } from "./text";
+import { classifyCertificate, type CertificateKind } from "./isCertificate";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
 import { suggestNurseTopic } from "../nurse";
 import { foldKey } from "../text";
@@ -54,6 +55,8 @@ export interface ParseResult {
   pointsKind: PointsKind | null;
   /** JSON array of ParseNote (codes plus values), rendered in the UI language; null when there is nothing to say */
   notes: string | null;
+  /** "is this a certificate?" on the text read (./isCertificate.ts); left out when there was nothing to judge */
+  content?: CertificateKind;
 }
 
 const encodeNotes = (notes: ParseNote[]): string | null => (notes.length ? JSON.stringify(notes) : null);
@@ -89,8 +92,11 @@ export async function parseCertificate(
   contentType: string,
   profile: Pick<Profile, "specialty">,
   ocrText?: string | null,
+  /** tesseract's mean confidence (0-100) for ocrText, sent by the browser; tells photo noise from text */
+  ocrConfidence: number | null = null,
 ): Promise<ParseResult> {
   const ocr = (ocrText ?? "").trim();
+  const judge = (r: ParseResult, text: string, conf: number | null) => withContent(r, classifyCertificate(text, r.fields, conf).kind);
 
   if (contentType === "application/pdf") {
     let layer = "";
@@ -104,14 +110,26 @@ export async function parseCertificate(
     const hasLayer = textChars(layer) >= MIN_TEXT_CHARS;
     const hasOcr = textChars(ocr) >= MIN_TEXT_CHARS;
     if (!hasLayer && !hasOcr) return manual(unreadable ? "pdfUnreadable" : "pdfScan");
-    if (!hasOcr) return parseCertificateText(layer, profile);
+    if (!hasOcr) return judge(parseCertificateText(layer, profile), layer, null);
     // a thin text layer often holds exactly the lines OCR misreads (names, credit tables): read both
-    const r = parseCertificateText(hasLayer ? `${layer}\n\n${ocr}` : ocr, profile, { ocr: true });
-    return withNote(r, { code: "pdfOcr" });
+    const text = hasLayer ? `${layer}\n\n${ocr}` : ocr;
+    return judge(withNote(parseCertificateText(text, profile, { ocr: true }), { code: "pdfOcr" }), text, hasLayer ? null : ocrConfidence);
   }
 
-  if (textChars(ocr) < MIN_TEXT_CHARS) return manual("imageUnreadable");
-  return withNote(parseCertificateText(ocr, profile, { ocr: true }), { code: "ocr" });
+  // too little to parse: still judged when OCR read something (a meme caption is short); no OCR text at all means the
+  // browser could not read it, so there is nothing to judge
+  if (textChars(ocr) < MIN_TEXT_CHARS) return ocr ? withContent(manual("imageUnreadable"), classifyCertificate(ocr, null, ocrConfidence).kind) : manual("imageUnreadable");
+  return judge(withNote(parseCertificateText(ocr, profile, { ocr: true }), { code: "ocr" }), ocr, ocrConfidence);
+}
+
+/**
+ * Record what the "is this a certificate?" check found. Anything but a certificate puts its note first
+ * (the review panel says so before anything else); "no text" replaces "could not read the image", which says the same.
+ */
+export function withContent(r: ParseResult, kind: CertificateKind): ParseResult {
+  if (kind === "certificate") return { ...r, content: kind };
+  const notes: ParseNote[] = (r.notes ? (JSON.parse(r.notes) as ParseNote[]) : []).filter((n) => !(kind === "noText" && n.code === "imageUnreadable"));
+  return { ...r, content: kind, notes: encodeNotes([{ code: kind }, ...notes]) };
 }
 
 export async function extractPdfText(bytes: Uint8Array): Promise<string> {

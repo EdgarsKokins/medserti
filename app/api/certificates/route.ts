@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "crypto";
 import { currentUser, requireWritableUser } from "@/lib/auth";
 import { listCertificates, saveCertificate, unreadableNote } from "@/lib/db";
 import { putBytes, remove } from "@/lib/storage";
-import { EMPTY_FIELDS, parseCertificate } from "@/lib/parse";
+import { EMPTY_FIELDS, parseCertificate, withContent } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
 import { applyTipLookup } from "@/lib/parse/tipMatch";
 import { lookupTip } from "@/lib/tipRegistry";
@@ -47,9 +47,11 @@ export async function GET() {
 
 /** The LĀB register lists events approved in Latvia; a master class abroad or a certificate with no title has nothing to find */
 const needsLookup = (r: Awaited<ReturnType<typeof parseCertificate>>) =>
+  (r.content == null || r.content === "certificate") &&
   r.fields.points == null && !!r.fields.title && (r.fields.country == null || r.fields.country === "LV") && r.fields.category !== "lecture_or_publication";
 
 const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable"]);
+const CONTENT_FLAGS = new Set(["noText", "notCertificate"]);
 
 /** Put the "photo may be blurry" note first, so the review panel says why the fields may be wrong */
 function withImageNote(notes: string | null, reason: string): string {
@@ -79,6 +81,13 @@ export async function POST(req: Request) {
   // the browser's blurry-photo check flagged this file and the user uploaded it anyway (lib/parse/imageQuality.ts)
   const quality = form?.get("imageQuality");
   const qualityReason = typeof quality === "string" ? quality.split(",").find((q) => QUALITY_REASONS.has(q)) ?? null : null;
+  // tesseract's confidence for ocrText: the server's own "is this a certificate?" check uses it to tell photo noise from text
+  const conf = Number(form?.get("ocrConfidence"));
+  const ocrConfidence = form?.get("ocrConfidence") != null && Number.isFinite(conf) ? Math.max(0, Math.min(100, conf)) : null;
+  // the browser's "is this a certificate?" check said no and the user uploaded anyway. The server judges the text itself
+  // (never trusting the browser alone); the browser's word counts only when the server had no text to judge.
+  const claim = form?.get("contentCheck");
+  const contentClaim = typeof claim === "string" && CONTENT_FLAGS.has(claim) ? (claim as "noText" | "notCertificate") : null;
 
   const id = randomUUID();
   const safeName = sanitizeName(file.name, type);
@@ -109,7 +118,8 @@ export async function POST(req: Request) {
   // the account's first certificate: the browser counts it as a funnel step (Vercel Analytics, no personal data)
   let first = false;
   try {
-    const [parsed, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText), listCertificates(user.id)]);
+    const [read, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText, ocrConfidence), listCertificates(user.id)]);
+    const parsed = read.content == null && contentClaim ? withContent(read, contentClaim) : read;
     first = all.length === 0;
     // no points printed on a Latvian event: look it up in the LĀB register (filled in for the user to confirm, never confirmed)
     const result = applyTipLookup(parsed, needsLookup(parsed) ? await lookupTip({
@@ -129,6 +139,7 @@ export async function POST(req: Request) {
       existing: all,
       fileHash,
       today: todayLv(),
+      content: result.content,
     });
     const auto = blocks.length === 0;
     done = {
