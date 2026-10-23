@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Golos_Text, Public_Sans, Schibsted_Grotesk } from "next/font/google";
+import "./fonts.css";
 import "./globals.css";
 import { currentUser, currentUserId } from "@/lib/auth";
 import { isDemoUserId } from "@/lib/demo/id";
@@ -14,15 +14,6 @@ import AppFooter from "@/components/AppFooter";
 import ErrorReporter from "@/components/monitoring/ErrorReporter";
 import AnalyticsClient from "@/components/monitoring/AnalyticsClient";
 import { NURSE_RULES, REGISTER_URL, RULES } from "@/lib/rules";
-
-// self-hosted at build time; latin-ext covers Latvian (ā, č, ē, ģ, ī, ķ, ļ, ņ, š, ū, ž)
-// Public Sans for text and controls: built for government services, open and plain numerals for 60+ readers
-const body = Public_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-body", display: "swap" });
-// Schibsted Grotesk for headings and the numbers that matter
-const display = Schibsted_Grotesk({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "700"], variable: "--font-display-face", display: "swap" });
-// neither face has Cyrillic: Golos Text (made for Russian government services) covers Russian only, via unicode-range.
-// It comes first in the font stacks; no fallback face, so Latin letters skip it. Downloaded only on pages with Cyrillic text.
-const cyrillic = Golos_Text({ subsets: ["cyrillic"], weight: ["400", "500", "600", "700"], variable: "--font-cyrillic", display: "swap", preload: false, adjustFontFallback: false });
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = t(await getLocale());
@@ -65,7 +56,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={locale}
-      className={`${body.variable} ${display.variable} ${cyrillic.variable}`}
       data-theme="light"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
