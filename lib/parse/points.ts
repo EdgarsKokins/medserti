@@ -1,7 +1,7 @@
 import type { CmeCategory, ParseNote } from "../types";
 import { eventDays } from "./dates";
 import { estimateAbroad } from "../abroad";
-import { lineAt, NA, NB, rx, toNum, type Text } from "./text";
+import { lineAt, NA, NB, rx, toNum, withoutSeals, type Text } from "./text";
 
 /*
  * Points and hours. All patterns run on folded text, so "tālākizglītības" and an OCR'd "talakizglTtibas"
@@ -73,7 +73,9 @@ function approvalFor(t: Text, hit: { index: number; length: number }, next: numb
 
 const fmt = (n: number) => String(Math.round(n * 100) / 100);
 
-export function findPoints(t: Text): PointsResult {
+export function findPoints(text: Text): PointsResult {
+  // a seal's text between "Piešķirti 8" and "TIP", or glued onto "8 TIP", hides the value
+  const t = withoutSeals(text);
   // credits listed per day: add them up
   // keyed by day: a text layer and OCR of the same page list the same days twice
   const days = new Map<string, number>();

@@ -115,10 +115,23 @@ export async function parseCertificate(
 }
 
 export async function extractPdfText(bytes: Uint8Array): Promise<string> {
-  const { extractText, getDocumentProxy } = await import("unpdf");
+  const { extractTextItems, getDocumentProxy } = await import("unpdf");
   const pdf = await getDocumentProxy(new Uint8Array(bytes));
-  const { text } = await extractText(pdf, { mergePages: true });
-  return text;
+  const { items } = await extractTextItems(pdf);
+  // unpdf's extractText, except that text placed far away on the page starts a new line: pdf.js marks no line end
+  // between "Piešķirti 8 TIP" and a seal's "PARAUGU" in the corner, which would read as "8 TIPPARAUGU".
+  // A jump of a line or so is a wrapped line of a scan's skewed text layer ("bezmiegu" / "un"): left as it was.
+  const pages = items.map((page) => {
+    let s = "";
+    let prev: (typeof page)[number] | null = null;
+    for (const it of page) {
+      if (prev && !prev.hasEOL && prev.str && it.str && Math.abs(it.y - prev.y) > Math.max(it.fontSize, prev.fontSize) * 2) s += "\n";
+      s += it.str + (it.hasEOL ? "\n" : "");
+      prev = it;
+    }
+    return s;
+  });
+  return pages.join("\n").replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n");
 }
 
 function withNote(r: ParseResult, note: ParseNote): ParseResult {
@@ -142,9 +155,10 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const title = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizerHit = findOrganizer(t);
   // a line of the title read as an organizer ("... Eiropas Sirds Ritma asociācijas (EHRA)"): not the organizer
+  // (the header above the heading is its own line, even when the event is named after it: "Baltic Demo Cardiology Forum 2025")
   const titleWords = new Set(foldKey(titleHit.value).split(" "));
   const inTitle = (v: string) => foldKey(v).split(" ").filter((w) => w.length > 2).every((w) => titleWords.has(w));
-  if (organizerHit.value && titleHit.value && !organizerHit.stated && inTitle(organizerHit.value)) {
+  if (organizerHit.value && titleHit.value && !organizerHit.stated && !organizerHit.header && inTitle(organizerHit.value)) {
     organizerHit.value = "";
     organizerHit.confidence = 0;
   }
