@@ -75,3 +75,83 @@ export function looksLatvian(t: Text): boolean {
   if ((t.raw.match(/[āčēģīķļņšūž]/gi) ?? []).length >= 3) return true;
   return /sertifikats|apliecin|piedalij|talakizglitib|kreditpunkt|arstu|seminara|konferenc[eē]|gada \d/.test(t.flat);
 }
+
+// ----- seals and stamps -----
+
+/** a legal form: a line carrying one is a name, never a seal fragment */
+const LEGAL_FORM =
+  /(?<![\p{L}])(?:SIA|AS|VSIA|AB|UAB|OÜ|LLC|LTD|GMBH|INC|BIEDRĪBA|BIEDRIBA|NODIBINĀJUMS|NODIBINAJUMS|ООО|ОАО|ЗАО|АО)(?![\p{L}])/u;
+/** words a points line needs ("8\nTIP", "12\nCREDITS", "KOPĀ"), and certificate headings, are never seal text (folded) */
+const NOT_SEAL =
+  /(?<![\p{L}])(?:tip|cme|ects|ecmec|cpd|lab)(?![\p{L}])|credit|point|punkt|kredit|stund|hour|kopa|total|sertifik|apliecib|certific|diplom|izzin|attestation|балл|кредит|час|сертификат|удостоверени/u;
+
+/** one to three words, all capitals, no digits: "PARAUGU", "MED.", "PALĪDZĪBAS CENTRS", OCR's "—- PARAUGU" */
+function shortCaps(line: string): boolean {
+  const s = line.replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "");
+  const words = s.split(/\s+/).filter(Boolean);
+  return words.length >= 1 && words.length <= 3 && /\p{Lu}{2}/u.test(s) && !/[\p{Ll}\p{N}]/u.test(s)
+    && !LEGAL_FORM.test(s) && !NOT_SEAL.test(fold(s)) && words.every((w) => /^[\p{Lu}][\p{Lu}.'’-]*$/u.test(w));
+}
+
+/**
+ * Lines that are the text of a round seal or stamp: a run of short all-capital fragments broken over lines
+ * ("PARAUGU" / "MED." / "AKADĒMIJA"). Three or more in a row, or two with an abbreviation ("NEATL."), and no legal form.
+ * `any` takes every such fragment, even alone: for extractors that never read names (points).
+ * Returns their indexes in `lines`; blank lines do not break a run.
+ */
+export function sealLines(lines: string[], any = false): Set<number> {
+  const out = new Set<number>();
+  let run: number[] = [];
+  const close = () => {
+    const abbrev = run.some((i) => /(?<![\p{L}])\p{Lu}{2,5}\.(?:\s|$)/u.test(lines[i].trim()));
+    if (any || run.length >= 3 || (run.length === 2 && abbrev)) run.forEach((i) => out.add(i));
+    run = [];
+  };
+  lines.forEach((l, i) => {
+    if (!l.trim()) return;
+    if (shortCaps(l)) run.push(i);
+    else close();
+  });
+  close();
+  return out;
+}
+
+/**
+ * The text without seal fragments, for the points: "Piešķirti 8" / "AKADĒMIJA" / "PARAUGU" / "TIP" reads as "8 TIP".
+ * Every short all-capital line goes (no points label, heading or digit is ever one). A text layer can glue the seal
+ * onto the line before it ("8 TIPPARAUGU"): that is split first. Returns `t` itself when there is nothing to remove.
+ */
+export function withoutSeals(t: Text): Text {
+  const raw = t.raw.replace(/(\d\s*(?:TIP|CME|ECTS))(?=\p{Lu}{3,})/gu, "$1\n");
+  const lines = raw.split("\n");
+  const seal = sealLines(lines, true);
+  if (raw === t.raw && !seal.size) return t;
+  return makeText(lines.filter((_, i) => !seal.has(i)).join("\n"));
+}
+
+/**
+ * A letter-spaced line ("S I A PA R A U G U  M E D I C Ī N A S") back into words, or null.
+ * The spaces between words are lost, so the letters are split into words that appear elsewhere in the document
+ * (`vocab`, folded); a line that does not split completely is not guessed at.
+ */
+export function despace(line: string, vocab: Set<string>): string | null {
+  const tokens = line.trim().split(/\s+/);
+  if (tokens.length < 6 || tokens.filter((w) => w.length <= 2).length / tokens.length < 0.75) return null;
+  const letters = tokens.join("");
+  const f = fold(letters);
+  // fewest words that cover every letter
+  const best: (number[] | null)[] = Array(f.length + 1).fill(null);
+  best[0] = [];
+  for (let i = 0; i < f.length; i++) {
+    if (!best[i]) continue;
+    for (let j = i + 2; j <= Math.min(f.length, i + 30); j++) {
+      if (!vocab.has(f.slice(i, j))) continue;
+      const cand = [...best[i]!, j];
+      if (!best[j] || cand.length < best[j]!.length) best[j] = cand;
+    }
+  }
+  const cuts = best[f.length];
+  if (!cuts) return null;
+  let from = 0;
+  return cuts.map((to) => letters.slice(from, (from = to))).join(" ");
+}
