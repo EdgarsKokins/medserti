@@ -120,8 +120,9 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
     file: f,
     item: { key: `${stamp}-${i}-${f.name}`, name: f.name, state: "queued" as UploadState, message: null },
   }));
-  // a new batch replaces the finished rows of the last one, but keeps its failures in view
-  emit({ items: [...batch.map((b) => b.item), ...snap.items.filter((p) => p.state === "failed")], busy: true, stored: [] });
+  // a new batch replaces the finished rows of the last one, but keeps its failures and files still waiting for an answer
+  const keep = (p: UploadItem) => p.state === "failed" || (p.state === "check" && waiting.has(p.key));
+  emit({ items: [...batch.map((b) => b.item), ...snap.items.filter(keep)], busy: true, stored: [] });
 
   // OCR runs in the browser (free); workers are shared by the batch and loaded only when an image is present.
   // The Russian model (~2.7 MB) is downloaded only for a page whose Latvian read looks like Cyrillic (lib/parse/ocr.ts).
@@ -155,9 +156,8 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
     let text: string | null = null;
     // the photo checks before OCR: measured first, asked about once the text is in (see uploadQuestion)
     let issues: QualityIssue[] = [];
-    // what the user uploaded anyway; the server notes it on the certificate
-    let flagged: QualityIssue[] = [];
-    let content: "noText" | "notCertificate" | null = null;
+    const flagged: QualityIssue[] = [];
+    const content = null;
     const isPdf = !isImage(file) && (file.type === "application/pdf" || /\.pdf$/i.test(file.name));
     if (isPdf) {
       // scanned PDFs have no usable text layer: read them like photos, with the same check on page 1
@@ -197,49 +197,21 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
       }
       currentKey = "";
     }
-    // one question per file: photo quality, no text, or not a certificate, in the order of lib/parse/isCertificate.ts
+    // one question per file: photo quality, no text, or not a certificate, in the order of lib/parse/isCertificate.ts.
+    // The file waits for the answer on its own; the rest of the batch keeps going.
     if (text != null) {
       const ask = uploadQuestion({ check: classifyCertificate(text, null, ocrConfidence), issues, ocrConfidence, text });
       if (ask) {
-        if ((await askUser(item.key, ask)) !== "upload") {
-          dropItem(item.key);
-          continue;
-        }
-        if (ask.kind === "quality") flagged = ask.issues;
-        else content = ask.kind;
-      }
-    }
-    update(item.key, { state: "uploading", progress: undefined, ask: undefined });
-    try {
-      const upload = isImage(file) ? await shrinkImage(file).catch(() => file) : file;
-      if (upload.size > MAX_BYTES) {
-        update(item.key, { state: "failed", message: d.tooLargeToUpload });
+        const sent = { ocrText, ocrConfidence };
+        void askUser(item.key, ask).then((choice) => {
+          if (choice !== "upload") return dropItem(item.key);
+          const checked = ask.kind === "quality" ? { flagged: ask.issues, content: null } : { flagged: [], content: ask.kind };
+          return inTurn(() => send(file, item.key, { ...sent, ...checked }, d));
+        });
         continue;
       }
-      const body = new FormData();
-      body.append("files", upload);
-      if (ocrText) body.append("ocrText", ocrText);
-      if (ocrConfidence != null) body.append("ocrConfidence", String(Math.round(ocrConfidence)));
-      if (flagged.length) body.append("imageQuality", flagged.join(","));
-      if (content) body.append("contentCheck", content);
-      const res = await fetch("/api/certificates", { method: "POST", body });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        reportFailure("certUpload", res);
-        update(item.key, { state: "failed", message: data.error ?? d.uploadFailed(res.status) });
-        continue;
-      }
-      const certs: CmeCertificate[] = data.certificates ?? [];
-      if (data.first) trackEvent("First certificate uploaded");
-      emit({ stored: [...snap.stored, ...certs] });
-      storedListeners.forEach((l) => l(certs));
-      const unread = certs.find((c) => !c.title && c.points == null);
-      update(item.key, { state: "done", message: unread ? d.notRead : d.checkBelow });
-    } catch (err) {
-      reportFailure("certUpload", null);
-      if (!(err instanceof TypeError)) reportError({ source: "client", message: err instanceof Error ? err.message : err, stack: err instanceof Error ? err.stack : undefined });
-      update(item.key, { state: "failed", message: d.network });
     }
+    await inTurn(() => send(file, item.key, { ocrText, ocrConfidence, flagged, content }, d));
   }
   for (const w of workers.values()) await w.then((x) => x.terminate()).catch(() => {});
   emit({ busy: false });
@@ -248,5 +220,55 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
     const next = pending;
     pending = [];
     void startUpload(next, d);
+  }
+}
+
+/** Uploads go out one at a time, also when a checked file is let through while the batch is still running */
+let turn: Promise<void> = Promise.resolve();
+function inTurn(fn: () => Promise<void>) {
+  const run = turn.then(fn);
+  turn = run.catch(() => {});
+  return run;
+}
+
+interface Extras {
+  ocrText: string;
+  ocrConfidence: number | null;
+  /** photo issues the user uploaded anyway; the server notes them on the certificate */
+  flagged: QualityIssue[];
+  content: "noText" | "notCertificate" | null;
+}
+
+async function send(file: File, key: string, { ocrText, ocrConfidence, flagged, content }: Extras, d: Dict["upload"]) {
+  update(key, { state: "uploading", progress: undefined, ask: undefined });
+  try {
+    const upload = isImage(file) ? await shrinkImage(file).catch(() => file) : file;
+    if (upload.size > MAX_BYTES) {
+      update(key, { state: "failed", message: d.tooLargeToUpload });
+      return;
+    }
+    const body = new FormData();
+    body.append("files", upload);
+    if (ocrText) body.append("ocrText", ocrText);
+    if (ocrConfidence != null) body.append("ocrConfidence", String(Math.round(ocrConfidence)));
+    if (flagged.length) body.append("imageQuality", flagged.join(","));
+    if (content) body.append("contentCheck", content);
+    const res = await fetch("/api/certificates", { method: "POST", body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      reportFailure("certUpload", res);
+      update(key, { state: "failed", message: data.error ?? d.uploadFailed(res.status) });
+      return;
+    }
+    const certs: CmeCertificate[] = data.certificates ?? [];
+    if (data.first) trackEvent("First certificate uploaded");
+    emit({ stored: [...snap.stored, ...certs] });
+    storedListeners.forEach((l) => l(certs));
+    const unread = certs.find((c) => !c.title && c.points == null);
+    update(key, { state: "done", message: unread ? d.notRead : d.checkBelow });
+  } catch (err) {
+    reportFailure("certUpload", null);
+    if (!(err instanceof TypeError)) reportError({ source: "client", message: err instanceof Error ? err.message : err, stack: err instanceof Error ? err.stack : undefined });
+    update(key, { state: "failed", message: d.network });
   }
 }
