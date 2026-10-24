@@ -73,12 +73,14 @@ export default async function DashboardPage() {
 
       <Hero p={p} h={headline(p, dict, locale)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
 
-      <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
-      {certs.some((c) => c.status === "confirmed") && (
-        <Link href="/export" className={styles.exportLink}>
+      {/* the main next step once points are in; stands out once the total is reached */}
+      {certs.length > 0 && (
+        <Link href="/export" className={`btn ${p.remaining === 0 ? "btn-primary" : ""} ${styles.exportLink}`}>
           {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
         </Link>
       )}
+
+      <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
 
       <div className={styles.twoCol}>
         <Requirements p={p} locale={locale} hours={hours} />

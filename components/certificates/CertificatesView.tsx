@@ -152,8 +152,13 @@ export default function CertificatesView({
   );
   const close = useCallback(() => setOpenId(null), []);
 
-  const waitingList = certs.filter((c) => c.status !== "confirmed");
-  const confirmedList = certs.filter((c) => c.status === "confirmed");
+  // confirmed certificates from before this period: kept as a record (what was attended, the files), apart from the current list
+  const past = (c: CmeCertificate) => c.status === "confirmed" && reasons.get(c.id) === "beforeWindow";
+  const pastList = certs.filter(past);
+  const pastPoints = pastList.reduce((n, c) => n + (c.points ?? 0), 0);
+  const current = certs.filter((c) => !past(c));
+  const waitingList = current.filter((c) => c.status !== "confirmed");
+  const confirmedList = current.filter((c) => c.status === "confirmed");
   // the confirmed ones fold away while something waits for review, so the waiting ones are not lost in a long list
   const grouped = confirmedList.length > 0 && waitingList.length > 0;
   const [confirmedOpen, setConfirmedOpen] = useState(false);
@@ -326,12 +331,19 @@ export default function CertificatesView({
                 <span>{d.colStatus}</span>
                 <span />
               </li>
-              {(grouped ? waitingList : certs).map(row)}
+              {(grouped ? waitingList : current).map(row)}
             </ul>
             {grouped && (
               <details className={styles.group} open={confirmedOpen} onToggle={(e) => setConfirmedOpen(e.currentTarget.open)}>
                 <summary>{d.confirmedGroup(confirmedList.length)}</summary>
                 <ul className={styles.list}>{confirmedList.map(row)}</ul>
+              </details>
+            )}
+            {pastList.length > 0 && (
+              <details className={styles.group}>
+                <summary>{d.pastGroup(pastList.length, formatNumber(pastPoints))}</summary>
+                <p className="small muted">{d.pastNote}</p>
+                <ul className={styles.list}>{pastList.map(row)}</ul>
               </details>
             )}
           </>

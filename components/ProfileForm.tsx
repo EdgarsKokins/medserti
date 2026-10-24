@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
-import { addYears, certificateWindow, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
+import { addYears, certificateWindow, REGISTER_URL, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
 import { findSpecialty, OTHER_SPECIALTY, resolveSpecialty, specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import { inHours, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
@@ -46,6 +46,8 @@ export default function ProfileForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  // most practitioners hold a specialty certificate; the method choice stays out of the way until asked for
+  const [showKind, setShowKind] = useState(initial.certificationKind === "method");
   // "Certification needed": the dates put the certificate period in the past, so this is not recertification
   const expiredDialog = useRef<HTMLDialogElement>(null);
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => {
@@ -109,6 +111,8 @@ export default function ProfileForm({
     else if (spec.code === OTHER_SPECIALTY && !validPlainText(spec.text, SPECIALTY_MAX)) e.specialtyText = dict.api.specialtyInvalid;
     if (!validCertNo(p.certificateNumber)) e.certNo = dict.api.certNoInvalid;
     if (!nurse && p.certificateIssued && p.certificateIssued > today) e.issued = dict.api.issuedFuture;
+    // the dates set the period points count in: without them nothing on the dashboard can be right
+    if (nurse ? !p.certificateExpires : customEnd ? !p.certificateExpires : !p.certificateIssued) e[dateField] = d.dateRequired;
     if (ended(p)) e[dateField] = dict.api.certExpired;
     return e;
   }
@@ -142,9 +146,10 @@ export default function ProfileForm({
     if (!res || !res.ok) reportFailure("profileSave", res);
     if (!res) return setMsg({ ok: false, text: dict.common.networkError });
     if (!res.ok) return setMsg({ ok: false, text: data.error ?? d.saveError });
-    if (onboarding && profileComplete(data.profile)) {
-      trackEvent("Profile completed");
-      return router.push("/dashboard");
+    if (profileComplete(data.profile)) {
+      if (onboarding) trackEvent("Profile completed");
+      router.push("/dashboard");
+      return router.refresh();
     }
     setP(data.profile);
     setSpec(resolveSpecialty(data.profile));
@@ -250,10 +255,33 @@ export default function ProfileForm({
             {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
           </p>
           {!p.certificateExpires && <p className="small muted">{nurse ? d.summaryNoDateNurse : d.summaryNoDate}</p>}
-          {basis && <p className="small muted">{basis === "nurse" ? d.nurseRule : d.functionalTransition}</p>}
+          <p className="small muted">
+            {basis === "nurse"
+              ? d.nurseRule
+              : basis === "functionalTransition"
+                ? d.functionalTransition
+                : p.certificationKind === "method"
+                  ? d.ruleMethod
+                  : target === RULES.points.doctorTier
+                    ? d.ruleDoctorTier
+                    : d.ruleOther}
+          </p>
+          <p className="small muted">
+            {d.registerCheck}{" "}
+            <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.registerLink} ↗</a>
+          </p>
         </div>
         <div className={s.fields}>
-          {!nurse && (
+          {!nurse && !showKind && (
+            <div className="field">
+              <span className={s.hint}>
+                <button type="button" className={s.inlineBtn} aria-controls="kind" onClick={() => setShowKind(true)}>
+                  {d.kindMethodLink}
+                </button>
+              </span>
+            </div>
+          )}
+          {!nurse && showKind && (
             <div className="field">
               <label htmlFor="kind">{d.kind}</label>
               <select

@@ -169,12 +169,29 @@ export const OTHER_PROFESSION_SPECIALTIES: readonly Specialty[] = [
   { code: "nu-child", lv: "Māsas specializācija bērnu aprūpē", en: "Nurse, child care", ru: "Медсестра, специализация: уход за детьми" },
   { code: "nu-psych", lv: "Māsas specializācija psihiatrijā un narkoloģijā", en: "Nurse, psychiatry and addiction", ru: "Медсестра, специализация: психиатрия и наркология" },
   { code: "nu-periop", lv: "Māsas specializācija perioperatīvajā aprūpē", en: "Nurse, perioperative care", ru: "Медсестра, специализация: периоперационный уход" },
+  // "Cita ārstniecības persona": the other health professions in Reg. 460 Annex 1 (rows 21-23, 25, 28, 32-33, 37-38, 40, 42, 44)
+  { code: "op-dent-asst", lv: "Zobārsta asistents", en: "Dental assistant", ru: "Ассистент стоматолога" },
+  { code: "op-dent-tech", lv: "Zobu tehniķis", en: "Dental technician", ru: "Зубной техник" },
+  { code: "op-dent-hyg", lv: "Zobu higiēnists", en: "Dental hygienist", ru: "Гигиенист стоматологический" },
+  { code: "op-nurse-asst", lv: "Māsas palīgs", en: "Nursing assistant", ru: "Помощник медсестры" },
+  { code: "op-biomed", lv: "Biomedicīnas laborants", en: "Biomedical laboratory technician", ru: "Биомедицинский лаборант" },
+  { code: "op-physio-asst", lv: "Fizioterapeita asistents", en: "Physiotherapy assistant", ru: "Ассистент физиотерапевта" },
+  { code: "op-ot-asst", lv: "Ergoterapeita asistents", en: "Occupational therapy assistant", ru: "Ассистент эрготерапевта" },
+  { code: "op-rad-asst", lv: "Radiologa asistents", en: "Radiology assistant", ru: "Ассистент радиолога" },
+  { code: "op-radiographer", lv: "Radiogrāfers", en: "Radiographer", ru: "Рентгенолаборант (радиограф)" },
+  { code: "op-podiatrist", lv: "Podologs", en: "Podiatrist", ru: "Подолог" },
+  { code: "op-mil-paramedic", lv: "Militārais paramediķis", en: "Military paramedic", ru: "Военный парамедик" },
+  { code: "op-masseur", lv: "Masieris", en: "Massage therapist", ru: "Массажист" },
 ];
 
 /** Reg. 460 Annex 1 row 20, matched to LĀB codes: Zobārsts, Bērnu zobārsts, Endodontists, Ortodonts, Paradontologs, Zobu protēzists */
 const DENTIST_CODES = ["128", "28", "43", "90", "97", "129"];
 
 const ALL = [...SPECIALTIES, ...OTHER_PROFESSION_SPECIALTIES];
+/** The LĀB list mixes specialties and methods; methods are marked "(method)" in their English name */
+const isMethod = (s: Specialty) => s.en.endsWith("(method)");
+const DOCTOR_SPECIALTIES = SPECIALTIES.filter((s) => !isMethod(s));
+const METHODS = SPECIALTIES.filter(isMethod);
 const BY_CODE = new Map(ALL.map((s) => [s.code, s]));
 const pick = (prefix: string) => OTHER_PROFESSION_SPECIALTIES.filter((s) => s.code.startsWith(prefix));
 
@@ -183,8 +200,9 @@ const pick = (prefix: string) => OTHER_PROFESSION_SPECIALTIES.filter((s) => s.co
  * Method certificates use the LĀB list, which holds the methods.
  */
 export function specialtiesFor(profession: Profession, kind: CertificationKind): readonly Specialty[] {
-  if (profession === "doctor" || (kind === "method" && profession === "dentist")) return SPECIALTIES;
-  if (kind === "method") return [];
+  // a method certificate lists only methods, a specialty certificate only specialties
+  if (kind === "method") return profession === "doctor" || profession === "dentist" ? METHODS : [];
+  if (profession === "doctor") return DOCTOR_SPECIALTIES;
   switch (profession) {
     case "dentist":
       return DENTIST_CODES.map((c) => BY_CODE.get(c)!);
@@ -196,6 +214,8 @@ export function specialtiesFor(profession: Profession, kind: CertificationKind):
       return pick("fs-");
     case "nurse":
       return pick("nu-");
+    case "other_practitioner":
+      return pick("op-");
     default:
       return [];
   }

@@ -126,6 +126,11 @@
 
 .apply { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .applyTitle { margin: 0; font-size: 1.05rem; }
+/* "Pieteikties" by email: address and text to copy, web mail links */
+.emailApply { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.emailAddr { font-size: 0.95rem; padding: 4px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
+.emailText { width: 100%; font: inherit; font-size: 0.9rem; line-height: 1.45; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); resize: vertical; }
+.smallBtn { padding: 5px 12px; font-size: 0.85rem; }
 
 /* "Course abroad: how many TIP?" (components/courses/AbroadEstimate.tsx), also shown in the certificate review panel */
 .abroad { display: flex; flex-direction: column; gap: 14px; }

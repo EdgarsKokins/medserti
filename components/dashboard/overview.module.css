@@ -42,8 +42,15 @@
 .checklist, .picks { list-style: none; margin: 0; padding: 0; }
 .checklist li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .checklist li:first-child { border-top: 1px solid var(--border); }
-.mark { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--warn); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; color: var(--on-ink); }
-.met .mark { border-color: var(--ok); background: var(--ok); }
+/* not met: a plain bullet, so nothing looks like a checkbox to click; met: a filled tick */
+.mark { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; color: var(--on-ink); }
+.mark::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.met .mark { border-radius: 50%; background: var(--ok); }
+.met .mark::before { display: none; }
+.sub { padding-left: 20px; }
+.sub .checkLabel { font-size: 0.95rem; }
+.within { grid-column: 1 / -1; font-size: 0.82rem; color: var(--muted); margin-bottom: -4px; }
+.checkHint { display: block; font-size: 0.82rem; color: var(--muted); line-height: 1.35; margin-top: 2px; }
 .met .checkLabel { color: var(--muted); }
 .checkVal { font-variant-numeric: tabular-nums; font-weight: 500; }
 
