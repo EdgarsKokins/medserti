@@ -943,4 +943,13 @@ export const LABELS: Record<string, string> = {
   "courses.sourceLabels.medicinaskursi": "Avots: medicinaskursi.lv",
   "courses.sourceLabels.lumpii": "Avots: LUMPII",
   "courses.sourceLabels.evisit": "Avots: Evisit",
+  "api.passwordBreachedWarn": "Parole datu noplūdē: brīdinājums ar iespēju turpināt",
+  "profile.ruleDoctorTier": "Profils: prasība 250 TIP (ārsti, zobārsti, funkcionālie speciālisti)",
+  "api.passwordBreachedContinue": "Parole datu noplūdē: poga, lai turpinātu",
+  "profile.kindMethodLink": "Profils: saite uz metodes sertifikātu",
+  "profile.dateRequired": "Profils: datums nav norādīts",
+  "profile.ruleOther": "Profils: prasība 150 TIP (pārējās profesijas)",
+  "profile.ruleMethod": "Profils: prasība 100 TIP (metode)",
+  "profile.registerCheck": "Profils: teksts pirms saites uz VI reģistru",
+  "profile.registerLink": "Profils: saite uz VI reģistru",
 };

@@ -21,6 +21,8 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({});
   const [busy, setBusy] = useState(false);
+  // the password is in a known breach: the next submit keeps it if the user chooses to
+  const [breached, setBreached] = useState(false);
   const d = useDict();
   const a = d.auth;
   const m = d.api;
@@ -75,6 +77,7 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
     const body = (await res?.json().catch(() => null)) ?? {};
     if (!res?.ok) {
       setError(res ? (body.error ?? a.genericError) : d.common.networkError);
+      setBreached(body.code === "breached");
       setBusy(false);
       return;
     }
@@ -162,7 +165,13 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
               type="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               maxLength={mode === "register" ? PASSWORD_MAX : undefined}
-              onChange={() => clearField("password")}
+              onChange={() => {
+                clearField("password");
+                if (breached) {
+                  setBreached(false);
+                  setError(null);
+                }
+              }}
               {...invalid("password")}
               aria-describedby={describedBy("password", mode === "register" ? "password-hint" : undefined)}
             />
@@ -192,9 +201,10 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
               {errorText("consent")}
             </div>
           )}
-          {error && <div className="alert alert-bad" role="alert">{error}</div>}
+          {error && <div className={`alert ${breached ? "alert-warn" : "alert-bad"}`} role="alert">{error}</div>}
+          {breached && <input type="hidden" name="acceptBreached" value="on" />}
           <button className={`btn btn-primary ${s.submit}`} disabled={busy}>
-            {busy ? a.wait : mode === "login" ? a.loginTitle : a.registerTitle}
+            {busy ? a.wait : breached ? m.passwordBreachedContinue : mode === "login" ? a.loginTitle : a.registerTitle}
           </button>
         </form>
         <p className={s.switch}>

@@ -19,6 +19,8 @@ const Body = z.object({
   profession: z.enum(PROFESSIONS),
   // checkbox value; the form sends nothing when it is unticked
   consent: z.literal("on"),
+  // the user saw the breached-password warning and chose to keep this password
+  acceptBreached: z.literal("on").optional(),
 });
 
 /** User-facing message for the first failing field */
@@ -35,12 +37,14 @@ export async function POST(req: Request) {
     if (field === "consent") return NextResponse.json({ error: d.legal.consent.required }, { status: 400 });
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { email, password, fullName, profession } = parsed.data;
+  const { email, password, fullName, profession, acceptBreached } = parsed.data;
   if (passwordTooLong(password)) return NextResponse.json({ error: m.passwordLong }, { status: 400 });
   // 5 sign-up attempts per IP per hour, counted once the form itself is valid
   if (!(await rateLimit(`register-ip:${clientIp(req)}`, 5, HOUR)))
     return NextResponse.json({ error: m.tooMany }, { status: 429 });
-  if (await passwordBreached(password)) return NextResponse.json({ error: m.passwordBreached }, { status: 400 });
+  // a warning, not a block: some users have no other password to hand (usability test, 24 Oct 2026)
+  if (!acceptBreached && (await passwordBreached(password)))
+    return NextResponse.json({ error: m.passwordBreachedWarn, code: "breached" }, { status: 400 });
   if (await getUserByEmail(email)) return NextResponse.json({ error: m.emailTaken }, { status: 409 });
 
   const id = randomUUID();
