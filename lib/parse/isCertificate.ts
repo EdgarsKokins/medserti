@@ -178,6 +178,16 @@ export function classifyCertificate(text: string, found?: FoundFields | null, oc
 }
 
 /** What the upload flow asks the user about a file, if anything */
+/**
+ * A photo of a computer screen instead of the file: the OCR text carries the app's menu bar ("Edit View Go Tools Window
+ * Help") or the keyboard's function row (F1 F2 F3 ...). The PDF itself reads far better, so we ask for it.
+ */
+export function screenPhoto(text: string): boolean {
+  const menu = text.split("\n").some((l) => new Set(l.match(/(?<![\p{L}])(?:File|Edit|View|Go|Tools|Window|Help|Format|Insert|Bookmarks|History)(?![\p{L}])/gu) ?? []).size >= 4);
+  const fKeys = new Set(text.match(/(?<![\p{L}\d])F(?:[1-9]|1[0-2])(?!\d)/gu) ?? []).size >= 4;
+  return menu || fKeys;
+}
+
 export type UploadQuestion =
   | { kind: "quality"; issues: QualityIssue[] }
   | { kind: "noText" }
@@ -194,6 +204,8 @@ export type UploadQuestion =
  */
 export function uploadQuestion(x: { check: CertificateCheck; issues: QualityIssue[]; ocrConfidence: number | null; text: string }): UploadQuestion | null {
   if (x.check.kind === "certificate") {
+    // only photos (OCR): a PDF's own text layer is never a screen photo
+    if (x.ocrConfidence != null && screenPhoto(x.text)) return { kind: "quality", issues: ["screen", ...x.issues] };
     if (x.issues.length) return { kind: "quality", issues: x.issues };
     if (x.ocrConfidence != null && ocrUnreadable(x.ocrConfidence, x.text)) return { kind: "quality", issues: ["unreadable"] };
     return null;

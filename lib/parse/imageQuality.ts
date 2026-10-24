@@ -27,7 +27,8 @@ export const MIN_LONG_SIDE = 700;
 export const MIN_OCR_CONFIDENCE = 50;
 export const MIN_OCR_LETTERS = 100;
 
-export type QualityIssue = "blurry" | "dark" | "bright" | "small" | "unreadable";
+/** screen: a photo of a computer or phone screen (found in the OCR text, lib/parse/isCertificate.ts screenPhoto) */
+export type QualityIssue = "blurry" | "dark" | "bright" | "small" | "unreadable" | "screen";
 
 export interface ImageMeasure {
   sharpness: number;

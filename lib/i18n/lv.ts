@@ -521,6 +521,7 @@ export const lv: Dict = {
     checkBelow: "Pārbaudiet un apstipriniet zemāk.",
     network: "Tīkla kļūda",
     qualityBlurry: "Bilde, iespējams, ir izplūdusi. Nofotografējiet vēlreiz.",
+    qualityScreen: "Šī izskatās pēc datora ekrāna fotogrāfijas. Ja sertifikāts ir datorā, augšupielādējiet pašu failu (PDF): to nolasīsim precīzāk.",
     qualityDark: "Bilde, iespējams, ir par tumšu. Nofotografējiet vēlreiz.",
     qualityBright: "Bilde, iespējams, ir pārgaismota. Nofotografējiet vēlreiz.",
     qualitySmall: "Bilde ir par mazu. Nofotografējiet vēlreiz.",

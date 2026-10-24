@@ -50,7 +50,7 @@ const needsLookup = (r: Awaited<ReturnType<typeof parseCertificate>>) =>
   (r.content == null || r.content === "certificate") &&
   r.fields.points == null && !!r.fields.title && (r.fields.country == null || r.fields.country === "LV") && r.fields.category !== "lecture_or_publication";
 
-const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable"]);
+const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable", "screen"]);
 const CONTENT_FLAGS = new Set(["noText", "notCertificate"]);
 
 /** Put the "photo may be blurry" note first, so the review panel says why the fields may be wrong */
