@@ -13,6 +13,8 @@ export default function DeleteAccount({ locale }: { locale: Locale }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // a second, deliberate step on top of the password: nothing is deleted by one quick click
+  const [understood, setUnderstood] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,10 +65,14 @@ export default function DeleteAccount({ locale }: { locale: Locale }) {
                 aria-describedby={error ? "delete-error" : undefined}
               />
             </div>
+            <label className={s.understand}>
+              <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} />
+              <span>{d.understand}</span>
+            </label>
             {error && <div id="delete-error" className="alert alert-bad" role="alert">{error}</div>}
             <div className={s.actions}>
-              <button className={`btn ${s.danger}`} disabled={busy}>{busy ? d.deleting : d.confirm}</button>
-              <button type="button" className="btn" disabled={busy} onClick={() => { setOpen(false); setPassword(""); setError(null); }}>
+              <button className={`btn ${s.danger}`} disabled={busy || !understood}>{busy ? d.deleting : d.confirm}</button>
+              <button type="button" className="btn" disabled={busy} onClick={() => { setOpen(false); setPassword(""); setError(null); setUnderstood(false); }}>
                 {d.cancel}
               </button>
             </div>

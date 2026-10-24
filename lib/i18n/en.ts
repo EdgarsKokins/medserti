@@ -481,6 +481,8 @@ export const en = {
     leadShort: "We read each file automatically. You can view, edit and change the details.",
     waitingShort: (n: number) => `${n} waiting for review`,
     confirmedGroup: (n: number) => `Confirmed (${n})`,
+    pastGroup: (n: number, pts: string) => `Earlier periods: ${n} ${n === 1 ? "certificate" : "certificates"}, ${pts} TIP`,
+    pastNote: "These certificates are from before the current period and do not count, but stay here as your history, with their files.",
     notCounted: "Not counted",
     whyNotCounted: "Why is it not counted?",
     reasons: {
@@ -904,6 +906,7 @@ export const en = {
       body: "This deletes your account, profile, all certificates and every uploaded file. Export your documents first if you still need them.",
       open: "Delete account...",
       confirmLabel: "Enter your password to confirm",
+      understand: "I understand that my account, all certificates and files will be deleted permanently.",
       confirm: "Delete my account and all data",
       deleting: "Deleting...",
       cancel: "Cancel",

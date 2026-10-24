@@ -484,6 +484,8 @@ export const lv: Dict = {
     leadShort: "Datus nolasām automātiski, Jums ir iespēja apskatīt, rediģēt un mainīt.",
     waitingShort: (n: number) => `${n} gaida pārbaudi`,
     confirmedGroup: (n: number) => `Apstiprinātie (${n})`,
+    pastGroup: (n: number, pts: string) => `Iepriekšējie periodi: ${n} ${n === 1 ? "sertifikāts" : "sertifikāti"}, ${pts} TIP`,
+    pastNote: "Šie sertifikāti ir pirms pašreizējā perioda un netiek skaitīti, bet paliek šeit kā Jūsu vēsture, ar failiem.",
     notCounted: "Neieskaitīts",
     whyNotCounted: "Kāpēc netiek ieskaitīts?",
     reasons: {
@@ -909,6 +911,7 @@ export const lv: Dict = {
       body: "Tiks izdzēsts jūsu konts, profils, visi sertifikāti un visi augšupielādētie faili. Ja dokumenti vēl vajadzīgi, vispirms tos eksportējiet.",
       open: "Dzēst kontu...",
       confirmLabel: "Lai apstiprinātu, ievadiet paroli",
+      understand: "Saprotu, ka konts, visi sertifikāti un faili tiks izdzēsti neatgriezeniski.",
       confirm: "Dzēst kontu un visus datus",
       deleting: "Dzēš...",
       cancel: "Atcelt",

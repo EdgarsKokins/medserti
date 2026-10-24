@@ -70,6 +70,7 @@ export const PARAM_NAMES: Record<string, string[]> = {
   "upload.batchDone": ["done", "total"],
   "upload.batchFailed": ["n"],
   "certs.confirmedGroup": ["n"],
+  "certs.pastGroup": ["n", "pts"],
   "certs.reasons.beforeWindow": ["date"],
   "certs.reasons.afterWindow": ["date"],
   "certs.reasons.beforeWindowNurse": ["date"],
@@ -966,4 +967,7 @@ export const LABELS: Record<string, string> = {
   "courses.apply.emailTextLabel": "Kursi: pieteikuma teksta lauks",
   "courses.apply.mailApp": "Kursi: atvērt e-pasta programmā",
   "courses.apply.findSite": "Kursi: saite meklēt rīkotāja mājaslapu",
+  "legal.deleteAccount.understand": "Konta dzēšana: apstiprinājuma rūtiņa",
+  "certs.pastNote": "Sertifikāti: iepriekšējo periodu piezīme",
+  "certs.pastGroup": "Saliekamā grupa: iepriekšējo periodu sertifikāti",
 };
