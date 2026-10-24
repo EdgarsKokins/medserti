@@ -17,7 +17,7 @@ const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|ministr|(?<![\p{L}])(
 const EVENT_NOUN = "(?:kursa|konference|seminara|apmaciba|programma|kongresa|darbnica|meistarklase|lekcij\\p{L}*|vebinara|sede|paneldiskusija|forum\\p{L}*|akademij\\p{L}*)";
 const TITLE_ANCHORS = [
   rx(`par\\s+(?:sekmigu\\s+)?(?:piedalisanos|dalibu)(?:\\s+${EVENT_NOUN})?`, "u"),
-  rx(`(?:ir\\s+)?(?:piedalij\\p{L}*|apmeklej\\p{L}*|apguv\\p{L}*|noklausij\\p{L}*|dalyvavo)(?:\\/-?\\p{L}+)?(?:\\s+(?:talakizglitibas|profesionalas\\s+pilnveides|starptautiskaja|zinatniski\\s+praktiskaja|izglitojosa))?(?:\\s+${EVENT_NOUN})?:?`, "u"),
+  rx(`(?:ir\\s+)?(?:piedalij\\p{L}*|apmeklej\\p{L}*|apguv\\p{L}*|noklausij\\p{L}*|dalyvavo)(?:\\/-?\\p{L}+)?(?:\\s+(?:talakizglitibas|profesionalas\\s+pilnveides|starptautiskaja|zinatniski\\s+praktiskaja|izglitojosa|(?:neformalas\\s+)?izglitibas))?(?:\\s+${EVENT_NOUN})?:?`, "u"),
   /(?:participated\s+in|attended|has\s+completed|completed|for\s+attending|successfully\s+completed|(?:has\s+)?(?:successfully\s+)?passed|(?:lecturer|speaker|moderator)(?:\s+and\s+\p{L}+)?\s+at)(?:\s+(?:the|an?)(?![\p{L}]))?(?:\s+international)?(?:\s+(?:course|conference|seminar|workshop|webinar|training|congress|programme|program)(?![\p{L}]))?(?:\s+(?:entitled|titled|on)(?![\p{L}]))?/u,
   /(?<![\p{L}])(?:kursa|konference|seminara|apmaciba|kongresa)(?![\p{L}])/u,
 ];
@@ -231,6 +231,15 @@ export function findOrganizer(t: Text): { value: string; confidence: number; sta
     const pick = named.find((v) => !mixed(v)) ?? named[0];
     const r = pick ? stated(out(pick, mixed(pick) ? 0.6 : 0.8)) : null;
     if (r) return r;
+  }
+
+  // 1c. letterhead "Pieaugušo neformālās izglītības iestāde „Salvum TD”", "SIA „Med4U”": the quoted name in the top lines
+  for (const l of top.slice(0, 8)) {
+    const m = /(?<![\p{L}])(?:iestāde|SIA|biedrība|nodibinājums|centrs)\s+[„"“«]\s*([^”"»\n]{2,60}?)\s*[”"»]/iu.exec(l);
+    // a quoted name is kept whole: its short words ("TD") are part of it, not OCR scraps
+    const v = m?.[1].replace(/\s+/g, " ").trim();
+    // a labelled line ("Organizators: biedrība „X”") keeps its own rule further down
+    if (v && !SPONSOR.test(fold(l)) && !/organi[sz]|организатор/iu.test(l) && cleanName(v)) return { value: v, confidence: 0.7, stated: false };
   }
 
   // 2. the sentence names the organizer: "<X> organizētajā ...", "Semināru organizē <X>", "piedalījās <X> sēdē"

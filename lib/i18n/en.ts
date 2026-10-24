@@ -518,6 +518,7 @@ export const en = {
     checkBelow: "Check and confirm below.",
     network: "Network error",
     qualityBlurry: "The photo may be blurry. Take it again.",
+    qualityScreen: "This looks like a photo of a computer screen. If the certificate is on your computer, upload the file itself (PDF): it reads far more accurately.",
     qualityDark: "The photo may be too dark. Take it again.",
     qualityBright: "The photo may be washed out. Take it again.",
     qualitySmall: "The photo is too small. Take it again.",

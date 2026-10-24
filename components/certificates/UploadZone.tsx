@@ -73,7 +73,7 @@ export default function UploadZone({
   // collapsed, the list still shows what needs the user: failed files and photos to check
   const listed = grouped && !expanded ? items.filter((it) => it.state === "failed" || it.state === "check") : items;
   const qualityTitle = (issues: string[]) =>
-    issues.includes("small") ? d.qualitySmall : issues.includes("dark") ? d.qualityDark : issues.includes("bright") ? d.qualityBright : d.qualityBlurry;
+    issues.includes("screen") ? d.qualityScreen : issues.includes("small") ? d.qualitySmall : issues.includes("dark") ? d.qualityDark : issues.includes("bright") ? d.qualityBright : d.qualityBlurry;
 
   return (
     <div className={styles.upload}>

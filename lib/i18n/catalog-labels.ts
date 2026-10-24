@@ -970,4 +970,5 @@ export const LABELS: Record<string, string> = {
   "legal.deleteAccount.understand": "Konta dzēšana: apstiprinājuma rūtiņa",
   "certs.pastNote": "Sertifikāti: iepriekšējo periodu piezīme",
   "certs.pastGroup": "Saliekamā grupa: iepriekšējo periodu sertifikāti",
+  "upload.qualityScreen": "Augšupielāde: ekrāna fotogrāfija, lūgums augšupielādēt PDF",
 };
