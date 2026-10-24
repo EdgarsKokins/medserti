@@ -79,14 +79,18 @@ const CITIES = [
 // match the stem so locative forms ("Rīgā", "Liepājā", "Cēsīs") also hit
 const CITY_RX = CITIES.map((c) => [c, new RegExp(`(?<![a-z])${fold(c).slice(0, Math.max(4, c.length - 1))}[a-z]*`)] as const);
 /** large Riga hospitals and venues that are often written without the city */
-const RIGA_VENUES = /stradiņa|stradina|rakus|gaiļezer|gailezer|linezer|bērnu klīniskā universitātes|bkus|psihiskās veselības centrs|tvaika iela|pilsonu iela|hipokrāta|dzirciema|krasta iela|skolas iela 3/iu;
-const ONLINE_RX = /tiešsaist|attālināt|online|zoom|teams|meet|webex|webinār|vebinār|www\.|https?:\/\/|platform/iu;
-const WHOLE_LATVIA = /vis[aā]\s+latvij|dažād\p{L}*\s+(?:latvijas\s+)?(?:pilsēt|viet)|latvijas\s+pilsēt|^latvija$|pēc\s+pieprasījuma/iu;
+const RIGA_VENUES =
+  /stradiņa|stradina|rakus|gaiļezer|gailezer|linezer|bērnu klīniskā universitātes|bkus|psihiskās veselības centrs|tvaika iela|pilsonu iela|hipokrāta|dzirciema|krasta iela|skolas iela 3|turība|gradu iel|anniņmuiž|ķīpsal|wellton|grebenščikov|infektoloģijas centrs|dzelzceļš|\bnmpd\b|amerikas acu centrs|\bmitc\b/iu;
+/** venues outside Riga that are written without the town */
+const VENUE_CITY: [RegExp, string][] = [[/ziemeļkurzemes reģionālā slimnīca/iu, "Ventspils"]];
+const ONLINE_RX = /tiešsaist|attālināt|online|zoom|teams|meet|webex|webinār|vebinār|www\.|https?:\/\/|platform|tālmācīb|video\s*lekcij|moodle/iu;
+const WHOLE_LATVIA = /vis[aā]\s+latvij|dažād\p{L}*\s+(?:latvijas\s+)?(?:pilsēt|viet)|latvijas\s+pilsēt|^[lļ]atvija$|pēc\s+pieprasījuma/iu;
 
 export function cityOf(location: string): { city: string | null; online: boolean } {
   const online = ONLINE_RX.test(location);
   const f = fold(location);
   for (const [name, rx] of CITY_RX) if (rx.test(f)) return { city: name, online };
+  for (const [rx, name] of VENUE_CITY) if (rx.test(location)) return { city: name, online };
   if (RIGA_VENUES.test(location)) return { city: "Rīga", online };
   if (online) return { city: "Online", online };
   if (WHOLE_LATVIA.test(location.trim())) return { city: "Latvija", online };

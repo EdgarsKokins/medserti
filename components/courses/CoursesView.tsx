@@ -386,7 +386,7 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
             {r.kind === "ongoing" && r.tip != null && <Fact k={s.details.tip} v={s.details.tipWhole(formatNumber(r.tip, 1))} />}
             {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
             {r.audience && <Fact k={s.details.audience} v={r.audience} />}
-            {r.price && <Fact k={s.details.price} v={r.free ? s.free : r.price} />}
+            <Fact k={s.details.price} v={r.free ? s.free : (r.price ?? s.details.priceUnknown)} />
             {extra?.approvalId && <Fact k={r.source === "lma" ? s.details.approvalLma : s.details.approval} v={`${extra.approvalId}${extra.annexItem ? `, ${s.annex(extra.annexItem)}` : ""}`} />}
           </dl>
           {extra?.detailRef && <Programme detailRef={extra.detailRef} locale={locale} />}
@@ -426,21 +426,15 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
         </div>
       ) : c && (c.email || c.phone) ? (
         <>
-          <div className="row">
-            {c.email && (
-              <a
-                className="btn btn-primary"
-                href={`mailto:${c.email}?subject=${encodeURIComponent(applyEmail.subject(r.title, lvDate))}&body=${encodeURIComponent(applyEmail.body(r.title, lvDate))}`}
-              >
-                {a.email}
-              </a>
-            )}
-            {c.phone && (
-              <a className="btn" href={`tel:${c.phone.replace(/[^\d+]/g, "")}`}>
+          {c.email ? (
+            <EmailApply email={c.email} subject={applyEmail.subject(r.title, lvDate)} body={applyEmail.body(r.title, lvDate)} phone={c.phone} />
+          ) : (
+            <div className="row">
+              <a className="btn btn-primary" href={`tel:${c.phone!.replace(/[^\d+]/g, "")}`}>
                 {a.call} {c.phone}
               </a>
-            )}
-          </div>
+            </div>
+          )}
           <p className="small muted" style={{ margin: 0 }}>
             {[r.organizer, c.name, c.email].filter(Boolean).join(" · ")}
             <br />
@@ -453,7 +447,65 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
           <a href={url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : cs.open} ↗</a>
         </p>
       )}
+      {/* LĀB publishes no organiser website: a search is the quickest way to the organiser's own page */}
+      {!direct && r.organizer && (
+        <p className="small" style={{ margin: 0 }}>
+          <a href={`https://www.google.com/search?q=${encodeURIComponent(`${r.organizer} ${r.title}`)}`} target="_blank" rel="noreferrer">
+            {a.findSite} ↗
+          </a>
+        </p>
+      )}
     </section>
+  );
+}
+
+/**
+ * "Pieteikties" by email without relying on the computer's default mail app (often not the one used):
+ * the address and a ready text to copy, plus Gmail and Outlook web links with everything filled in.
+ */
+function EmailApply({ email, subject, body, phone }: { email: string; subject: string; body: string; phone: string | null }) {
+  const a = useDict().courses.apply;
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState<"email" | "text" | null>(null);
+  const copy = (what: "email" | "text", value: string) =>
+    navigator.clipboard?.writeText(value).then(
+      () => setCopied(what),
+      () => setCopied(null),
+    );
+  const q = (s: string) => encodeURIComponent(s);
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="row">
+        <button type="button" className="btn btn-primary" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+          {a.apply}
+        </button>
+        {phone && (
+          <a className="btn" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>
+            {a.call} {phone}
+          </a>
+        )}
+      </div>
+      {open && (
+        <div className={styles.emailApply}>
+          <p className="small" style={{ margin: 0 }}>{a.emailHow}</p>
+          <div className="row">
+            <code className={styles.emailAddr}>{email}</code>
+            <button type="button" className={`btn ${styles.smallBtn}`} onClick={() => copy("email", email)}>
+              {copied === "email" ? a.copied : a.copyEmail}
+            </button>
+          </div>
+          <textarea className={styles.emailText} readOnly rows={7} value={`${subject}\n\n${body}`} aria-label={a.emailTextLabel} />
+          <div className="row">
+            <button type="button" className={`btn ${styles.smallBtn}`} onClick={() => copy("text", body)}>
+              {copied === "text" ? a.copied : a.copyText}
+            </button>
+            <a className={`btn ${styles.smallBtn}`} href={`https://mail.google.com/mail/?view=cm&fs=1&to=${q(email)}&su=${q(subject)}&body=${q(body)}`} target="_blank" rel="noreferrer">Gmail ↗</a>
+            <a className={`btn ${styles.smallBtn}`} href={`https://outlook.live.com/mail/0/deeplink/compose?to=${q(email)}&subject=${q(subject)}&body=${q(body)}`} target="_blank" rel="noreferrer">Outlook ↗</a>
+            <a className={`btn ${styles.smallBtn}`} href={`mailto:${email}?subject=${q(subject)}&body=${q(body)}`}>{a.mailApp}</a>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

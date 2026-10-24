@@ -957,4 +957,13 @@ export const LABELS: Record<string, string> = {
   "checkHints.emergency_practical": "Pārskats: paskaidrojums praktiskajām stundām",
   "dashboard.requirementsWithin": "Pārskats: virsraksts minimumiem zem \"Kopā\"",
   "dashboard.requirementsNote": "Pārskats: piezīme, ka minimumi ir kopsummas ietvaros",
+  "courses.apply.apply": "Kursi: poga \"Pieteikties\"",
+  "courses.details.priceUnknown": "Kursi: cena nav norādīta",
+  "courses.apply.emailHow": "Kursi: pieteikšanās ar e-pastu, paskaidrojums",
+  "courses.apply.copyEmail": "Kursi: poga kopēt adresi",
+  "courses.apply.copyText": "Kursi: poga kopēt tekstu",
+  "courses.apply.copied": "Kursi: nokopēts",
+  "courses.apply.emailTextLabel": "Kursi: pieteikuma teksta lauks",
+  "courses.apply.mailApp": "Kursi: atvērt e-pasta programmā",
+  "courses.apply.findSite": "Kursi: saite meklēt rīkotāja mājaslapu",
 };

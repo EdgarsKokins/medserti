@@ -89,10 +89,10 @@ export const SOURCE_URLS: Record<CourseSource, string> = {
 };
 
 /**
- * "Tikai bez maksas": only a listed price excludes a course. No price published (LĀB's TIP list publishes none, and its
- * courses come with the LĀB subscription rather than a separate fee) counts as free; we show no price for those.
+ * "Tikai bez maksas": only courses the source marks as free. No price published (most of LĀB's TIP list) is shown as
+ * "Cena nav norādīta" and never counted as free: a 40 TIP course listed as free was not believed (usability test, 24 Oct 2026).
  */
-export const freeForFilter = (c: Pick<Course, "price" | "free">) => c.free || !c.price;
+export const freeForFilter = (c: Pick<Course, "price" | "free">) => c.free;
 
 /** LMA's approval register (208 pages, no event dates): linked for nurses, not scraped */
 export const LMA_REGISTER_URL = "https://www.masuasociacija.lv/talakizglitibas-programmu-registrs/";
