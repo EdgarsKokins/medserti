@@ -1027,6 +1027,7 @@ export const ru: Dict = {
       medicinaskursi: "medicinaskursi.lv",
       lumpii: "LUMPII",
       lma: "Латвийская ассоциация медсестёр",
+      evisit: "Evisit",
     },
     abroad: {
       title: "Курс за рубежом: сколько TIP?",

@@ -1027,6 +1027,7 @@ export const en = {
       medicinaskursi: "medicinaskursi.lv",
       lumpii: "LUMPII",
       lma: "Latvian Nurses Association",
+      evisit: "Evisit",
     } as Record<CourseSource, string>,
     abroad: {
       title: "Course abroad: how many TIP?",

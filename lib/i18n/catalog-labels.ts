@@ -942,4 +942,5 @@ export const LABELS: Record<string, string> = {
   "courses.sourceLabels.kursiarstiem": "Avots: kursiarstiem.lv",
   "courses.sourceLabels.medicinaskursi": "Avots: medicinaskursi.lv",
   "courses.sourceLabels.lumpii": "Avots: LUMPII",
+  "courses.sourceLabels.evisit": "Avots: Evisit",
 };
