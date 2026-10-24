@@ -366,6 +366,11 @@ export const lv: Dict = {
     nursing: "Māsas kompetences tēmas",
     emergency_practical: "Neatliekamās medicīniskās palīdzības praktiskās stundas",
   },
+  checkHints: {
+    specialty: "Kursi, kas attiecas uz sertifikātā norādīto specialitāti.",
+    emergency_points: "Prasība visām profesijām (MK noteikumi Nr. 391, 51. punkts).",
+    emergency_practical: "Stundas, ne TIP: no neatliekamās palīdzības apmācības vismaz 4 stundas praktiski.",
+  } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {
     label: "Noteikumi",
     source:
@@ -703,6 +708,8 @@ export const lv: Dict = {
     history: "Vēsture un sadalījums laika gaitā",
     requirements: "Nepieciešamie TIP punkti (pēc MK noteikumiem)",
     requirementsNurse: "Nepieciešamās akadēmiskās stundas (MK noteikumi Nr. 630)",
+    requirementsWithin: "Tai skaitā:",
+    requirementsNote: "Šie ir minimumi kopsummas ietvaros, nevis papildus tai. Viens kurss var skaitīties vairākās rindās.",
     coursesForYou: "Jums piemēroti kursi",
     allCourses: "Visi kursi",
     noCourses: "Pašlaik nav gaidāmu kursu jūsu specialitātei.",

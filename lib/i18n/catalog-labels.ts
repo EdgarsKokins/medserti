@@ -952,4 +952,9 @@ export const LABELS: Record<string, string> = {
   "profile.ruleMethod": "Profils: prasība 100 TIP (metode)",
   "profile.registerCheck": "Profils: teksts pirms saites uz VI reģistru",
   "profile.registerLink": "Profils: saite uz VI reģistru",
+  "checkHints.specialty": "Pārskats: paskaidrojums prasībai \"Savā specialitātē\"",
+  "checkHints.emergency_points": "Pārskats: paskaidrojums neatliekamās palīdzības prasībai",
+  "checkHints.emergency_practical": "Pārskats: paskaidrojums praktiskajām stundām",
+  "dashboard.requirementsWithin": "Pārskats: virsraksts minimumiem zem \"Kopā\"",
+  "dashboard.requirementsNote": "Pārskats: piezīme, ka minimumi ir kopsummas ietvaros",
 };

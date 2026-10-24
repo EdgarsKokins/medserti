@@ -26,4 +26,4 @@
 .history > summary::before { content: "+"; font-family: var(--font-sans); color: var(--muted); width: 14px; }
 .history[open] > summary::before { content: "−"; }
 
-.exportLink { align-self: flex-start; margin-top: -24px; font-weight: 500; }
+.exportLink { align-self: flex-start; margin-top: -16px; font-weight: 500; }

@@ -362,6 +362,11 @@ export const ru: Dict = {
     nursing: "Темы компетенции медсестры",
     emergency_practical: "Практические часы неотложной медицинской помощи",
   },
+  checkHints: {
+    specialty: "Курсы, относящиеся к специальности в сертификате.",
+    emergency_points: "Требование для всех профессий (Правила КМ № 391, пункт 51).",
+    emergency_practical: "Часы, а не TIP: не менее 4 часов обучения неотложной помощи должны быть практическими.",
+  } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {
     label: "Правила",
     source:
@@ -698,6 +703,8 @@ export const ru: Dict = {
     history: "История и распределение по времени",
     requirements: "Нужные баллы TIP (по MK noteikumi)",
     requirementsNurse: "Нужные академические часы (MK noteikumi Nr. 630)",
+    requirementsWithin: "В том числе:",
+    requirementsNote: "Эти минимумы входят в общую сумму, а не добавляются к ней. Один курс может засчитываться в нескольких строках.",
     coursesForYou: "Курсы для вас",
     allCourses: "Все курсы",
     noCourses: "Сейчас нет ближайших курсов по вашей специальности.",

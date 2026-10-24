@@ -364,6 +364,11 @@ export const en = {
     nursing: "Nursing competence topics",
     emergency_practical: "Emergency care practical hours",
   } as Record<Check["id"], string>,
+  checkHints: {
+    specialty: "Courses that relate to the specialty on your certificate.",
+    emergency_points: "Required for every profession (Cabinet Regulation No. 391, point 51).",
+    emergency_practical: "Hours, not TIP: at least 4 hours of the emergency care training must be practical.",
+  } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {
     label: "Rules",
     source: "Cabinet Regulation No. 391 (18 Jun 2024) as amended by No. 703 (25 Nov 2025) and No. 487 (18 Aug 2026), points 6 and 51, Annex 4",
@@ -698,6 +703,8 @@ export const en = {
     history: "History and breakdown over time",
     requirements: "Required TIP (under the Cabinet Regulations)",
     requirementsNurse: "Required academic hours (Regulation No. 630)",
+    requirementsWithin: "Of which:",
+    requirementsNote: "These minimums are part of the total, not on top of it. One course can count in several rows.",
     coursesForYou: "Courses for you",
     allCourses: "All courses",
     noCourses: "No upcoming courses for your specialty right now.",
