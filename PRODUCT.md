@@ -18,7 +18,7 @@ Medserti takes recertification admin off practitioners' hands. A user uploads a 
 
 ## Positioning
 
-One place for certificates from any organizer, read automatically and counted against the exact Regulation No. 391 rules. LĀB's own profile only counts events registered with the LĀB card; Medserti covers everything else too, and aggregates upcoming TIP-approved courses from LĀB, LUMPII, kursiarstiem.lv and medicinaskursi.lv with how to apply.
+One place for certificates from any organizer, read automatically and counted against the exact Regulation No. 391 rules. LĀB's own profile only counts events registered with the LĀB card; Medserti covers everything else too, and aggregates upcoming TIP-approved courses from LĀB, LUMPII, kursiarstiem.lv, medicinaskursi.lv, LMA and Evisit with how to apply.
 
 Medserti is independent. It is not affiliated with or endorsed by LĀB and must never imply that it is. It is open to partnering with LĀB later. It does not replace official recertification: the user applies as usual and the certification body decides.
 

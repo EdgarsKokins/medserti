@@ -39,7 +39,7 @@ Cabinet Regulation No. 391 (as amended by No. 703, 2025, and No. 487, Aug 2026),
 | `lib/records.ts`, `lib/db.ts` | JSON records in Upstash Redis (local file fallback). Users, certificates, settings, course index, errors, feedback |
 | `lib/storage.ts` | Uploaded files in Vercel Blob (local `./.data` fallback) |
 | `lib/backup.ts` | Weekly backup of files and records to Cloudflare R2 (EU), 8 weeks; restore with `scripts/restore-backup.mjs` |
-| `lib/courses/` | Course scrapers (LĀB, kursiarstiem.lv, medicinaskursi.lv, lumpii.lv, LMA), merge, cache |
+| `lib/courses/` | Course scrapers (LĀB, kursiarstiem.lv, medicinaskursi.lv, lumpii.lv, LMA, evisit.eu), merge, cache |
 | `lib/i18n/` | `lv.ts`, `en.ts`, `ru.ts` typed as one `Dict`; `catalog-labels.ts` labels every key for the `/admin` text editor; runtime overrides stored in Redis |
 | `lib/export/`, `components/export/` | LĀB application and recertification sheet (docx in the browser) |
 | `components/monitoring/` | Error log (`/admin/kludas`), "Ziņot par problēmu" reports, Vercel Analytics events |

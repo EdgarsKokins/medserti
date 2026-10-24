@@ -1033,6 +1033,7 @@ export const lv: Dict = {
       medicinaskursi: "medicinaskursi.lv",
       lumpii: "LUMPII",
       lma: "Latvijas Māsu asociācija",
+      evisit: "Evisit",
     },
     abroad: {
       title: "Kurss ārzemēs: cik TIP?",

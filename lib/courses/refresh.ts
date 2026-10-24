@@ -5,6 +5,7 @@ import { fetchLabCourses } from "./sources/labCourses";
 import { fetchRss } from "./sources/rss";
 import { fetchLumpii } from "./sources/lumpii";
 import { fetchLma } from "./sources/lma";
+import { fetchEvisit } from "./sources/evisit";
 
 const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   lab_tip: fetchLabTip,
@@ -13,6 +14,7 @@ const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   medicinaskursi: () => fetchRss("medicinaskursi"),
   lumpii: fetchLumpii,
   lma: fetchLma,
+  evisit: fetchEvisit,
 };
 
 /**
@@ -74,7 +76,7 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
   tip = tip.filter((c) => !replaced.has(c));
 
   const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
-  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? [])]) {
+  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? []), ...(bySource.evisit ?? [])]) {
     const key = titleKey(c.title);
     if (key && seen.has(key)) {
       // the same course on LĀB's TIP list: keep that row, but take the price the shop publishes

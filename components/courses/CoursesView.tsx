@@ -413,7 +413,7 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
   const lvDate = r.startDate
     ? `${formatDate(r.startDate, "lv")}${r.endDate ? ` - ${formatDate(r.endDate, "lv")}` : ""}`
     : null;
-  const direct = !!extra && (r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || (r.source === "lumpii" && !url.endsWith("/kursi")) || (r.source === "lma" && url !== SOURCE_URLS.lma));
+  const direct = !!extra && (r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || r.source === "evisit" || (r.source === "lumpii" && !url.endsWith("/kursi")) || (r.source === "lma" && url !== SOURCE_URLS.lma));
   const c = extra?.contact;
   return (
     <section className={styles.apply} aria-label={a.title}>
