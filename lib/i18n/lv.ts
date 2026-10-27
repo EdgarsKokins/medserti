@@ -9,7 +9,7 @@ export const lv: Dict = {
     name: "Medserti",
     tagline: "Jūsu tālākizglītības punkti un resertifikācija vienuviet",
   },
-  lang: { label: "Valoda" },
+  lang: { label: "Valoda", suggestText: "Šī lapa ir pieejama arī krieviski.", suggestYes: "Atvērt krieviski", suggestNo: "Palikt latviski" },
   common: { loading: "Ielādē...", home: "Uz sākumlapu", retry: "Mēģināt vēlreiz", networkError: "Neizdevās sazināties ar serveri. Pārbaudiet interneta savienojumu un mēģiniet vēlreiz." },
   notFound: { title: "Lapa nav atrasta", body: "Šādas lapas nav vai tā ir pārvietota." },
   error: { title: "Radās kļūda", body: "Lapu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža." },

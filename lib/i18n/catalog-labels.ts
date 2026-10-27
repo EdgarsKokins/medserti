@@ -971,4 +971,7 @@ export const LABELS: Record<string, string> = {
   "certs.pastNote": "Sertifikāti: iepriekšējo periodu piezīme",
   "certs.pastGroup": "Saliekamā grupa: iepriekšējo periodu sertifikāti",
   "upload.qualityScreen": "Augšupielāde: ekrāna fotogrāfija, lūgums augšupielādēt PDF",
+  "lang.suggestText": "Valodas piedāvājums krievu pārlūkam: teksts (rāda krieviski)",
+  "lang.suggestYes": "Valodas piedāvājums: poga atvērt krieviski",
+  "lang.suggestNo": "Valodas piedāvājums: poga palikt latviski",
 };

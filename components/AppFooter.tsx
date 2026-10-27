@@ -3,6 +3,7 @@ import LangSwitch from "@/components/LangSwitch";
 import DemoButton from "@/components/DemoButton";
 import ReportProblem from "@/components/monitoring/ReportProblem";
 import type { Locale } from "@/lib/i18n";
+import { localePath } from "@/lib/locale";
 import { CONTACT_EMAIL } from "@/lib/site";
 import s from "./app-footer.module.css";
 
@@ -57,17 +58,17 @@ export default function AppFooter({
                 <li><DemoButton label={labels.demo} className="" /></li>
               </>
             )}
-            <li><Link href="/par-mums">{labels.about}</Link></li>
+            <li><Link href={localePath("/par-mums", locale)}>{labels.about}</Link></li>
             <li><a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a></li>
-            <li><Link href="/privatums">{labels.privacy}</Link></li>
-            <li><Link href="/noteikumi">{labels.terms}</Link></li>
+            <li><Link href={localePath("/privatums", locale)}>{labels.privacy}</Link></li>
+            <li><Link href={localePath("/noteikumi", locale)}>{labels.terms}</Link></li>
             {signedIn && <li><ReportProblem demo={demo} className={s.reportLink} /></li>}
           </ul>
         </nav>
         <div className={s.contact}>
           <div className={s.label}>{labels.contactLabel}</div>
           <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-          <Link href="/kontakti" className={`btn ${s.contactBtn}`}>{labels.contactCta}</Link>
+          <Link href={localePath("/kontakti", locale)} className={`btn ${s.contactBtn}`}>{labels.contactCta}</Link>
         </div>
         <div className={s.tools}>
           <LangSwitch locale={locale} label={labels.lang} />

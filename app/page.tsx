@@ -14,13 +14,16 @@ import { SOURCE_URLS, type Course, type CourseSource } from "@/lib/courses/types
 import { MONTHS_SHORT } from "@/components/dashboard/DateBlock";
 import { t, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { languageAlternates, localePath } from "@/lib/locale";
 import s from "./landing.module.css";
 import { formatDate, formatNumber, todayLv } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const d = t(await getLocale());
+  const locale = await getLocale();
+  const d = t(locale);
   const l = d.landing;
   return {
+    alternates: languageAlternates("/", locale),
     // the landing page keeps its full marketing title, without the " · Medserti" template
     title: { absolute: l.metaTitle },
     description: l.metaDescription,
@@ -30,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: l.metaTitle,
       description: l.metaDescription,
       locale: l.ogLocale,
-      url: "https://medserti.lv",
+      url: `https://medserti.lv${localePath("/", locale)}`,
     },
   };
 }
@@ -211,7 +214,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               <div>
                 <h2 id="founders-title" className={s.h2}>{a.foundersTitle}</h2>
                 <p className={s.foundersBody}>{a.foundersBody}</p>
-                <Link href="/par-mums">{d.nav.about} →</Link>
               </div>
               <ul className={s.people}>
                 {d.about.people.map((p) => (
@@ -241,7 +243,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             <p className={s.closingText}>{a.closing}</p>
             <div className={s.closingCtas}>
               <Link href="/register" className={`btn ${s.closingCta}`}>{a.start}</Link>
-              <Link href="/kontakti" className={`btn ${s.closingGhost}`}>{d.contact.cta}</Link>
+              <Link href={localePath("/kontakti", locale)} className={`btn ${s.closingGhost}`}>{d.contact.cta}</Link>
             </div>
           </div>
         </div>

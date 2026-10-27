@@ -3,13 +3,15 @@ import Link from "next/link";
 import Controller from "@/components/legal/Controller";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { languageAlternates, localePath } from "@/lib/locale";
 import { DVI_URL, LEGAL_UPDATED } from "@/lib/legal";
 import { CONTACT_EMAIL } from "@/lib/site";
 import s from "@/components/legal/legal.module.css";
 import { formatDate } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: t(await getLocale()).legal.privacy.title };
+  const locale = await getLocale();
+  return { title: t(locale).legal.privacy.title, alternates: languageAlternates("/privatums", locale) };
 }
 
 /** Public privacy policy */
@@ -45,7 +47,7 @@ export default async function PrivacyPage() {
       <section className={s.section}>
         <h2>{l.complaintTitle}</h2>
         <p>{l.complaintBody} <a href={DVI_URL} target="_blank" rel="noreferrer">dvi.gov.lv</a></p>
-        <p className={s.seeAlso}>{l.seeAlsoTerms.pre} <Link href="/noteikumi">{l.seeAlsoTerms.link}</Link>{l.seeAlsoTerms.post}</p>
+        <p className={s.seeAlso}>{l.seeAlsoTerms.pre} <Link href={localePath("/noteikumi", locale)}>{l.seeAlsoTerms.link}</Link>{l.seeAlsoTerms.post}</p>
       </section>
     </main>
   );

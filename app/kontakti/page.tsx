@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { languageAlternates, localePath } from "@/lib/locale";
 import { CONTROLLER, isPlaceholder } from "@/lib/legal";
 import { CONTACT_EMAIL, CONTACT_PHONE } from "@/lib/site";
 import s from "@/components/contact.module.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: t(await getLocale()).contact.title };
+  const locale = await getLocale();
+  return { title: t(locale).contact.title, alternates: languageAlternates("/kontakti", locale) };
 }
 
 /** Public contact page: a message form and the company details. Company name, number and address come from lib/legal.ts. */
