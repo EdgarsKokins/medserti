@@ -364,7 +364,7 @@ export async function deleteRecords(keys: string[]): Promise<void> {
   await db().del(keys);
 }
 
-/** Keys under a prefix (SCAN; for scripts, deletes and the backup, never on a page view) */
+/** Keys under a prefix (SCAN; for scripts, deletes, the backup and the admin user list, never on a public page view) */
 export async function listRecordKeys(prefix: string): Promise<string[]> {
   trace("scan", prefix);
   return (await db().scan(prefix)).sort();
