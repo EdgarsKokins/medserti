@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAuthorized } from "@/lib/cron";
 import { migrateBlobRecords } from "@/lib/migrate-records";
 import { recordsBackend } from "@/lib/records";
 import { reportServerError } from "@/lib/monitoring/errors";
@@ -15,8 +16,7 @@ const BUDGET_MS = 240_000;
  * counts; `complete: false` means the time budget ran out, call again. Repeating it is safe. Never deletes from Blob.
  */
 export async function POST(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`)
+  if (!cronAuthorized(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   // a preview (no Redis on purpose) would copy live Blob data into a throwaway file
   if (process.env.VERCEL && recordsBackend() !== "redis")

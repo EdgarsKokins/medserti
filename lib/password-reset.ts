@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "crypto";
+import { isIP } from "net";
 import { deleteRecords, getRecord, incrementWindow, setRecord } from "./records";
 import { removeExact } from "./storage";
 
@@ -71,6 +72,16 @@ export async function clearLimit(key: string): Promise<void> {
   await deleteRecords([limitKey(key)]);
 }
 
-/** Caller IP as Vercel reports it */
-export const clientIp = (req: Request) =>
-  req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+/**
+ * Caller IP for rate-limiting. On Vercel x-real-ip is set by the edge to the true client IP and cannot be spoofed.
+ * The leftmost x-forwarded-for entry IS client-controlled: trusting it would let an attacker rotate the header to get a
+ * fresh bucket per request and defeat every per-IP limit (admin-login guessing included). So it is never trusted; off
+ * Vercel we fall back to the rightmost XFF entry, the one a trusted proxy adds. A value that is not a real IP collapses
+ * to one fixed bucket, so a malformed header cannot mint buckets either.
+ */
+export const clientIp = (req: Request): string => {
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp && isIP(realIp)) return realIp;
+  const rightmost = req.headers.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean).at(-1);
+  return rightmost && isIP(rightmost) ? rightmost : "unknown";
+};

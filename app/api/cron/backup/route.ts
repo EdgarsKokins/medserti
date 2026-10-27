@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cronAuthorized } from "@/lib/cron";
 import { runBackup } from "@/lib/backup";
 import { reportServerError } from "@/lib/monitoring/errors";
 
@@ -8,8 +9,7 @@ export const dynamic = "force-dynamic";
 
 /** Called weekly by Vercel Cron (vercel.json), which sends "Authorization: Bearer $CRON_SECRET" */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`)
+  if (!cronAuthorized(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
     return NextResponse.json(await runBackup());
