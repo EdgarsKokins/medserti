@@ -13,7 +13,7 @@ export const en = {
     name: "Medserti",
     tagline: "Your CME points (TIP) and recertification in one place",
   },
-  lang: { label: "Language" },
+  lang: { label: "Language", suggestText: "This page is also available in Russian.", suggestYes: "Open in Russian", suggestNo: "Stay in Latvian" },
   common: { loading: "Loading...", home: "Go to the start page", retry: "Try again", networkError: "Could not reach the server. Check your connection and try again." },
   notFound: { title: "Page not found", body: "This page doesn't exist or has moved." },
   error: { title: "Something went wrong", body: "This page could not be loaded. Please try again in a moment." },

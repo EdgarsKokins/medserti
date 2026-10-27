@@ -148,6 +148,10 @@ p { margin: 0 0 10px; }
 .demo-banner { background: var(--accent-soft); border-bottom: 1px solid var(--border); color: var(--text); font-size: 0.9rem; }
 .demo-banner-inner { max-width: 1120px; margin: 0 auto; padding: 8px 20px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center; }
 .demo-banner a { font-weight: 600; }
+/* "Эта страница есть и на русском": offered once to browsers that prefer Russian (components/LangSuggest.tsx) */
+.lang-suggest { background: var(--surface); border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+.lang-suggest-inner { max-width: 1120px; margin: 0 auto; padding: 10px 20px; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center; }
+.lang-suggest-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 /* read-only demo forms: the fields stay visible, the fieldset disables them */
 .ro-fieldset { display: contents; }
 /* buttons in the nav keep their own colours */

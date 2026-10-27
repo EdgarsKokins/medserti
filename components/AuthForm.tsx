@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Locale } from "@/lib/locale";
+import { localePath, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import type { Profession } from "@/lib/types";
 import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, validEmail, validName, validPassword } from "@/lib/validation";
@@ -193,9 +193,9 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
                 />
                 <span>
                   {d.legal.consent.agree}{" "}
-                  <Link href="/noteikumi" target="_blank">{d.legal.consent.terms}</Link>{" "}
+                  <Link href={localePath("/noteikumi", locale)} target="_blank">{d.legal.consent.terms}</Link>{" "}
                   {d.legal.consent.and}{" "}
-                  <Link href="/privatums" target="_blank">{d.legal.consent.privacy}</Link>
+                  <Link href={localePath("/privatums", locale)} target="_blank">{d.legal.consent.privacy}</Link>
                 </span>
               </label>
               {errorText("consent")}

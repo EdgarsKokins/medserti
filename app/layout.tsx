@@ -6,11 +6,14 @@ import { currentUser, currentUserId } from "@/lib/auth";
 import { isDemoUserId } from "@/lib/demo/id";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { localePath, SUGGEST_HEADER } from "@/lib/locale";
 import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
 import I18nOverrides from "@/components/I18nOverrides";
 import DictProvider from "@/components/i18n/DictProvider";
 import NavLinks, { NavAuth } from "@/components/NavLinks";
 import AppFooter from "@/components/AppFooter";
+import LangSuggest from "@/components/LangSuggest";
+import { headers } from "next/headers";
 import ErrorReporter from "@/components/monitoring/ErrorReporter";
 import AnalyticsClient from "@/components/monitoring/AnalyticsClient";
 import { NURSE_RULES, REGISTER_URL, RULES } from "@/lib/rules";
@@ -41,6 +44,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // already loaded by getLocale(); passed down once so client components get the same texts
   const overrides = await loadRuntimeOverrides();
   const d = t(locale);
+  // a Latvian public page in a browser that prefers Russian (proxy.ts): offer the Russian version in Russian
+  const suggestPath = (await headers()).get(SUGGEST_HEADER);
+  const ru = t("ru").lang;
   // the legal basis behind every number, for signed-in pages; nurses re-register under Reg. 630, everyone else under Reg. 391
   const user = signedIn ? await currentUser() : null;
   const nurse = user?.profile.profession === "nurse";
@@ -67,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="nav">
               <div className="nav-inner">
                 {/* the demo account's logo goes to the public homepage, which ends the demo */}
-                <Link href={signedIn && !demo ? "/dashboard" : "/"} className="brand" aria-label={d.brand.name}>
+                <Link href={signedIn && !demo ? "/dashboard" : localePath("/", locale)} className="brand" aria-label={d.brand.name}>
                   <span className="brand-seal" aria-hidden>M</span>
                   <span className="brand-name">{d.brand.name}</span>
                 </Link>
@@ -94,6 +100,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </div>
               </div>
             </nav>
+            {suggestPath && <LangSuggest path={suggestPath} text={ru.suggestText} yes={ru.suggestYes} no={ru.suggestNo} />}
             {demo && (
               <div className="demo-banner" role="note">
                 <div className="demo-banner-inner">

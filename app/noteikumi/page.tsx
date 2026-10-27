@@ -3,12 +3,14 @@ import Link from "next/link";
 import Controller from "@/components/legal/Controller";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { languageAlternates, localePath } from "@/lib/locale";
 import { LEGAL_UPDATED } from "@/lib/legal";
 import s from "@/components/legal/legal.module.css";
 import { formatDate } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: t(await getLocale()).legal.terms.title };
+  const locale = await getLocale();
+  return { title: t(locale).legal.terms.title, alternates: languageAlternates("/noteikumi", locale) };
 }
 
 /** Public terms of use: a short list of key points */
@@ -28,7 +30,7 @@ export default async function TermsPage() {
       <section className={s.section}>
         <h2>{l.controllerTitle}</h2>
         <Controller l={l} />
-        <p className={s.seeAlso}>{l.seeAlsoPrivacy.pre} <Link href="/privatums">{l.seeAlsoPrivacy.link}</Link>{l.seeAlsoPrivacy.post}</p>
+        <p className={s.seeAlso}>{l.seeAlsoPrivacy.pre} <Link href={localePath("/privatums", locale)}>{l.seeAlsoPrivacy.link}</Link>{l.seeAlsoPrivacy.post}</p>
       </section>
     </main>
   );
