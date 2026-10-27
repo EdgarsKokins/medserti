@@ -14,11 +14,14 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { todayLv } from "@/lib/format";
 import { reportServerError } from "@/lib/monitoring/errors";
+import { rateLimit } from "@/lib/password-reset";
 
 export const maxDuration = 60;
 
 const MAX_BYTES = 4.5 * 1024 * 1024; // Vercel request body limit
 const MAX_OCR_CHARS = 50_000;
+// a five-year backlog is rarely over 100 certificates; this stops a script from burning the Blob quota
+const UPLOAD_LIMIT = [150, 60 * 60 * 1000] as const;
 const EXT: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
 /** Detect the real type from the first bytes; the browser-supplied type is not trusted */
@@ -64,6 +67,7 @@ export async function POST(req: Request) {
   const g = await requireWritableUser();
   if (!g.ok) return g.response;
   const { user } = g;
+  if (!(await rateLimit(`upload-user:${user.id}`, ...UPLOAD_LIMIT))) return NextResponse.json({ error: m.tooMany }, { status: 429 });
 
   // one file per request (the upload queue sends them one by one, with per-file progress)
   const form = await req.formData().catch(() => null);

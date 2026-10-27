@@ -33,5 +33,10 @@
     "ioredis-mock": "8.13.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   }
 }
