@@ -21,6 +21,17 @@ export interface UserRecord {
   /** Bumped on password reset; sessions carrying an older version are rejected (missing = 0) */
   sessionVersion?: number;
   profile: Profile;
+  /** Which emails the user gets (profile, "E-pasta paziņojumi"); missing = defaults (lib/notifications.ts) */
+  notifications?: NotificationPrefs;
+  /** Language for emails: the UI language at sign-up, then when the email settings were last saved; missing = lv */
+  locale?: "lv" | "en" | "ru";
+}
+
+export interface NotificationPrefs {
+  /** recertification reminders 12, 6 and 4 months before the period ends */
+  reminders: boolean;
+  /** weekly email with new courses for the user's specialty */
+  courseAlerts: boolean;
 }
 
 export interface Profile {

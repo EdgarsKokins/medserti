@@ -4,7 +4,7 @@ import { t, type Locale } from "@/lib/i18n";
 import type { RuleBasis } from "@/lib/rules";
 import type { Course } from "@/lib/courses/types";
 import { specialtyLabel } from "@/lib/specialties";
-import { dayMs, dictFor, fmtDate, fmtNum, type Headline } from "./model";
+import { dayMs, dictFor, fmtDate, fmtNum, missingPhrases, type Headline } from "./model";
 import { DateBlock } from "./DateBlock";
 import styles from "./overview.module.css";
 
@@ -46,18 +46,7 @@ export function Hero({
     timePct = Math.max(0, Math.min(100, ((today.getTime() - a) / (b - a)) * 100));
   }
   const behind = timePct != null && pointsPct + 5 < timePct;
-  // requirements other than the total that are still open, as plain phrases ("2 TIP of emergency care training")
-  const missing = p.checks
-    .filter((c) => !c.met && c.id !== "total")
-    .map((c) => {
-      const gap = Math.max(0, c.need - c.have);
-      if (c.id === "specialty") return d.missingSpecialty(n(gap));
-      if (c.id === "emergency_points") return d.missingEmergencyPoints(n(gap));
-      if (c.id === "infection_control") return d.missingInfection(n(gap));
-      if (c.id === "patient_safety") return d.missingPatientSafety(n(gap));
-      if (c.id === "nursing") return d.missingNursing(n(gap));
-      return d.missingEmergencyHours(n(gap), Math.ceil(gap));
-    });
+  const missing = missingPhrases(p, d, n);
   // listed specialties show in the UI language; unlisted free text as typed
   const eyebrow = [specialtyLabel(specialty, locale), p.windowEnd ? (nurse ? d.registrationUntilShort : d.validUntilShort)(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
 

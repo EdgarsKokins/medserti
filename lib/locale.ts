@@ -69,7 +69,7 @@ export const ruPl = (n: number, one: string, few: string, many: string) => {
 };
 
 // sections that show a progress unit; texts that explain the conversion keep the word TIP
-const HOURS_SECTIONS = ["dashboard", "checks", "chart", "profile", "certs", "review"] as const;
+const HOURS_SECTIONS = ["dashboard", "checks", "chart", "profile", "certs", "review", "notify"] as const;
 const KEEP_TIP = new Set(["nurseRule", "functionalTransition"]);
 
 /** Swap the word TIP for another unit; "akad. st." already ends a sentence, so "100 TIP." becomes "100 akad. st." */

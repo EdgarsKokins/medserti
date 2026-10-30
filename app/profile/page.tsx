@@ -1,6 +1,8 @@
 import { isDemoUser, requireUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
 import DeleteAccount from "@/components/legal/DeleteAccount";
+import NotificationSettings from "@/components/NotificationSettings";
+import { prefsOf } from "@/lib/notifications";
 import { profileComplete } from "@/lib/profile";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
@@ -19,6 +21,8 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       <h1 className={s.head}>{d.profile.title}</h1>
       {welcome && <div className="alert alert-ok" style={{ margin: "16px 0 24px" }}>{nurse ? d.profile.welcomeNurse : d.profile.welcome}</div>}
       <ProfileForm initial={user.profile} locale={locale} readOnly={demo} onboarding={onboarding} />
+      {/* not while signing up, and not for the shared demo account, which gets no email */}
+      {!demo && !onboarding && <NotificationSettings initial={prefsOf(user)} email={user.email} nurse={nurse} />}
       {/* not while signing up; the shared demo account cannot be deleted (the API refuses it too) */}
       {!demo && !onboarding && <DeleteAccount locale={locale} />}
     </main>

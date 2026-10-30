@@ -57,3 +57,8 @@
 .dialog p { margin: 0 0 12px; line-height: 1.5; }
 .dialogQuestion { font-weight: 600; }
 .dialogActions { margin-top: 20px; }
+
+/* email notifications: one switch per row, the save button under them */
+.toggle { grid-column: 1 / -1; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; line-height: 1.45; }
+.toggle input { flex: none; width: 18px; height: 18px; margin-top: 2px; }
+.fullRow { grid-column: 1 / -1; }

@@ -7,15 +7,11 @@ import { sendEmail } from "@/lib/email";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { reportServerError } from "@/lib/monitoring/errors";
+import { siteUrl } from "@/lib/site";
 
 const Body = z.object({ email: z.string().email() });
 const HOUR = 60 * 60 * 1000;
 
-/** Base for links in emails. Never taken from the Host header in production (reset-link poisoning). */
-function siteUrl(req: Request) {
-  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "");
-  return process.env.NODE_ENV === "production" ? "https://medserti.lv" : new URL(req.url).origin;
-}
 
 /** Same answer whether or not the account exists; the lookup and email run after the response is sent */
 export async function POST(req: Request) {

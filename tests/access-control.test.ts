@@ -33,6 +33,7 @@ const PUBLIC: Record<string, string> = {
   "app/api/admin/logout/route.ts": "clears the caller's own admin cookie",
   "app/api/contact/route.ts": "public contact form; rate-limited",
   "app/api/errors/route.ts": "browser error reports; rate-limited, no data returned",
+  "app/api/notifications/unsubscribe/route.ts": "turns one kind of email off; needs the signed token from the email",
 };
 
 const USER_GUARD = /requireWritableUser\(\)|currentUser\(\)|currentUserId\(\)/;
