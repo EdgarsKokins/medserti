@@ -864,11 +864,18 @@ export const lv: Dict = {
           ],
         },
         {
+          title: "Piekļuve atbalstam",
+          items: [
+            "Medserti administratori var atvērt jūsu sertifikātus un no tiem nolasītos datus tikai, lai atbildētu uz jūsu jautājumu vai izlabotu kļūdu sertifikāta nolasīšanā.",
+            "Katru šādu skatījumu reģistrējam: kad, un vai atvērts saraksts vai konkrēts fails. Šo žurnālu glabājam 12 mēnešus vai līdz konta dzēšanai.",
+          ],
+        },
+        {
           title: "Tiesiskais pamats",
           items: [
             "Līgums (VDAR 6. panta 1. punkta b) apakšpunkts): šie dati ir vajadzīgi, lai sniegtu pakalpojumu, kuram pieteicāties.",
             "Piekrišana (VDAR 6. panta 1. punkta a) apakšpunkts): reģistrējoties jūs piekrītat šai politikai. Piekrišanu varat atsaukt jebkurā laikā, izdzēšot kontu.",
-            "Leģitīmās intereses (VDAR 6. panta 1. punkta f) apakšpunkts): kļūdu žurnāls un lietojuma statistika bez sīkdatnēm, lai pakalpojums darbotos un mēs redzētu, kuras tā daļas tiek izmantotas.",
+            "Leģitīmās intereses (VDAR 6. panta 1. punkta f) apakšpunkts): kļūdu žurnāls, lietojuma statistika bez sīkdatnēm un atbalsta piekļuve sertifikātiem, lai pakalpojums darbotos, mēs varētu izlabot nolasīšanas kļūdas un redzētu, kuras pakalpojuma daļas tiek izmantotas.",
           ],
         },
         {

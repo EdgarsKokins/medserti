@@ -859,11 +859,18 @@ export const en = {
           ],
         },
         {
+          title: "Support access",
+          items: [
+            "Medserti administrators can open your certificates and the data read from them only to answer your question or to fix an error in how a certificate was read.",
+            "We log every such view: when, and whether the list or a specific file was opened. We keep this log for 12 months or until you delete your account.",
+          ],
+        },
+        {
           title: "Legal basis",
           items: [
             "Contract (GDPR Article 6(1)(b)): we need this data to provide the service you signed up for.",
             "Consent (GDPR Article 6(1)(a)): you agree to this policy when you register. You can withdraw consent at any time by deleting your account.",
-            "Legitimate interest (GDPR Article 6(1)(f)): error logs and cookieless usage statistics, to keep the service working and to see which parts people use.",
+            "Legitimate interest (GDPR Article 6(1)(f)): error logs, cookieless usage statistics and support access to certificates, to keep the service working, fix reading errors and see which parts people use.",
           ],
         },
         {

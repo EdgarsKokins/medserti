@@ -98,4 +98,6 @@ export async function deleteUserData(user: UserRecord): Promise<void> {
   await deleteRecords([certsKey(user.id)]);
   await deleteRecords([indexKey(user.email)]);
   await deleteRecordsUnder(`users/${user.id}/`);
+  // the log of admin views of this account (lib/admin-audit.ts) goes with it
+  await deleteRecordsUnder(`admin-audit/${user.id}/`);
 }
