@@ -97,6 +97,7 @@ const SAMPLES: Record<string, Record<Locale, unknown>> = {
   title: { lv: "Kardioloģijas kongress 2026", en: "Cardiology congress 2026", ru: "Конгресс кардиологов 2026" },
   done: { lv: 3, en: 3, ru: 3 }, total: { lv: 8, en: 8, ru: 8 },
   period: { lv: "01.03.2023. - 01.03.2028.", en: "1 Mar 2023 - 1 Mar 2028", ru: "01.03.2023 - 01.03.2028" },
+  verb: { lv: "Plānojiet", en: "Plan", ru: "Планируйте" }, sources: { lv: 7, en: 7, ru: 7 }, tip: { lv: "2", en: "2", ru: "2" }, price: { lv: "Bez maksas", en: "Free", ru: "Бесплатно" },
   firstName: { lv: "Anna", en: "Anna", ru: "Анна" },
   link: { lv: "https://medserti.lv/atjaunot-paroli?token=…", en: "https://medserti.lv/atjaunot-paroli?token=…", ru: "https://medserti.lv/atjaunot-paroli?token=…" },
 };
