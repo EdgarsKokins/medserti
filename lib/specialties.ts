@@ -1,5 +1,5 @@
 import type { Locale } from "./i18n";
-import type { CertificationKind, Profession } from "./types";
+import type { Profession } from "./types";
 
 /**
  * Official specialty and method list used by the Latvian Medical Association (LĀB)
@@ -191,17 +191,14 @@ const ALL = [...SPECIALTIES, ...OTHER_PROFESSION_SPECIALTIES];
 /** The LĀB list mixes specialties and methods; methods are marked "(method)" in their English name */
 const isMethod = (s: Specialty) => s.en.endsWith("(method)");
 const DOCTOR_SPECIALTIES = SPECIALTIES.filter((s) => !isMethod(s));
-const METHODS = SPECIALTIES.filter(isMethod);
 const BY_CODE = new Map(ALL.map((s) => [s.code, s]));
 const pick = (prefix: string) => OTHER_PROFESSION_SPECIALTIES.filter((s) => s.code.startsWith(prefix));
 
 /**
  * Specialties a profession can be certified in. Empty list: no fixed list, the user types it.
- * Method certificates use the LĀB list, which holds the methods.
+ * Methods stay in SPECIALTIES for course audiences, but are not offered as a certificate.
  */
-export function specialtiesFor(profession: Profession, kind: CertificationKind): readonly Specialty[] {
-  // a method certificate lists only methods, a specialty certificate only specialties
-  if (kind === "method") return profession === "doctor" || profession === "dentist" ? METHODS : [];
+export function specialtiesFor(profession: Profession): readonly Specialty[] {
   if (profession === "doctor") return DOCTOR_SPECIALTIES;
   switch (profession) {
     case "dentist":

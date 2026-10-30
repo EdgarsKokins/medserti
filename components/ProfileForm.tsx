@@ -35,10 +35,16 @@ export default function ProfileForm({
   const dict = useDict();
   const professions = dict.professions;
   const router = useRouter();
-  const [p, setP] = useState<Profile>(initial);
+  // method certificates are no longer offered; a profile saved as one is edited as a specialty certificate
+  const [p, setP] = useState<Profile>({ ...initial, certificationKind: "specialty" });
   // nurses count academic hours, not TIP (Reg. 630 Annex 6)
   const d = (p.profession === "nurse" ? inHours(dict) : dict).profile;
-  const [spec, setSpec] = useState(() => resolveSpecialty(initial));
+  // a method picked before is not on the specialty list: start empty so the user picks their specialty
+  const [spec, setSpec] = useState(() => {
+    const r = resolveSpecialty(initial);
+    const list = specialtiesFor(initial.profession);
+    return r.code && r.code !== OTHER_SPECIALTY && list.length > 0 && !list.some((x) => x.code === r.code) ? { code: null, text: "" } : r;
+  });
   // an end date that is not issue + 5 years was set by hand; keep it and show the field
   const [customEnd, setCustomEnd] = useState(
     () => !!initial.certificateExpires && (!initial.certificateIssued || initial.certificateExpires !== addYears(initial.certificateIssued, RULES.validityYears)),
@@ -46,8 +52,6 @@ export default function ProfileForm({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  // most practitioners hold a specialty certificate; the method choice stays out of the way until asked for
-  const [showKind, setShowKind] = useState(initial.certificationKind === "method");
   // "Certification needed": the dates put the certificate period in the past, so this is not recertification
   const expiredDialog = useRef<HTMLDialogElement>(null);
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => {
@@ -56,22 +60,20 @@ export default function ProfileForm({
   };
   const clearError = (k: keyof FieldErrors) => errors[k] && setErrors((e) => ({ ...e, [k]: undefined }));
 
-  const specList = useMemo(() => specialtiesFor(p.profession, p.certificationKind), [p.profession, p.certificationKind]);
+  const specList = useMemo(() => specialtiesFor(p.profession), [p.profession]);
   // the rule can depend on the specialty picked but not yet saved (physiotherapists, Reg. 391 point 86)
   const ruleInput = { ...p, specialtyCode: spec.code, specialty: specialtyByCode(spec.code)?.lv ?? spec.text };
   const ruleTarget = ruleRequiredPoints(ruleInput);
   const basis = ruleBasis(ruleInput);
   const nurse = p.profession === "nurse";
 
-  /** Kind or profession changes the rule; an override that only repeated the old rule goes with it */
-  const setRuleInput = (patch: Partial<Pick<Profile, "profession" | "certificationKind">>) => {
+  /** Profession changes the rule */
+  const setRuleInput = (patch: Partial<Pick<Profile, "profession">>) => {
     setMsg(null);
     const next = { ...p, ...patch };
-    // nurses hold no certificate, so no method certificate either
-    if (next.profession === "nurse") next.certificationKind = "specialty";
     setP(next);
     // the specialty follows the new profession's list; a value that does not fit it is dropped, so only one specialty field shows
-    const list = specialtiesFor(next.profession, next.certificationKind);
+    const list = specialtiesFor(next.profession);
     const current = specialtyByCode(spec.code);
     const only = list.length === 1 ? { code: list[0].code, text: "" } : { code: null, text: "" };
     if (list.length === 0) {
@@ -260,11 +262,9 @@ export default function ProfileForm({
               ? d.nurseRule
               : basis === "functionalTransition"
                 ? d.functionalTransition
-                : p.certificationKind === "method"
-                  ? d.ruleMethod
-                  : target === RULES.points.doctorTier
-                    ? d.ruleDoctorTier
-                    : d.ruleOther}
+                : target === RULES.points.doctorTier
+                  ? d.ruleDoctorTier
+                  : d.ruleOther}
           </p>
           <p className="small muted">
             {d.registerCheck}{" "}
@@ -272,30 +272,6 @@ export default function ProfileForm({
           </p>
         </div>
         <div className={s.fields}>
-          {!nurse && !showKind && (
-            <div className="field">
-              <span className={s.hint}>
-                <button type="button" className={s.inlineBtn} aria-controls="kind" onClick={() => setShowKind(true)}>
-                  {d.kindMethodLink}
-                </button>
-              </span>
-            </div>
-          )}
-          {!nurse && showKind && (
-            <div className="field">
-              <label htmlFor="kind">{d.kind}</label>
-              <select
-                id="kind"
-                value={p.certificationKind}
-                aria-describedby="kind-hint"
-                onChange={(e) => setRuleInput({ certificationKind: e.target.value as Profile["certificationKind"] })}
-              >
-                <option value="specialty">{d.kindSpecialty}</option>
-                <option value="method">{d.kindMethod}</option>
-              </select>
-              <span id="kind-hint" className={s.hint}>{d.kindHint}</span>
-            </div>
-          )}
           <div className="field">
             <label htmlFor="certNo">{nurse ? d.regNo : d.certNo}</label>
             <input

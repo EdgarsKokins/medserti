@@ -6,7 +6,7 @@ import { round1, todayLv } from "./format";
 
 export { NURSE_RULES, RULES };
 
-type RuleInput = Pick<Profile, "profession" | "certificationKind" | "certificateExpires"> &
+type RuleInput = Pick<Profile, "profession" | "certificateExpires"> &
   Partial<Pick<Profile, "specialty" | "specialtyCode">>;
 
 export type RuleBasis = "nurse" | "functionalTransition";
@@ -16,7 +16,6 @@ export function ruleBasis(p: RuleInput): RuleBasis | null {
   if (p.profession === "nurse") return "nurse";
   if (
     p.profession === "functional_specialist" &&
-    p.certificationKind === "specialty" &&
     !!p.certificateExpires &&
     p.certificateExpires < RULES.functionalTransitionUntil &&
     (specialtyByCode(p.specialtyCode) ?? findSpecialty(p.specialty))?.code !== "fs-physio"
@@ -32,7 +31,8 @@ export function ruleRequiredPoints(p: RuleInput): number {
   const basis = ruleBasis(p);
   if (basis === "nurse") return NURSE_RULES.points;
   if (basis === "functionalTransition") return RULES.functionalTransitionPoints;
-  if (p.certificationKind === "method") return RULES.points.method;
+  // method certificates (point 51: 100 TIP) are not offered: testers did not understand the choice and picked it by
+  // mistake. Every certificate counts as a specialty one, including profiles that saved "method" before.
   if (p.profession === "doctor" || p.profession === "dentist" || p.profession === "functional_specialist")
     return RULES.points.doctorTier;
   return RULES.points.otherProfessions;
