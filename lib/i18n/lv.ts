@@ -119,7 +119,7 @@ export const lv: Dict = {
       { title: "Atlasiet", body: "Saraksts rāda kursus jūsu specialitātei. Sašauriniet pēc pilsētas, datuma un cenas." },
       { title: "Salīdziniet", body: "Pie katra kursa redzat TIP, cenu, vietu un rīkotāju." },
       { title: "Piesakieties", body: "Pieteikuma e-pasts jau sagatavots: nokopējiet to vai atveriet savā e-pastā." },
-      { title: "Pievienojiet sertifikātu", body: "Pēc kursa augšupielādējiet sertifikātu, un TIP nonāk pārskatā." },
+      { title: "Pievienojiet sertifikātu", body: "Pēc kursa pievienojiet sertifikātu no tā paša kursa: to, kas tajā nav norādīts, aizpildīsim no kursa saraksta, un TIP nonāk pārskatā." },
     ],
     onlineTitle: "Trūkstošos punktus iegūstiet tiešsaistē",
     onlineBody: "Ierakstītas lekcijas ar TIP, ko varat noskatīties, kad jums ērti. Noder, ja tuvumā nav pasākumu vai līdz termiņam palicis maz laika.",
