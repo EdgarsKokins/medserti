@@ -167,17 +167,19 @@ export function Requirements({ p, locale, hours = false }: { p: Progress; locale
 
 
 /** Next upcoming events that match the specialty (or are for all specialties) */
-export function CoursePicks({ courses, locale }: { courses: Course[]; locale: Locale }) {
+/** `online`: the recordings block (courses page "Ieraksti" tab); otherwise the next dated events */
+export function CoursePicks({ courses, locale, online = false }: { courses: Course[]; locale: Locale; online?: boolean }) {
   const d = t(locale).dashboard;
   const cs = t(locale).courses;
+  const id = online ? "online-title" : "picks-title";
   return (
-    <section aria-labelledby="picks-title">
+    <section aria-labelledby={id}>
       <div className={styles.sectionHead}>
-        <h2 id="picks-title">{d.coursesForYou}</h2>
-        <Link href="/courses" className={`small ${styles.headLink}`}>{d.allCourses} →</Link>
+        <h2 id={id}>{online ? d.onlineForYou : d.coursesForYou}</h2>
+        <Link href={online ? "/courses?tab=recorded" : "/courses"} className={`small ${styles.headLink}`}>{online ? d.allOnline : d.allCourses} →</Link>
       </div>
       {courses.length === 0 ? (
-        <p className="muted small">{d.noCourses}</p>
+        <p className="muted small">{online ? d.noOnline : d.noCourses}</p>
       ) : (
         <ul className={styles.picks}>
           {courses.map((c) => (
