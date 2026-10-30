@@ -16,7 +16,7 @@ import DashboardUpload from "@/components/dashboard/DashboardUpload";
 import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, headline } from "@/components/dashboard/model";
 import { formatPeriod, todayLv } from "@/lib/format";
 
-/** Next events for this specialty (or all specialties), then free recordings, at most `n` */
+/** Next events for this specialty (or all specialties), at most `n`; recordings get their own block (pickRecorded) */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
   // matched once per course, not inside the sort comparator
   const mine = new Map(courses.map((c) => [c, !!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty)]));
@@ -26,20 +26,31 @@ function pickCourses(courses: Course[], specialty: string, todayIso: string, n =
     .sort((a, b) => Number(mine.get(b)) - Number(mine.get(a)) || a.startDate!.localeCompare(b.startDate!))
     .slice(0, n)
     .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
-  if (events.length >= n) return events;
-  const recorded = courses.filter((c) => c.kind === "recorded" && c.free && fits(c)).slice(0, n - events.length);
-  return [...events, ...recorded];
+  return events;
 }
 
-/** Nurses: next courses for nurses (LMA list, or an audience naming nurses), then recordings */
+/** Recordings for this specialty first, then for all specialties; free ones first within each, at most `n` */
+function pickRecorded(courses: Course[], specialty: string, n = 3): Course[] {
+  const score = (c: Course) => (specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty) ? 2 : c.allSpecialties ? 1 : 0);
+  return courses
+    .filter((c) => c.kind === "recorded")
+    .map((c) => ({ c, s: score(c) }))
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s || Number(b.c.free) - Number(a.c.free))
+    .slice(0, n)
+    .map((x) => x.c);
+}
+
+/** Nurses: next courses for nurses (LMA list, or an audience naming nurses) */
 function pickNurseCourses(courses: Course[], todayIso: string, n = 4): Course[] {
-  const nurseCourses = courses.filter(isNurseCourse);
-  const events = nurseCourses
-    .filter((c) => c.kind === "event" && c.startDate && c.startDate >= todayIso)
+  return courses
+    .filter((c) => isNurseCourse(c) && c.kind === "event" && c.startDate && c.startDate >= todayIso)
     .sort((a, b) => a.startDate!.localeCompare(b.startDate!))
     .slice(0, n);
-  return [...events, ...nurseCourses.filter((c) => c.kind === "recorded").slice(0, n - events.length)];
 }
+
+/** Nurses: recordings for nurses */
+const pickNurseRecorded = (courses: Course[], n = 3) => courses.filter((c) => isNurseCourse(c) && c.kind === "recorded").slice(0, n);
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).nav.dashboard };
@@ -59,9 +70,9 @@ export default async function DashboardPage() {
   const basis = ruleBasis(user.profile);
   // nurses give only the date their registration runs to (Reg. 630 point 33)
   const profileIncomplete = hours ? !user.profile.certificateExpires : !user.profile.certificateIssued;
-  const picks = hours
-    ? pickNurseCourses(courseIdx?.courses ?? [], todayLv(today))
-    : pickCourses(courseIdx?.courses ?? [], user.profile.specialty.trim(), todayLv(today));
+  const all = courseIdx?.courses ?? [];
+  const picks = hours ? pickNurseCourses(all, todayLv(today)) : pickCourses(all, user.profile.specialty.trim(), todayLv(today));
+  const online = hours ? pickNurseRecorded(all) : pickRecorded(all, user.profile.specialty.trim());
 
   return (
     <main className="container stack" style={{ gap: 40 }}>
@@ -93,7 +104,11 @@ export default async function DashboardPage() {
 
       <div className={styles.twoCol}>
         <Requirements p={p} locale={locale} hours={hours} />
-        <CoursePicks courses={picks} locale={locale} />
+        {/* where the missing points come from: the next events, then recordings to watch any time */}
+        <div className="stack" style={{ gap: 32 }}>
+          <CoursePicks courses={picks} locale={locale} />
+          <CoursePicks courses={online} locale={locale} online />
+        </div>
       </div>
 
       {certs.length > 0 && (

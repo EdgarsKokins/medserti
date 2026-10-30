@@ -59,6 +59,7 @@ export default function CoursesView({
   nurse = false,
   openId = null,
   openExtra = null,
+  initialKind = null,
 }: {
   locale: Locale;
   rows: CourseRow[];
@@ -74,10 +75,12 @@ export default function CoursesView({
   openId?: string | null;
   /** the linked course's details, sent with the page so it opens without a request */
   openExtra?: CourseExtra | null;
+  /** tab to start on (/courses?tab=recorded, from the overview's online block); a linked course's own tab wins */
+  initialKind?: CourseKind | null;
 }) {
   const s = useDict().courses;
   const target = useMemo(() => (openId ? rows.find((r) => r.id === openId) ?? null : null), [rows, openId]);
-  const [kind, setKind] = useState<CourseKind>(target?.kind ?? "event");
+  const [kind, setKind] = useState<CourseKind>(target?.kind ?? initialKind ?? "event");
   const [q, setQ] = useState("");
   const [mine, setMine] = useState(nurse ? !target || target.forMe : !!specialty && (!target || target.forMe || target.allSpecialties));
   const fits = (r: CourseRow) => r.forMe || (!nurse && r.allSpecialties);
