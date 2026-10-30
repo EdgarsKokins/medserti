@@ -364,7 +364,7 @@ export const ru: Dict = {
   },
   checkHints: {
     specialty: "Курсы, относящиеся к специальности в сертификате.",
-    emergency_points: "Требование для всех профессий (Правила КМ № 391, пункт 51).",
+    emergency_points: "Новое требование для всех профессий, действует с 1 мая 2026 года (Правила КМ № 391, пункт 51, с поправками № 703). Переходных положений нет, поэтому оно применяется и к сертификатам, период которых начался раньше.",
     emergency_practical: "Часы, а не TIP: не менее 4 часов обучения неотложной помощи должны быть практическими.",
   } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {

@@ -368,7 +368,7 @@ export const lv: Dict = {
   },
   checkHints: {
     specialty: "Kursi, kas attiecas uz sertifikātā norādīto specialitāti.",
-    emergency_points: "Prasība visām profesijām (MK noteikumi Nr. 391, 51. punkts).",
+    emergency_points: "Jauna prasība visām profesijām, spēkā no 2026. gada 1. maija (MK noteikumi Nr. 391, 51. punkts, grozījumi ar Nr. 703). Pārejas noteikumu nav, tāpēc tā attiecas arī uz sertifikātiem, kuru periods sācies agrāk.",
     emergency_practical: "Stundas, ne TIP: no neatliekamās palīdzības apmācības vismaz 4 stundas praktiski.",
   } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {

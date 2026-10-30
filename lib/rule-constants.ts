@@ -14,7 +14,8 @@ export const RULES = {
   points: { doctorTier: 250, otherProfessions: 150, method: 100 },
   /** point 51: at least 60% from activity related to the certified specialty */
   specialtyShare: 0.6,
-  /** point 51: at least 8 TIP from emergency medical care training, incl. at least 4 practical hours */
+  /** point 51: at least 8 TIP from emergency medical care training, incl. at least 4 practical hours. Added by No. 703 point 1.22,
+   * in force from 01 May 2026 (No. 703 point 4), with no transitional rule, so it applies to every recertification from then */
   emergencyMinPoints: 8,
   emergencyMinPracticalHours: 4,
   /** Annex 4 footnote 3, item 10 (practical training): "nedrīkst pārsniegt 16 % no resertifikācijai specialitātē nepieciešamā tālākizglītības punktu skaita" */

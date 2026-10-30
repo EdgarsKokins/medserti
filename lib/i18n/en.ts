@@ -366,7 +366,7 @@ export const en = {
   } as Record<Check["id"], string>,
   checkHints: {
     specialty: "Courses that relate to the specialty on your certificate.",
-    emergency_points: "Required for every profession (Cabinet Regulation No. 391, point 51).",
+    emergency_points: "New requirement for every profession, in force since 1 May 2026 (Cabinet Regulation No. 391, point 51, as amended by No. 703). There is no transitional rule, so it also applies to certificates whose period started earlier.",
     emergency_practical: "Hours, not TIP: at least 4 hours of the emergency care training must be practical.",
   } as Partial<Record<"total" | "specialty" | "emergency_points" | "emergency_practical" | "infection_control" | "patient_safety" | "nursing", string>>,
   rules: {
