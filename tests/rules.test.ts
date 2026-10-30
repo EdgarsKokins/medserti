@@ -278,8 +278,10 @@ test("functional specialist: physiotherapists get no transition", () => {
   assert.equal(ruleRequiredPoints(prof), 250);
 });
 
-test("functional specialist: method certificates get no transition", () => {
-  const prof = profile({ profession: "functional_specialist", certificationKind: "method", specialtyCode: "fs-ot", certificateExpires: "2027-06-01" });
-  assert.equal(ruleBasis(prof), null);
-  assert.equal(ruleRequiredPoints(prof), 100);
+test("a profile saved as a method certificate counts as a specialty certificate (method option removed)", () => {
+  // Kārlis' test, October 2026: an algologist picked "method" by mistake and saw 100 TIP instead of 250
+  const doctor = profile({ profession: "doctor", certificationKind: "method", specialtyCode: "4", specialty: "Algologs" });
+  assert.equal(ruleRequiredPoints(doctor), 250);
+  const fs = profile({ profession: "functional_specialist", certificationKind: "method", specialtyCode: "fs-ot", certificateExpires: "2027-06-01" });
+  assert.equal(ruleBasis(fs), "functionalTransition");
 });

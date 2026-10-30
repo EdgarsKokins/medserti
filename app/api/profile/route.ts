@@ -16,7 +16,8 @@ const Body = z.object({
   profession: z.enum(PROFESSIONS),
   specialty: z.string().trim().refine((v) => validPlainText(v, SPECIALTY_MAX)),
   specialtyCode: z.string().trim().max(10).nullable().optional(),
-  certificationKind: z.enum(CERTIFICATION_KINDS),
+  // accepted from older clients and stored as "specialty": method certificates are no longer offered
+  certificationKind: z.enum(CERTIFICATION_KINDS).optional(),
   certificateNumber: z.string().trim().max(CERT_NO_MAX).refine(validCertNo),
   certificateIssued: isoDate.nullable(),
   certificateExpires: isoDate.nullable(),
@@ -37,7 +38,8 @@ export async function PUT(req: Request) {
     const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { requiredPointsOverride: _ignored, ...p } = parsed.data;
+  const { requiredPointsOverride: _ignored, certificationKind: _kind, ...rest } = parsed.data;
+  const p = { ...rest, certificationKind: "specialty" as const };
   if (p.certificateIssued && !p.certificateExpires) p.certificateExpires = addYears(p.certificateIssued, RULES.validityYears);
   const today = todayLv();
   if (p.profession !== "nurse" && p.certificateIssued && p.certificateIssued > today) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });
