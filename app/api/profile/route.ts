@@ -6,9 +6,11 @@ import { addYears, certificateWindow, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode } from "@/lib/specialties";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { CERTIFICATION_KINDS, PROFESSIONS } from "@/lib/types";
+import { CERTIFICATION_KINDS, PROFESSIONS, type Profile } from "@/lib/types";
 import { CERT_NO_MAX, SPECIALTY_MAX, tidyName, validCertNo, validName, validPlainText } from "@/lib/validation";
 import { todayLv } from "@/lib/format";
+import { randomUUID } from "crypto";
+import { MAX_EXTRA_CERTS } from "@/lib/profileCerts";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Body = z.object({
@@ -23,6 +25,19 @@ const Body = z.object({
   certificateExpires: isoDate.nullable(),
   // no longer edited: the requirement always follows the rules. Accepted from older clients and dropped.
   requiredPointsOverride: z.unknown().optional(),
+  extraCertificates: z
+    .array(
+      z.object({
+        id: z.string().max(40),
+        specialty: z.string().trim().min(1).refine((v) => validPlainText(v, SPECIALTY_MAX)),
+        specialtyCode: z.string().trim().max(10).nullable().optional(),
+        certificateNumber: z.string().trim().max(CERT_NO_MAX).refine(validCertNo),
+        certificateIssued: isoDate.nullable(),
+        certificateExpires: isoDate.nullable(),
+      }),
+    )
+    .max(MAX_EXTRA_CERTS)
+    .optional(),
 });
 
 /** User-facing message for the first failing field */
@@ -38,8 +53,25 @@ export async function PUT(req: Request) {
     const field = parsed.error.issues[0]?.path[0] as keyof typeof FIELD_ERROR | undefined;
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { requiredPointsOverride: _ignored, certificationKind: _kind, ...rest } = parsed.data;
-  const p = { ...rest, certificationKind: "specialty" as const };
+  const { requiredPointsOverride: _ignored, certificationKind: _kind, extraCertificates: extras, ...rest } = parsed.data;
+  const p: Profile = { ...rest, certificationKind: "specialty" as const };
+  const today0 = todayLv();
+  // other certificates: listed codes store the LV name, ids are ours, a missing end is issue + 5 years; nurses have none
+  if (rest.profession !== "nurse" && extras?.length) {
+    p.extraCertificates = extras.map((x) => {
+      const listed = specialtyByCode(x.specialtyCode);
+      return {
+        id: z.uuid().safeParse(x.id).success ? x.id : randomUUID(),
+        specialty: listed ? listed.lv : x.specialty,
+        specialtyCode: listed ? listed.code : OTHER_SPECIALTY,
+        certificateNumber: x.certificateNumber,
+        certificateIssued: x.certificateIssued,
+        certificateExpires: x.certificateExpires ?? (x.certificateIssued ? addYears(x.certificateIssued, RULES.validityYears) : null),
+      };
+    });
+    if (p.extraCertificates.some((x) => x.certificateIssued && x.certificateIssued > today0)) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });
+    if (p.extraCertificates.some((x) => x.certificateExpires && x.certificateExpires < today0)) return NextResponse.json({ error: m.certExpired }, { status: 400 });
+  }
   if (p.certificateIssued && !p.certificateExpires) p.certificateExpires = addYears(p.certificateIssued, RULES.validityYears);
   const today = todayLv();
   if (p.profession !== "nurse" && p.certificateIssued && p.certificateIssued > today) return NextResponse.json({ error: m.issuedFuture }, { status: 400 });

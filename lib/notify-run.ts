@@ -2,7 +2,10 @@ import "server-only";
 import { deleteHashFields, getHash, getRecord, getRecords, listRecordKeys, setHashFields, setRecord } from "./records";
 import { listCertificates } from "./db";
 import { isDemoUserId } from "./demo/id";
-import { certificateWindow, computeProgress } from "./rules";
+import { certificateWindow } from "./rules";
+import { certProgress } from "./certAssign";
+import { asProfile, profileCerts } from "./profileCerts";
+import { specialtyLabel } from "./specialties";
 import { readCourseIndex } from "./courses/store";
 import type { Course } from "./courses/types";
 import { sendEmail } from "./email";
@@ -71,12 +74,19 @@ export async function runNotifications(base: string, now = new Date()) {
     try {
       const state: NotifyState = { ...EMPTY_STATE, ...(await getRecord<NotifyState>(stateKey(u.id))) };
       if (prefs.reminders) {
-        // the window alone says whether a reminder is due; the certificates are read only when one is
-        const due = dueReminder(certificateWindow(u.profile, today).end, today, state.reminders);
-        if (due) {
-          const p = computeProgress(u.profile, await listCertificates(u.id), now);
-          await send(u, reminderEmail(u, p, due.months, base));
-          state.reminders = [...state.reminders, reminderKey(p.windowEnd!, due.days)];
+        // each own certificate has its own period; the window alone says whether a reminder is due, and the
+        // uploads are read only when one is
+        const own = profileCerts(u.profile);
+        let uploads: Awaited<ReturnType<typeof listCertificates>> | null = null;
+        for (const c of own) {
+          const end = certificateWindow(asProfile(u.profile, c), today).end;
+          const due = dueReminder(end, today, state.reminders, c.id);
+          if (!due || !end) continue;
+          uploads ??= await listCertificates(u.id);
+          const { progress } = certProgress(u.profile, uploads, c, now);
+          const label = own.length > 1 ? specialtyLabel(c.specialty, u.locale ?? "lv") : null;
+          await send(u, reminderEmail(u, progress, due.months, base, label));
+          state.reminders = [...state.reminders, reminderKey(end, due.days, c.id)];
           await setRecord(stateKey(u.id), state);
           out.reminders++;
         }

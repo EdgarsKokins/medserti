@@ -17,6 +17,8 @@ import { reportServerError } from "@/lib/monitoring/errors";
 import { rateLimit } from "@/lib/password-reset";
 import { readCourseIndex } from "@/lib/courses/store";
 import { fillFromCourse } from "@/lib/courses/fromCourse";
+import { assignedCert } from "@/lib/certAssign";
+import { asProfile, pickCert } from "@/lib/profileCerts";
 
 export const maxDuration = 60;
 
@@ -162,7 +164,7 @@ export async function POST(req: Request) {
       source: result.source,
       pointsKind: result.pointsKind,
       fields: result.fields,
-      window: certificateWindow(user.profile),
+      window: certificateWindow(asProfile(user.profile, pickCert(user.profile, assignedCert({ countsFor: null, title: result.fields.title, organizer: result.fields.organizer }, user.profile)))),
       existing: all,
       fileHash,
       today: todayLv(),

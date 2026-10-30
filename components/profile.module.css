@@ -62,3 +62,8 @@
 .toggle { grid-column: 1 / -1; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; line-height: 1.45; }
 .toggle input { flex: none; width: 18px; height: 18px; margin-top: 2px; }
 .fullRow { grid-column: 1 / -1; }
+
+/* other certificates: one box per certificate */
+.extraCert { margin: 0; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
+.extraCert legend { font-weight: 700; padding: 0 6px; }
+@media (max-width: 640px) { .extraCert { grid-template-columns: minmax(0, 1fr); } }

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { isDemoUser, requireUser } from "@/lib/auth";
 import { listCertificates } from "@/lib/db";
-import { computeProgress, ruleBasis, RULES } from "@/lib/rules";
+import { ruleBasis, RULES } from "@/lib/rules";
+import { certProgress } from "@/lib/certAssign";
+import { asProfile, pickCert, profileCerts } from "@/lib/profileCerts";
+import { specialtyLabel } from "@/lib/specialties";
 import { matchesSpecialty } from "@/lib/parse";
 import { readCourseIndex } from "@/lib/courses/store";
 import { isNurseCourse, type Course } from "@/lib/courses/types";
@@ -56,23 +59,29 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).nav.dashboard };
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ sert?: string | string[] }> }) {
   const user = await requireUser();
+  const { sert } = await searchParams;
   const [certs, courseIdx, locale] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null), getLocale()]);
   // nurses re-register on academic hours (Reg. 630), everyone else recertifies on TIP (Reg. 391)
   const hours = user.profile.profession === "nurse";
   const dict = dictFor(locale, hours);
   const d = dict.dashboard;
   const today = new Date();
-  const p = computeProgress(user.profile, certs, today);
+  // with certificates in more than one specialty the page shows one at a time (?sert=<id>), each with its own uploads
+  const own = profileCerts(user.profile);
+  const cert = pickCert(user.profile, typeof sert === "string" ? sert : null);
+  const all3 = own.map((c) => ({ c, p: certProgress(user.profile, certs, c, today).progress }));
+  const p = all3.find((x) => x.c.id === cert.id)!.p;
+  const certProfile = asProfile(user.profile, cert);
   const outside = exclusions(p).outsideWindow;
   // a hand-set target replaces the rule, so its reason is not shown
-  const basis = ruleBasis(user.profile);
+  const basis = ruleBasis(certProfile);
   // nurses give only the date their registration runs to (Reg. 630 point 33)
   const profileIncomplete = hours ? !user.profile.certificateExpires : !user.profile.certificateIssued;
   const all = courseIdx?.courses ?? [];
-  const picks = hours ? pickNurseCourses(all, todayLv(today)) : pickCourses(all, user.profile.specialty.trim(), todayLv(today));
-  const online = hours ? pickNurseRecorded(all) : pickRecorded(all, user.profile.specialty.trim());
+  const picks = hours ? pickNurseCourses(all, todayLv(today)) : pickCourses(all, cert.specialty.trim(), todayLv(today));
+  const online = hours ? pickNurseRecorded(all) : pickRecorded(all, cert.specialty.trim());
 
   return (
     <main className="container stack" style={{ gap: 40 }}>
@@ -83,7 +92,18 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <Hero p={p} h={headline(p, dict, locale)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
+      {own.length > 1 && (
+        <nav className={styles.certSwitch} aria-label={d.certSwitch}>
+          {all3.map(({ c, p: cp }) => (
+            <Link key={c.id} href={c.id === "main" ? "/dashboard" : `/dashboard?sert=${c.id}`} className={c.id === cert.id ? styles.certOn : undefined} aria-current={c.id === cert.id ? "page" : undefined}>
+              <b>{specialtyLabel(c.specialty, locale) || d.certSwitch}</b>
+              <span>{d.certSwitchLine(cp.total, cp.required, cp.windowEnd ? formatPeriod(cp.windowEnd, null, locale) : "")}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      <Hero p={p} h={headline(p, dict, locale)} specialty={cert.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
 
       {/* said up front: wrong period dates in the profile make every certificate "not counted" (Kārlis' test, October 2026) */}
       {outside > 0 && (
@@ -95,7 +115,7 @@ export default async function DashboardPage() {
 
       {/* the main next step once points are in; stands out once the total is reached */}
       {certs.length > 0 && (
-        <Link href="/export" className={`btn ${p.remaining === 0 ? "btn-primary" : ""} ${styles.exportLink}`}>
+        <Link href={cert.id === "main" ? "/export" : `/export?sert=${cert.id}`} className={`btn ${p.remaining === 0 ? "btn-primary" : ""} ${styles.exportLink}`}>
           {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
         </Link>
       )}

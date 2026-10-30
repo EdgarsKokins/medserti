@@ -8,6 +8,8 @@ import type { CmeCertificate } from "@/lib/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { todayLv } from "@/lib/format";
+import { assignedCert } from "@/lib/certAssign";
+import { asProfile, pickCert } from "@/lib/profileCerts";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +28,8 @@ export async function POST(_req: Request, { params }: Ctx) {
   if (!cert) return NextResponse.json({ error: m.notFound }, { status: 404 });
   // Riga's date, the same "today" the certificates page gives the row (app/certificates/page.tsx)
   const today = todayLv();
-  if (!rowConfirmEligible(cert, all, certificateWindow(g.user.profile, today), today))
+  const own = asProfile(g.user.profile, pickCert(g.user.profile, assignedCert(cert, g.user.profile)));
+  if (!rowConfirmEligible(cert, all, certificateWindow(own, today), today))
     return NextResponse.json({ error: m.notConfirmable }, { status: 409 });
   const updated: CmeCertificate = { ...cert, status: "confirmed", autoConfirmed: false };
   await saveCertificate(updated);

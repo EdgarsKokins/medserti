@@ -8,6 +8,8 @@ import { specialtyLabel } from "@/lib/specialties";
 import { certificateWindow } from "@/lib/rules";
 import { todayLv } from "@/lib/format";
 import { readCourseIndex } from "@/lib/courses/store";
+import { assignments } from "@/lib/certAssign";
+import { asProfile, profileCerts } from "@/lib/profileCerts";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,13 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
   // "Pievienot sertifikātu" on a course: the uploads here are for it
   const forCourse = typeof course === "string" ? courses?.courses.find((c) => c.id === course) ?? null : null;
   const locale = await getLocale();
+  // certificates in more than one specialty: each upload counts toward one of them, in that one's period
+  const own = profileCerts(user.profile).map((c) => ({
+    id: c.id,
+    label: specialtyLabel(c.specialty, locale),
+    specialty: c.specialty,
+    cycle: certificateWindow(asProfile(user.profile, c)),
+  }));
   const dict = t(locale);
   const d = dict.certs;
   return (
@@ -43,6 +52,8 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
         readOnly={isDemoUser(user)}
         nurse={user.profile.profession === "nurse"}
         forCourse={forCourse ? { id: forCourse.id, title: forCourse.title } : null}
+        own={own.length > 1 ? own : []}
+        assignment={own.length > 1 ? assignments(user.profile, certificates) : {}}
       />
     </main>
   );

@@ -44,15 +44,16 @@ const daysBetween = (from: string, to: string) => Math.round((Date.parse(to + "T
  * The reminder due today, if any: the latest milestone already reached, unless it was sent for this period end.
  * A missed day sends only the most urgent one, never a backlog; a period that has ended gets none.
  */
-export function dueReminder(end: string | null, today: string, sent: string[]): (typeof REMINDERS)[number] | null {
+export function dueReminder(end: string | null, today: string, sent: string[], certId = "main"): (typeof REMINDERS)[number] | null {
   if (!end) return null;
   const left = daysBetween(today, end);
   if (left < 0) return null;
   const reached = REMINDERS.filter((r) => left <= r.days);
   const due = reached[reached.length - 1];
-  return due && !sent.includes(reminderKey(end, due.days)) ? due : null;
+  return due && !sent.includes(reminderKey(end, due.days, certId)) ? due : null;
 }
-export const reminderKey = (end: string, days: number) => `${end}:${days}`;
+/** "<end>:<days>" for the main certificate (as before there were several), "<certId>:<end>:<days>" for the others */
+export const reminderKey = (end: string, days: number, certId = "main") => (certId === "main" ? `${end}:${days}` : `${certId}:${end}:${days}`);
 
 /* ---------- unsubscribe links: one per user and kind, signed with AUTH_SECRET ---------- */
 
@@ -88,7 +89,8 @@ const dictFor = (u: UserRecord) => {
 };
 const unsubHeaders = (link: string) => ({ "List-Unsubscribe": `<${link}>` });
 
-export function reminderEmail(u: UserRecord, p: Progress, months: number, base: string): Email {
+/** `certLabel`: the specialty, named when the user has certificates in more than one */
+export function reminderEmail(u: UserRecord, p: Progress, months: number, base: string, certLabel: string | null = null): Email {
   const { locale, nurse, d } = dictFor(u);
   const m = d.notify;
   const end = p.windowEnd!;
@@ -97,6 +99,7 @@ export function reminderEmail(u: UserRecord, p: Progress, months: number, base: 
   const lines = [
     m.hello(firstName(u)),
     "",
+    ...(certLabel ? [m.certLine(certLabel)] : []),
     (nurse ? m.periodEndsNurse : m.periodEnds)(formatDate(end, locale)),
     m.status(fmtNum(p.total), p.required) + " " + (p.remaining > 0 ? m.remaining(fmtNum(p.remaining)) : m.allCollected),
     ...(missing.length ? [m.stillMissing, ...missing.map((x) => `- ${x}`)] : []),

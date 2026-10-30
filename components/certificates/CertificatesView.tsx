@@ -34,7 +34,13 @@ export default function CertificatesView({
   readOnly = false,
   nurse = false,
   forCourse = null,
+  own = [],
+  assignment = {},
 }: {
+  /** the user's own certificates when there is more than one specialty: label, specialty and period of each */
+  own?: { id: string; label: string; specialty: string; cycle: { start: string | null; end: string | null } }[];
+  /** upload id -> the own certificate it counts toward (lib/certAssign.ts, worked out on the server) */
+  assignment?: Record<string, string>;
   initial: CmeCertificate[];
   specialty: string;
   locale: Locale;
@@ -54,14 +60,20 @@ export default function CertificatesView({
   const router = useRouter();
   const [certs, setCerts] = useState(() => sortCerts(initial));
   const [openId, setOpenId] = useState<string | null>(null);
+  // choices saved in the review panel this visit, before the server's assignment comes back with the page
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+  const assignedOf = (c: CmeCertificate) => chosen[c.id] ?? (c.countsFor && own.some((x) => x.id === c.countsFor) ? c.countsFor : assignment[c.id]) ?? "main";
+  const ownOf = (c: CmeCertificate) => own.find((x) => x.id === assignedOf(c));
+  const cycleOf = (c: CmeCertificate) => ownOf(c)?.cycle ?? cycle;
   const open = certs.find((c) => c.id === openId) ?? null;
 
   const waiting = useMemo(() => certs.filter((c) => c.status !== "confirmed").length, [certs]);
   // why each certificate is left out of the progress, by the same rule computeProgress applies on the dashboard
   const reasons = useMemo(() => {
     const ids = new Set(certs.map((c) => c.id));
-    return new Map(certs.map((c) => [c.id, exclusionReason(c, ids, cycle)] as const));
-  }, [certs, cycle]);
+    return new Map(certs.map((c) => [c.id, exclusionReason(c, ids, cycleOf(c))] as const));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [certs, cycle, own, assignment, chosen]);
   const confirmedPoints = useMemo(
     () => certs.filter((c) => c.status === "confirmed" && !reasons.get(c.id)).reduce((s, c) => s + (c.points ?? 0), 0),
     [certs, reasons],
@@ -71,11 +83,11 @@ export default function CertificatesView({
     () => certs.filter((c) => { const r = reasons.get(c.id); return r === "beforeWindow" || r === "afterWindow"; }).length,
     [certs, reasons],
   );
-  const reasonText = (r: ExclusionReason) =>
+  const reasonText = (r: ExclusionReason, cyc = cycle) =>
     r === "beforeWindow"
-      ? (nurse ? d.reasons.beforeWindowNurse : d.reasons.beforeWindow)(formatDate(cycle.start!, locale))
+      ? (nurse ? d.reasons.beforeWindowNurse : d.reasons.beforeWindow)(formatDate(cyc.start!, locale))
       : r === "afterWindow"
-        ? d.reasons.afterWindow(formatDate(cycle.end!, locale))
+        ? d.reasons.afterWindow(formatDate(cyc.end!, locale))
         : d.reasons[r];
 
   // in-row "Apstiprināt": confirm without the panel, with a few seconds to undo; the server checks again
@@ -85,8 +97,9 @@ export default function CertificatesView({
   const undoTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(undoTimer.current), []);
   const quick = useMemo(
-    () => new Set(certs.filter((c) => rowConfirmEligible(c, certs, cycle, today)).map((c) => c.id)),
-    [certs, cycle, today],
+    () => new Set(certs.filter((c) => rowConfirmEligible(c, certs, cycleOf(c), today)).map((c) => c.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [certs, cycle, today, own, assignment, chosen],
   );
 
   // bin icon in the row: asks once in place, then deletes (record and file, as the review panel's Dzēst does)
@@ -171,6 +184,7 @@ export default function CertificatesView({
   const [confirmedOpen, setConfirmedOpen] = useState(false);
 
   function replace(c: CmeCertificate) {
+    if (c.countsFor) setChosen((m) => ({ ...m, [c.id]: c.countsFor! }));
     setCerts((prev) => sortCerts(prev.map((p) => (p.id === c.id ? c : p))));
     setOpenId(null);
     router.refresh();
@@ -214,7 +228,7 @@ export default function CertificatesView({
         <span className={styles.main}>
           <span className={styles.title}>{c.title || <span className="muted">{c.fileName}</span>}</span>
           <span className={styles.meta}>
-            {[org, nurse ? dict.review.topics[nurseTopicOf(c)] : dict.categories[c.category]].filter(Boolean).join(" · ")}
+            {[org, nurse ? dict.review.topics[nurseTopicOf(c)] : dict.categories[c.category], own.length > 1 ? ownOf(c)?.label : null].filter(Boolean).join(" · ")}
           </span>
           {nurse && needsApprovalCheck(c) && <span className="badge badge-warn">{d.approvalCheckShort}</span>}
         </span>
@@ -302,7 +316,7 @@ export default function CertificatesView({
         </span>
         {infoOpen && (
           <p id={`why-${c.id}`} className={`alert small ${styles.reason}`} role="note">
-            {reasonText(explain)}
+            {reasonText(explain, cycleOf(c))}
           </p>
         )}
       </li>
@@ -384,8 +398,10 @@ export default function CertificatesView({
           onDeleted={removed}
           readOnly={readOnly}
           nurse={nurse}
-          cycle={cycle}
+          cycle={cycleOf(open)}
           today={today}
+          own={own.length > 1 ? own : []}
+          assignedTo={assignedOf(open)}
         />
       )}
     </>
