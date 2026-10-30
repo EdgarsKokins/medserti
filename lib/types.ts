@@ -48,6 +48,22 @@ export interface Profile {
   certificateIssued: string | null;
   /** YYYY-MM-DD, defaults to issued + 5 years, editable */
   certificateExpires: string | null;
+  /**
+   * More certificates in other specialties (e.g. a neurologist also certified in algology). Each is recertified on its
+   * own: own period, own 250 TIP, own 60% in its specialty (Reg. 391 point 51; Annex 3 is one sheet per certificate).
+   * The fields above stay the main certificate, so profiles saved before this keep working.
+   */
+  extraCertificates?: ExtraCertificate[];
+}
+
+export interface ExtraCertificate {
+  /** uuid; what an uploaded certificate's countsFor points to */
+  id: string;
+  specialty: string;
+  specialtyCode: string | null;
+  certificateNumber: string;
+  certificateIssued: string | null;
+  certificateExpires: string | null;
 }
 
 /** Annex 4 of Cabinet Regulation No. 391 (No. 487 version, 18 Aug 2026) grouped into the buckets that matter for counting */
@@ -105,6 +121,11 @@ export interface CmeCertificate {
   tipLookup?: TipLookup | null;
   /** the Medserti course list entry this certificate was uploaded for ("Pievienot sertifikātu" on a course) */
   courseId?: string | null;
+  /**
+   * Which of the user's own certificates this one counts toward: "main" or an ExtraCertificate id. Missing: chosen by
+   * specialty (lib/certAssign.ts). One event counts toward one certificate: Reg. 391 does not say it may count twice.
+   */
+  countsFor?: string | null;
   /** 0-1, share of the key fields (title, date, points) the parser found */
   confidence: number | null;
   /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */

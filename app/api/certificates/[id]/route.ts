@@ -6,6 +6,7 @@ import { CME_CATEGORIES, NURSE_TOPICS, type CmeCertificate } from "@/lib/types";
 import { t, type Dict } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { todayLv } from "@/lib/format";
+import { profileCerts } from "@/lib/profileCerts";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -34,6 +35,8 @@ const bodySchema = (m: Dict["api"]) => {
       approvalId: z.string().trim().max(100).nullable(),
       country: z.string().trim().max(80).nullable(),
       status: z.enum(["confirmed", "needs_review"]).default("confirmed"),
+      // which of the user's own certificates it counts toward (more than one specialty); checked against the profile below
+      countsFor: z.string().max(40).nullable().optional(),
     })
     .superRefine((b, ctx) => {
       if (b.status !== "needs_review") {
@@ -71,7 +74,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const field = typeof issue?.path[0] === "string" ? issue.path[0] : null;
     return NextResponse.json({ error: issue && OWN_CODES.has(issue.code) ? issue.message : m.invalidInput, field }, { status: 400 });
   }
-  const { status, ...fields } = parsed.data;
+  const { status, countsFor, ...fields } = parsed.data;
+  const own = profileCerts(user.profile).map((c) => c.id);
 
   const updated: CmeCertificate = {
     ...cert,
@@ -87,6 +91,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     // confirming a flagged duplicate means the user says it is a different certificate
     duplicateOf: status === "confirmed" ? null : (cert.duplicateOf ?? null),
     status,
+    // a choice that names none of the user's certificates (removed since) falls back to the automatic one
+    countsFor: countsFor === undefined ? (cert.countsFor ?? null) : countsFor && own.includes(countsFor) ? countsFor : null,
   };
   await saveCertificate(updated);
   return NextResponse.json({ certificate: updated });

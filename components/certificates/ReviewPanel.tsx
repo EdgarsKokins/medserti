@@ -33,6 +33,7 @@ type Editable = Pick<
   | "nurseTopic"
   | "approvalId"
   | "country"
+  | "countsFor"
 >;
 
 const pick = (c: CmeCertificate, nurse: boolean): Editable => ({
@@ -51,6 +52,7 @@ const pick = (c: CmeCertificate, nurse: boolean): Editable => ({
   approvalId: c.approvalId,
   // older certificates hold an English name ("Latvia"); the select works with ISO codes
   country: countryCode(c.country) ?? c.country,
+  countsFor: c.countsFor ?? null,
 });
 
 const toNum = (v: string) => (v.trim() === "" ? null : Number(v));
@@ -75,7 +77,13 @@ export default function ReviewPanel({
   nurse = false,
   cycle,
   today,
+  own = [],
+  assignedTo = "main",
 }: {
+  /** the user's own certificates when there is more than one: the panel asks which one this upload counts toward */
+  own?: { id: string; label: string; specialty: string; cycle: { start: string | null; end: string | null } }[];
+  /** where it counts now: the user's choice, or the one picked by specialty */
+  assignedTo?: string;
   cert: CmeCertificate;
   specialty: string;
   locale: Locale;
@@ -110,7 +118,9 @@ export default function ReviewPanel({
   const errors = fieldErrors(f, today);
   const blocking = (status: "confirmed" | "needs_review") =>
     CHECKED_FIELDS.filter((k) => errors[k] && (status === "confirmed" || !MISSING.has(errors[k]!)));
-  const notice = dateNotice(f.date, cycle, today);
+  // with several own certificates, the period and specialty are the chosen one's
+  const target = own.find((x) => x.id === (f.countsFor ?? assignedTo));
+  const notice = dateNotice(f.date, target?.cycle ?? cycle, today);
   const dirty = JSON.stringify(f) !== JSON.stringify(initial);
 
   // Native modal: focus trap, inert page and Escape come with showModal(). We add the scroll lock and focus return.
@@ -440,9 +450,18 @@ export default function ReviewPanel({
             </div>
           ) : (
             <>
+            {own.length > 1 && (
+              <div className="field">
+                <label htmlFor="c-counts">{d.fCountsFor}</label>
+                <select id="c-counts" value={f.countsFor ?? assignedTo} onChange={(e) => set("countsFor", e.target.value)} aria-describedby="c-counts-hint">
+                  {own.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+                </select>
+                <span id="c-counts-hint" className="small muted">{d.fCountsForHint}</span>
+              </div>
+            )}
             <div className={styles.checkRow}>
               <input id="c-spec" type="checkbox" checked={f.inSpecialty} onChange={(e) => set("inSpecialty", e.target.checked)} />
-              <label htmlFor="c-spec">{d.fInSpecialty(specialty)}</label>
+              <label htmlFor="c-spec">{d.fInSpecialty(target?.label ?? specialty)}</label>
             </div>
             <div className={styles.checkRow}>
               <input id="c-emerg" type="checkbox" checked={f.emergencyCare} onChange={(e) => set("emergencyCare", e.target.checked)} />

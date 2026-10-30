@@ -10,6 +10,7 @@ import { useDict } from "@/components/i18n/DictProvider";
 import { profileComplete } from "@/lib/profile";
 import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
+import ExtraCertificates from "./ExtraCertificates";
 import s from "./profile.module.css";
 import { formatDate, todayLv } from "@/lib/format";
 import { reportFailure } from "@/components/monitoring/report";
@@ -50,6 +51,8 @@ export default function ProfileForm({
     () => !!initial.certificateExpires && (!initial.certificateIssued || initial.certificateExpires !== addYears(initial.certificateIssued, RULES.validityYears)),
   );
   const [errors, setErrors] = useState<FieldErrors>({});
+  // "Citi sertifikāti": row index -> what is missing
+  const [extraErrors, setExtraErrors] = useState<Record<number, string>>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   // "Certification needed": the dates put the certificate period in the past, so this is not recertification
@@ -124,11 +127,23 @@ export default function ProfileForm({
     setMsg(null);
     const found = validate();
     setErrors(found);
+    const extraFound: Record<number, string> = {};
+    (p.extraCertificates ?? []).forEach((c, i) => {
+      if (!c.specialty.trim()) extraFound[i] = d.specialtyOtherRequired;
+      else if (!c.certificateIssued) extraFound[i] = d.dateRequired;
+      else if (c.certificateIssued > today) extraFound[i] = dict.api.issuedFuture;
+    });
+    setExtraErrors(extraFound);
     const firstBad = (Object.keys(found) as (keyof FieldErrors)[])[0];
     // a past deadline is never saved; the dialog explains why and sends the user back to the date
     if (found[dateField] === dict.api.certExpired) return expiredDialog.current?.showModal();
     if (firstBad) {
       document.getElementById(firstBad)?.focus();
+      return;
+    }
+    const badExtra = Object.keys(extraFound)[0];
+    if (badExtra != null) {
+      document.getElementById(`extra-issued-${badExtra}`)?.focus();
       return;
     }
     const listed = specialtyByCode(spec.code);
@@ -381,6 +396,21 @@ export default function ProfileForm({
           )}
         </div>
       </section>
+
+      {/* certificates in other specialties; nurses re-register once, in the profession */}
+      {!nurse && (
+        <ExtraCertificates
+          value={p.extraCertificates ?? []}
+          onChange={(next) => {
+            setExtraErrors({});
+            set("extraCertificates", next);
+          }}
+          list={specList}
+          locale={locale}
+          d={d}
+          errors={extraErrors}
+        />
+      )}
 
       </fieldset>
       <dialog
