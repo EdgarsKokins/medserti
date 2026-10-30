@@ -51,7 +51,7 @@ export default async function UsersAdminPage() {
       <h1>Lietotāji ({users.length})</h1>
       <p className="small muted">
         Profils aizpildīts: {complete}. Ar vismaz vienu sertifikātu: {withCerts}. Demo konts nav iekļauts. Personas dati: neeksportējiet
-        un nesūtiet tālāk.
+        un nesūtiet tālāk. E-pasts atver lietotāja sertifikātus (katrs skatījums tiek reģistrēts).
       </p>
       <section className="card">
         {users.length === 0 ? (
@@ -77,7 +77,7 @@ export default async function UsersAdminPage() {
               <tbody>
                 {users.map((u, i) => (
                   <tr key={u.id}>
-                    <td className={s.msg}>{u.email}</td>
+                    <td className={s.nowrap}><Link href={`/admin/lietotaji/${u.id}`}>{u.email}</Link></td>
                     <td>{u.profile.fullName}</td>
                     <td>{professions[u.profile.profession] ?? u.profile.profession}</td>
                     <td>{u.profile.specialty || <span className="muted">-</span>}</td>

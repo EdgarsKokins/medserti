@@ -9,7 +9,7 @@ export const CONTROLLER = {
 };
 
 /** Date the current privacy policy and terms took effect (YYYY-MM-DD). Change it whenever the texts change. */
-export const LEGAL_UPDATED = "2026-10-22";
+export const LEGAL_UPDATED = "2026-10-30";
 
 /** Data State Inspectorate, the Latvian data protection authority */
 export const DVI_URL = "https://www.dvi.gov.lv";
