@@ -1,0 +1,69 @@
+{
+ "takenAt": "2026-10-30T12:51:41.333Z",
+ "next": [
+  {
+   "id": "lab_tip:TIP2026/9542",
+   "kind": "event",
+   "title": "Balsta un kustību aparāta veselība klīniskajā praksē: multidisciplināra pieeja diagnostikā, ārstēšanā un rehabilitācijā",
+   "startDate": "2026-10-30",
+   "city": "Rīga",
+   "organizer": "ORTO klīnika",
+   "tip": 8,
+   "free": false,
+   "price": null,
+   "source": "lab_tip"
+  },
+  {
+   "id": "lab_tip:TIP2026/9394",
+   "kind": "event",
+   "title": "Mīksto audu menedžmenta principi un tehnika oralajā ķirurģijā un implantacijā",
+   "startDate": "2026-10-30",
+   "city": "Rīga",
+   "organizer": "AS SIROWA Rīga",
+   "tip": 8,
+   "free": false,
+   "price": null,
+   "source": "lab_tip"
+  },
+  {
+   "id": "lab_tip:TIP2026/9731",
+   "kind": "event",
+   "title": "Miomas un sarkomas: diagnostikas izaicinājumi, droša ķirurģija un ārstēšanas stratēģijas",
+   "startDate": "2026-10-30",
+   "city": "Rīga",
+   "organizer": "Latvijas Ginekologu un dzemdību speciālistu asociācija",
+   "tip": 6,
+   "free": false,
+   "price": null,
+   "source": "lab_tip"
+  },
+  {
+   "id": "lab_tip:",
+   "kind": "event",
+   "title": "Latvijas Pieaugušo reimatoloģijas biedrības sēde",
+   "startDate": "2026-10-30",
+   "city": "Rīga",
+   "organizer": "Latvijas Pieaugušo Reimatoloģijas Biedrība",
+   "tip": 4,
+   "free": false,
+   "price": null,
+   "source": "lab_tip"
+  }
+ ],
+ "upcoming": 61,
+ "recorded": 124,
+ "recording": {
+  "id": "medicinaskursi:2-tipa-cukura-diabeta-diagnostika-un-arstesana-jauno-klinisko-rekomendaciju-gaisma-k-geldnere-2-2-tip",
+  "kind": "recorded",
+  "title": "2. tipa cukura diabēta diagnostika un ārstēšana jauno klīnisko rekomendāciju gaismā. K. Geldnere",
+  "startDate": null,
+  "city": "Online",
+  "organizer": "Latvijas Ārstu biedrība",
+  "tip": 2.2,
+  "free": true,
+  "price": "Bez maksas",
+  "source": "medicinaskursi"
+ },
+ "total": 645,
+ "sources": 7
+}

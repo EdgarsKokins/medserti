@@ -1,0 +1,38 @@
+/* Landing page options for comparison (never merged). Builds on app/landing.module.css. */
+.bar { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: center; align-items: center; padding: 10px 20px; background: var(--ink); color: var(--on-ink); font-size: 0.92rem; }
+.bar a { color: var(--on-ink); }
+.barActive { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* the three parts */
+.parts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 32px; }
+.parts li { border-top: 2px solid var(--accent); padding-top: 18px; display: flex; flex-direction: column; }
+.partNo { font-size: 0.85rem; font-weight: 700; color: var(--accent); margin: 0 0 6px; letter-spacing: 0.04em; }
+.partTitle { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; }
+.partBody { margin: 0; color: var(--muted); text-wrap: pretty; }
+.partStat { margin: 14px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* option B: three product cards in the hero */
+.cards { display: flex; flex-direction: column; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(11 27 43 / 0.06); }
+.card:nth-child(2) { margin-left: 32px; }
+.card:nth-child(3) { margin-left: 64px; }
+.cardLabel { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0 0 8px; }
+.cardBig { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.cardRow { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.cardTitle { font-weight: 700; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cardTip { color: var(--ok); font-weight: 700; white-space: nowrap; }
+.track { height: 8px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; margin: 10px 0 8px; }
+.fill { height: 100%; background: var(--accent); border-radius: 99px; }
+
+/* option C: live events in the hero */
+.heroList { display: flex; flex-direction: column; gap: 10px; }
+.heroListHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-weight: 700; }
+
+/* option C: online band */
+.band { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px 56px; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; }
+
+@media (max-width: 960px) {
+  .parts { grid-template-columns: minmax(0, 1fr); }
+  .band { grid-template-columns: minmax(0, 1fr); padding: 28px; }
+  .card:nth-child(2), .card:nth-child(3) { margin-left: 0; }
+}
