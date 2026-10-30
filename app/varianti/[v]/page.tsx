@@ -14,6 +14,7 @@ import { formatDate, formatNumber, todayLv } from "@/lib/format";
 import { localePath } from "@/lib/locale";
 import s from "../../landing.module.css";
 import v from "../variants.module.css";
+import PartsTabs, { type PartTab } from "../PartsTabs";
 import snapshot from "../snapshot.json";
 
 /*
@@ -99,10 +100,7 @@ export default async function LandingOption({ params }: { params: Promise<{ v: s
           <>
             <HeroAllInOne d={d} facts={facts} />
             <div className={s.wrap}>
-              <PartsB facts={facts} />
-              <Pains d={d} />
-              <Answer d={d} />
-              <How d={d} />
+              <PartsExplained d={d} facts={facts} />
               <Rest d={d} />
             </div>
           </>
@@ -176,6 +174,7 @@ function HeroAllInOne({ d, facts }: { d: D; facts: Facts }) {
         </div>
         <ol className={v.path} aria-label="Trīs daļas">
           <li className={`${v.step} ${v.tone1}`}>
+            <a href="#dala-1" className={v.stepLink} aria-label="1. daļa: Saskaitiet. Uzzināt vairāk" />
             <span className={v.node} aria-hidden>1</span>
             <div className={v.panel}>
               <p className={v.stepLabel}>Saskaitiet · Sertifikāti un TIP</p>
@@ -188,6 +187,7 @@ function HeroAllInOne({ d, facts }: { d: D; facts: Facts }) {
             </div>
           </li>
           <li className={`${v.step} ${v.tone2}`}>
+            <a href="#dala-2" className={v.stepLink} aria-label="2. daļa: Plānojiet. Uzzināt vairāk" />
             <span className={v.node} aria-hidden>2</span>
             <div className={v.panel}>
               <p className={v.stepLabel}>Plānojiet · Nākamie kursi</p>
@@ -206,6 +206,7 @@ function HeroAllInOne({ d, facts }: { d: D; facts: Facts }) {
             </div>
           </li>
           <li className={`${v.step} ${v.tone3}`}>
+            <a href="#dala-3" className={v.stepLink} aria-label="3. daļa: Papildiniet. Uzzināt vairāk" />
             <span className={v.node} aria-hidden>3</span>
             <div className={`${v.panel} ${v.videoPanel}`}>
               <span className={v.thumb} aria-hidden>▶</span>
@@ -226,41 +227,183 @@ function HeroAllInOne({ d, facts }: { d: D; facts: Facts }) {
   );
 }
 
-/** Option B, under the hero: the same three parts in their colours, with what each covers */
-function PartsB({ facts }: { facts: Facts }) {
+/** Option B, under the hero: the three parts as tabs, each opening its own explanation (one panel, not three long sections) */
+function PartsExplained({ d, facts }: { d: D; facts: Facts }) {
+  const tabs: PartTab[] = [
+    {
+      id: "dala-1", label: "1 · Saskaitiet", title: "Sertifikāti un TIP", tone: "tone1",
+      lines: ["PDF vai foto, dati nolasīti automātiski", "TIP pēc MK noteikumiem Nr. 391", "Resertifikācijas dokumenti no jūsu sertifikātiem"],
+    },
+    {
+      id: "dala-2", label: "2 · Plānojiet", title: "Nākamie kursi", tone: "tone2",
+      lines: [`${facts.upcoming > 0 ? `${facts.upcoming} gaidāmi pasākumi` : "Gaidāmie pasākumi"} no ${facts.sources || 7} avotiem`, "Atlasīti pēc jūsu specialitātes", "TIP, cena un pieteikšanās vienuviet"],
+    },
+    {
+      id: "dala-3", label: "3 · Papildiniet", title: "Tiešsaistes lekcijas", tone: "tone3",
+      lines: [`${facts.recorded > 0 ? `${facts.recorded} ${lvPl(facts.recorded, "ierakstīta lekcija", "ierakstītas lekcijas")}` : "Ierakstītas lekcijas"} ar TIP`, "Skatāmas jebkurā laikā", "Kad tuvumā nav pasākumu"],
+    },
+  ];
   return (
     <section className={s.section} aria-labelledby="parts-title">
       <h2 id="parts-title" className={s.h2}>Trīs daļas, kas aptver visu resertifikāciju</h2>
-      <ol className={v.columns}>
-        <li className={v.tone1}>
-          <p className={v.colNo}>1 · Saskaitiet</p>
-          <h3 className={v.partTitle}>Sertifikāti un TIP</h3>
-          <ul className={v.covers}>
-            <li>Augšupielādējiet PDF vai foto, dati tiek nolasīti automātiski</li>
-            <li>TIP pēc MK noteikumiem Nr. 391: 60% specialitātē, neatliekamā palīdzība</li>
-            <li>Resertifikācijas dokumenti, sagatavoti no jūsu sertifikātiem</li>
-          </ul>
-        </li>
-        <li className={v.tone2}>
-          <p className={v.colNo}>2 · Plānojiet</p>
-          <h3 className={v.partTitle}>Nākamie kursi</h3>
-          <ul className={v.covers}>
-            <li>{facts.upcoming > 0 ? `${facts.upcoming} gaidāmi pasākumi ar TIP` : "Gaidāmie pasākumi ar TIP"} no {facts.sources || 7} avotiem</li>
-            <li>Atlasīti pēc jūsu specialitātes</li>
-            <li>Cena, TIP un pieteikšanās vienuviet</li>
-          </ul>
-        </li>
-        <li className={v.tone3}>
-          <p className={v.colNo}>3 · Papildiniet</p>
-          <h3 className={v.partTitle}>Tiešsaistes lekcijas</h3>
-          <ul className={v.covers}>
-            <li>{facts.recorded > 0 ? `${facts.recorded} ${lvPl(facts.recorded, "ierakstīta lekcija", "ierakstītas lekcijas")}` : "Ierakstītas lekcijas"} ar TIP</li>
-            <li>Skatāmas jebkurā laikā, bez braukšanas</li>
-            <li>Trūkstošajiem punktiem, kad tuvumā nav pasākumu</li>
-          </ul>
-        </li>
+      <PartsTabs
+        tabs={tabs}
+        panels={[
+          <div key="1">
+            <Answer d={d} />
+            <How d={d} />
+          </div>,
+          <PanelCourses key="2" facts={facts} />,
+          <PanelOnline key="3" facts={facts} />,
+        ]}
+      />
+    </section>
+  );
+}
+
+function Steps({ items }: { items: [string, string][] }) {
+  return (
+    <section className={v.stepsSection} aria-label="Kā tas strādā">
+      <h3 className={v.panelH}>Kā tas strādā</h3>
+      <ol className={v.steps}>
+        {items.map(([title, body], i) => (
+          <li key={title}>
+            <span className={v.stepNo} aria-hidden>{i + 1}</span>
+            <span>
+              <b className={v.stepTitle}>{title}</b>
+              <span className={v.stepBody}>{body}</span>
+            </span>
+          </li>
+        ))}
       </ol>
     </section>
+  );
+}
+
+function Checks({ items }: { items: string[] }) {
+  return (
+    <ul className={s.answers}>
+      {items.map((x) => (
+        <li key={x}><span className={`${s.answerMark} ${v.toneMark}`} aria-hidden>✓</span>{x}</li>
+      ))}
+    </ul>
+  );
+}
+
+function Frame({ url, children }: { url: string; children: React.ReactNode }) {
+  return (
+    <div className={v.frame} aria-hidden>
+      <div className={v.frameBar}><i /><i /><i /><span className={v.frameUrl}>{url}</span></div>
+      {children}
+    </div>
+  );
+}
+
+function PanelCourses({ facts }: { facts: Facts }) {
+  const rows = facts.next.slice(0, 3);
+  return (
+    <div>
+      <div className={s.answer}>
+        <div className={s.answerCopy}>
+          <h3 className={s.h2}>Atrodiet kursus, kas jums vēl vajadzīgi</h3>
+          <p className={s.answerBody}>
+            Medserti apvieno apstiprinātos pasākumus no LĀB un kursu rīkotāju vietnēm vienā sarakstā. Jūs redzat to, kas attiecas uz jūsu
+            specialitāti, un uzreiz zināt, cik TIP kurss dod.
+          </p>
+          <Checks
+            items={[
+              `${facts.upcoming > 0 ? `${facts.upcoming} gaidāmi pasākumi` : "Gaidāmie pasākumi"} no ${facts.sources || 7} avotiem`,
+              "Atlase pēc specialitātes, pilsētas un datuma",
+              "TIP, cena un vieta pie katra kursa",
+              "Pieteikuma e-pasts jau sagatavots",
+            ]}
+          />
+        </div>
+        <Frame url="medserti.lv/courses">
+          <div className={v.frameBody}>
+            <div className={v.chips}>
+              <span className={v.chipOn}>✓ Mana specialitāte</span>
+              <span className={v.chip}>Rīga</span>
+              <span className={v.chip}>Nākamie 3 mēneši</span>
+              <span className={v.chip}>Bez maksas</span>
+            </div>
+            <ul className={v.mini}>
+              {rows.map((c) => (
+                <li key={c.id}>
+                  <span className={v.miniDate}>
+                    <b>{c.startDate?.slice(8, 10)}</b>
+                    {MONTHS_SHORT.lv[Number(c.startDate?.slice(5, 7) ?? "1") - 1]}
+                  </span>
+                  <span>
+                    <span className={v.cardTitle}>{c.title}</span>
+                    <span className="small muted">{[c.city === "Online" ? "Tiešsaistē" : c.city, c.free ? "Bez maksas" : c.price].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  <span className={v.cardTip}>+{formatNumber(c.tip ?? 0, 1)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className={v.applyRow}>
+              <span className="small muted">Pieteikties:</span>
+              <span className={v.chip}>Kopēt e-pastu</span>
+              <span className={v.chip}>Gmail</span>
+              <span className={v.chip}>Outlook</span>
+            </div>
+          </div>
+        </Frame>
+      </div>
+      <Steps
+        items={[
+          ["Atlasiet", "Saraksts rāda kursus jūsu specialitātei. Sašauriniet pēc pilsētas, datuma un cenas."],
+          ["Salīdziniet", "Pie katra kursa redzat TIP, cenu, vietu un rīkotāju."],
+          ["Piesakieties", "Pieteikuma e-pasts jau sagatavots: nokopējiet to vai atveriet savā e-pastā."],
+          ["Pievienojiet sertifikātu", "Pēc kursa sertifikātu pievienojat no tā paša kursa, un TIP nonāk pārskatā."],
+        ]}
+      />
+    </div>
+  );
+}
+
+function PanelOnline({ facts }: { facts: Facts }) {
+  const r = facts.recording;
+  return (
+    <div>
+      <div className={s.answer}>
+        <div className={s.answerCopy}>
+          <h3 className={s.h2}>Trūkstošos punktus iegūstiet tiešsaistē</h3>
+          <p className={s.answerBody}>
+            Ierakstītas lekcijas ar TIP, ko varat noskatīties, kad jums ērti. Noder, ja tuvumā nav pasākumu vai līdz termiņam palicis maz
+            laika.
+          </p>
+          <Checks
+            items={[
+              `${facts.recorded > 0 ? `${facts.recorded} ${lvPl(facts.recorded, "ierakstīta lekcija", "ierakstītas lekcijas")}` : "Ierakstītas lekcijas"} ar TIP`,
+              "Bezmaksas un maksas, ar cenu",
+              "Atlasītas pēc jūsu specialitātes",
+              "Saite uz lekciju vienā klikšķī",
+            ]}
+          />
+        </div>
+        <Frame url="medserti.lv/courses?tab=recorded">
+          <div className={v.video}><span className={v.play}>▶</span></div>
+          <div className={v.frameBody}>
+            <span className={v.cardTitle}>{r?.title ?? "Pneimokoku infekcijas: riski un risinājumi"}</span>
+            <span className="small muted">Ieraksts · +{formatNumber(r?.tip ?? 1, 1)} TIP · {r ? (r.free ? "Bez maksas" : r.price ?? "") : "Bez maksas"}</span>
+            <div className={v.applyRow}>
+              <span className={v.chipOn}>Skatīties ↗</span>
+              <span className="small muted">Pēc tam: sertifikāts → +{formatNumber(r?.tip ?? 1, 1)} TIP pārskatā</span>
+            </div>
+          </div>
+        </Frame>
+      </div>
+      <Steps
+        items={[
+          ["Izvēlieties lekciju", "Ieraksti ar TIP jūsu specialitātei, bezmaksas un maksas."],
+          ["Noskatieties, kad ērti", "Vakarā, brīvdienās, bez braukšanas uz pasākumu."],
+          ["Saņemiet sertifikātu", "Rīkotājs izsniedz sertifikātu par noskatīto lekciju."],
+          ["TIP pārskatā", "Augšupielādējiet sertifikātu Medserti, un punkti pieskaitās kopsummai."],
+        ]}
+      />
+    </div>
   );
 }
 
