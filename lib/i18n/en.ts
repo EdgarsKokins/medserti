@@ -123,7 +123,7 @@ export const en = {
       { title: "Filter", body: "The list shows courses for your specialty. Narrow it by city, date and price." },
       { title: "Compare", body: "Every course shows its TIP, price, venue and organiser." },
       { title: "Sign up", body: "The sign-up email is ready: copy it or open it in your email." },
-      { title: "Add the certificate", body: "After the course, upload the certificate and the TIP go into your overview." },
+      { title: "Add the certificate", body: "After the course, add the certificate from that same course: what it leaves out is filled in from the course list, and the TIP go into your overview." },
     ],
     onlineTitle: "Get the missing points online",
     onlineBody: "Recorded lectures with TIP that you can watch when it suits you. Useful when there are no events nearby or little time is left before the deadline.",
