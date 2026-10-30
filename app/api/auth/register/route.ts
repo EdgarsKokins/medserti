@@ -56,6 +56,7 @@ export async function POST(req: Request) {
     createdAt: now,
     termsAcceptedAt: now,
     termsVersion: LEGAL_UPDATED,
+    locale: await getLocale(),
     profile: {
       fullName,
       profession,

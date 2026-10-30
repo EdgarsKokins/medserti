@@ -14,14 +14,9 @@ import type { UserRecord } from "./types";
 const COOKIE = "cme_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function secret() {
-  const s = process.env.AUTH_SECRET;
-  if (!s) {
-    if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is not set");
-    return new TextEncoder().encode("dev-only-secret-change-me-dev-only-secret");
-  }
-  return new TextEncoder().encode(s);
-}
+// in its own module so code that only signs (email links) does not load the session code; re-exported for lib/admin
+export { secret } from "./secret";
+import { secret } from "./secret";
 
 export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
 export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);

@@ -143,3 +143,18 @@ export const needsReviewCount = (p: Progress) => p.counted.filter((c) => c.statu
 export function recent(p: Progress, n = 8): CmeCertificate[] {
   return [...p.counted].sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, n);
 }
+
+/** Requirements other than the total that are still open, as plain phrases ("2 TIP of emergency care training"); the overview and the reminder emails */
+export function missingPhrases(p: Progress, d: Dict["dashboard"], n: (v: number) => string): string[] {
+  return p.checks
+    .filter((c) => !c.met && c.id !== "total")
+    .map((c) => {
+      const gap = Math.max(0, c.need - c.have);
+      if (c.id === "specialty") return d.missingSpecialty(n(gap));
+      if (c.id === "emergency_points") return d.missingEmergencyPoints(n(gap));
+      if (c.id === "infection_control") return d.missingInfection(n(gap));
+      if (c.id === "patient_safety") return d.missingPatientSafety(n(gap));
+      if (c.id === "nursing") return d.missingNursing(n(gap));
+      return d.missingEmergencyHours(n(gap), Math.ceil(gap));
+    });
+}

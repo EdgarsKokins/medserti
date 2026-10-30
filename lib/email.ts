@@ -6,11 +6,12 @@ import { CONTACT_EMAIL } from "./site";
  * Without RESEND_API_KEY (local dev) the email is printed to the server console instead of sent.
  */
 /** replyTo: where a reply goes (the visitor, for contact form messages); default the public address */
-type Email = { to: string; subject: string; text: string; replyTo?: string };
+/** headers: extra email headers, e.g. List-Unsubscribe on reminders */
+type Email = { to: string; subject: string; text: string; replyTo?: string; headers?: Record<string, string> };
 
 const DEFAULT_FROM = "Medserti <noreply@medserti.lv>";
 
-export async function sendEmail({ to, subject, text, replyTo }: Email): Promise<void> {
+export async function sendEmail({ to, subject, text, replyTo, headers }: Email): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM || DEFAULT_FROM;
   if (!key) {
@@ -21,7 +22,7 @@ export async function sendEmail({ to, subject, text, replyTo }: Email): Promise<
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, text, reply_to: replyTo || process.env.EMAIL_REPLY_TO || CONTACT_EMAIL }),
+    body: JSON.stringify({ from, to: [to], subject, text, reply_to: replyTo || process.env.EMAIL_REPLY_TO || CONTACT_EMAIL, ...(headers ? { headers } : {}) }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text().catch(() => "")}`);
 }
