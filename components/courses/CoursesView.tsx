@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { swapUnit, type Locale } from "@/lib/locale";
 import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
 import { useDict } from "@/components/i18n/DictProvider";
@@ -458,6 +459,10 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
           </a>
         </p>
       )}
+      {/* after the course: its certificate goes in from here, and the course fills what the certificate leaves out */}
+      <p className="small" style={{ margin: 0 }}>
+        <Link href={`/certificates?course=${encodeURIComponent(r.id)}`}>{a.addCertificate} →</Link>
+      </p>
     </section>
   );
 }

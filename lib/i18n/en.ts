@@ -558,6 +558,8 @@ export const en = {
     pastNote: "These certificates are from before the current period and do not count, but stay here as your history, with their files.",
     notCounted: "Not counted",
     whyNotCounted: "Why is it not counted?",
+    forCourse: (title: string) => `Certificate for "${title}". Upload it, and anything we cannot read on the certificate is filled in from the course list.`,
+    forCourseCancel: "Cancel",
     outsideAlert: (n: number, period: string) =>
       `${n} ${enPl(n, "certificate does", "certificates do")} not count: ${enPl(n, "its date is", "their dates are")} outside your period (${period}). If the period in your profile is wrong, correct it.`,
     outsideAlertLink: "Open profile",
@@ -720,6 +722,8 @@ export const en = {
         : "You lectured at this event. A talk at a Latvian event counts 10 TIP (Annex 4 item 23): add it as a separate lecture.",
     lowConfidence: (p: NoteP) =>
       `Not sure we read these right: ${fieldList(p.fields, { title: "title", organizer: "organiser", date: "date", points: "points", country: "country" })}. Check them against the certificate.`,
+    fromCourse: (p: NoteP) =>
+      `Filled in from the course list: ${fieldList(p.fields, { title: "title", organizer: "organiser", date: "date", points: "points", approvalId: "approval number" })}. Check that it matches the certificate.`,
     masterClass: () =>
       "This document confirms a master class you ran. Annex 4 of Regulation No. 391 has no item for master classes: the certification commission sets the points by analogy (point 51). The closest are item 22 (30 TIP per talk at an international event) and item 18 (10 TIP a year for teaching). Enter the points LĀB approves.",
     foreignLanguage: (p: NoteP) =>
@@ -1105,6 +1109,7 @@ export const en = {
       emailTextLabel: "Application text",
       mailApp: "In mail app",
       findSite: "Search for the organiser's website",
+      addCertificate: "Attended? Add the certificate",
     },
     details: {
       date: "Date",

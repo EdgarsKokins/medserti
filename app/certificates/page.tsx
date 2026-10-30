@@ -7,12 +7,19 @@ import { getLocale } from "@/lib/i18n/server";
 import { specialtyLabel } from "@/lib/specialties";
 import { certificateWindow } from "@/lib/rules";
 import { todayLv } from "@/lib/format";
+import { readCourseIndex } from "@/lib/courses/store";
 
 export const dynamic = "force-dynamic";
 
-export default async function CertificatesPage() {
+export default async function CertificatesPage({ searchParams }: { searchParams: Promise<{ course?: string | string[] }> }) {
   const user = await requireUser();
-  const certificates = await listCertificates(user.id);
+  const { course } = await searchParams;
+  const [certificates, courses] = await Promise.all([
+    listCertificates(user.id),
+    typeof course === "string" ? readCourseIndex().catch(() => null) : null,
+  ]);
+  // "Pievienot sertifikātu" on a course: the uploads here are for it
+  const forCourse = typeof course === "string" ? courses?.courses.find((c) => c.id === course) ?? null : null;
   const locale = await getLocale();
   const dict = t(locale);
   const d = dict.certs;
@@ -35,6 +42,7 @@ export default async function CertificatesPage() {
         today={todayLv()}
         readOnly={isDemoUser(user)}
         nurse={user.profile.profession === "nurse"}
+        forCourse={forCourse ? { id: forCourse.id, title: forCourse.title } : null}
       />
     </main>
   );

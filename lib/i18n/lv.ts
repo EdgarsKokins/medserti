@@ -562,6 +562,8 @@ export const lv: Dict = {
     pastNote: "Šie sertifikāti ir pirms pašreizējā perioda un netiek skaitīti, bet paliek šeit kā Jūsu vēsture, ar failiem.",
     notCounted: "Neieskaitīts",
     whyNotCounted: "Kāpēc netiek ieskaitīts?",
+    forCourse: (title: string) => `Sertifikāts kursam „${title}”. Augšupielādējiet to, un to, ko sertifikātā neatradīsim, aizpildīsim no kursa saraksta.`,
+    forCourseCancel: "Atcelt",
     outsideAlert: (n: number, period: string) =>
       `${n} ${lvPl(n, "sertifikāts netiek ieskaitīts", "sertifikāti netiek ieskaitīti")}, jo ${lvPl(n, "tā datums ir", "to datumi ir")} ārpus jūsu perioda (${period}). Ja periods profilā norādīts nepareizi, izlabojiet to.`,
     outsideAlertLink: "Atvērt profilu",
@@ -724,6 +726,8 @@ export const lv: Dict = {
         : "Šajā pasākumā jūs uzstājāties. Priekšlasījums Latvijas pasākumā dod 10 TIP (4. pielikuma 23. punkts): pievienojiet to kā atsevišķu ierakstu.",
     lowConfidence: (p: NoteP) =>
       `Neesam droši, ka pareizi nolasījām: ${fieldList(p.fields, { title: "nosaukums", organizer: "organizators", date: "datums", points: "punkti", country: "valsts" })}. Salīdziniet ar sertifikātu.`,
+    fromCourse: (p: NoteP) =>
+      `No kursa saraksta aizpildīts: ${fieldList(p.fields, { title: "nosaukums", organizer: "organizators", date: "datums", points: "punkti", approvalId: "apstiprinājuma numurs" })}. Pārbaudiet, vai tas sakrīt ar sertifikātu.`,
     masterClass: () =>
       "Šis dokuments apliecina meistarklasi, ko vadījāt. MK noteikumu Nr. 391 4. pielikumā meistarklasei sava punkta nav: punktus nosaka sertifikācijas komisija pēc līdzības (51. punkts). Tuvākie ir 22. punkts (30 TIP par ziņojumu starptautiskā pasākumā) un 18. punkts (10 TIP gadā par pedagoģisko darbu). Ievadiet punktus, ko apstiprina LĀB.",
     foreignLanguage: (p: NoteP) =>
@@ -1111,6 +1115,7 @@ export const lv: Dict = {
       emailTextLabel: "Pieteikuma teksts",
       mailApp: "E-pasta programmā",
       findSite: "Meklēt rīkotāja mājaslapu",
+      addCertificate: "Apmeklējāt? Pievienojiet sertifikātu",
     },
     details: {
       date: "Datums",

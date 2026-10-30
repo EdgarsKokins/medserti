@@ -31,7 +31,10 @@ const GROUP_FROM = 4;
 export default function UploadZone({
   onUploaded,
   locale,
+  courseId = null,
 }: {
+  /** files picked here are certificates for this Medserti course ("Pievienot sertifikātu" on a course) */
+  courseId?: string | null;
   /** replay: the queue's copies from before this page mounted, older than the page's own list */
   onUploaded: (certs: CmeCertificate[], replay: boolean) => void;
   locale: Locale;
@@ -62,7 +65,7 @@ export default function UploadZone({
     if (!fileList?.length) return;
     lastSource.current = source;
     if (!busy) setExpanded(false);
-    startUpload(Array.from(fileList), d);
+    startUpload(Array.from(fileList), d, courseId);
     if (input.current) input.current.value = "";
     if (camera.current) camera.current.value = "";
   }

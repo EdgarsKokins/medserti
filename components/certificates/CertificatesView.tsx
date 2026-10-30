@@ -33,6 +33,7 @@ export default function CertificatesView({
   today,
   readOnly = false,
   nurse = false,
+  forCourse = null,
 }: {
   initial: CmeCertificate[];
   specialty: string;
@@ -44,6 +45,8 @@ export default function CertificatesView({
   readOnly?: boolean;
   /** nurses: hours instead of TIP, the Reg. 630 topic instead of the Annex 4 category, and the point 47 approval flag */
   nurse?: boolean;
+  /** opened from "Pievienot sertifikātu" on a course (/certificates?course=<id>): uploads are for that course */
+  forCourse?: { id: string; title: string } | null;
 }) {
   const base = useDict();
   const dict = nurse ? inHours(base) : base;
@@ -318,7 +321,14 @@ export default function CertificatesView({
       {readOnly ? (
         <p className="alert">{dict.demo.uploadOff}</p>
       ) : (
-        <UploadZone onUploaded={onUploaded} locale={locale} />
+        <>
+          {forCourse && (
+            <p className="alert">
+              {d.forCourse(forCourse.title)} <a href="/certificates">{d.forCourseCancel}</a>
+            </p>
+          )}
+          <UploadZone onUploaded={onUploaded} locale={locale} courseId={forCourse?.id ?? null} />
+        </>
       )}
 
       <section aria-labelledby="certs-title">
