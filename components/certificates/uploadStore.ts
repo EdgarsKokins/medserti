@@ -89,6 +89,8 @@ const dropItem = (key: string) => emit({ items: snap.items.filter((it) => it.key
 
 /** files picked while a batch runs ("Izvēlēties citu" mid-batch): uploaded right after it */
 let pending: File[] = [];
+/** the course of the files waiting in `pending` (picked from "Pievienot sertifikātu" on a course) */
+let pendingCourse: string | null = null;
 
 const isImage = (f: File) => f.type.startsWith("image/") || /\.(jpe?g|png|webp)$/i.test(f.name);
 
@@ -108,11 +110,12 @@ async function shrinkImage(file: File): Promise<File> {
   return file;
 }
 
-/** Start uploading; ignored while a batch is running (the pickers are disabled then) */
-export async function startUpload(files: File[], d: Dict["upload"]) {
+/** Start uploading; files picked while a batch runs wait for it. `courseId`: the course these certificates are for */
+export async function startUpload(files: File[], d: Dict["upload"], courseId: string | null = null) {
   if (!files.length) return;
   if (snap.busy) {
     pending.push(...files);
+    pendingCourse = courseId;
     return;
   }
   const stamp = Date.now();
@@ -202,7 +205,7 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
     if (text != null) {
       const ask = uploadQuestion({ check: classifyCertificate(text, null, ocrConfidence), issues, ocrConfidence, text });
       if (ask) {
-        const sent = { ocrText, ocrConfidence };
+        const sent = { ocrText, ocrConfidence, courseId };
         void askUser(item.key, ask).then((choice) => {
           if (choice !== "upload") return dropItem(item.key);
           const checked = ask.kind === "quality" ? { flagged: ask.issues, content: null } : { flagged: [], content: ask.kind };
@@ -211,15 +214,16 @@ export async function startUpload(files: File[], d: Dict["upload"]) {
         continue;
       }
     }
-    await inTurn(() => send(file, item.key, { ocrText, ocrConfidence, flagged, content }, d));
+    await inTurn(() => send(file, item.key, { ocrText, ocrConfidence, flagged, content, courseId }, d));
   }
   for (const w of workers.values()) await w.then((x) => x.terminate()).catch(() => {});
   emit({ busy: false });
   // files the user picked meanwhile (a retaken photo): start them now
   if (pending.length) {
-    const next = pending;
+    const [next, course] = [pending, pendingCourse];
     pending = [];
-    void startUpload(next, d);
+    pendingCourse = null;
+    void startUpload(next, d, course);
   }
 }
 
@@ -237,9 +241,11 @@ interface Extras {
   /** photo issues the user uploaded anyway; the server notes them on the certificate */
   flagged: QualityIssue[];
   content: "noText" | "notCertificate" | null;
+  /** the Medserti course this certificate is for; the server fills empty fields from it */
+  courseId: string | null;
 }
 
-async function send(file: File, key: string, { ocrText, ocrConfidence, flagged, content }: Extras, d: Dict["upload"]) {
+async function send(file: File, key: string, { ocrText, ocrConfidence, flagged, content, courseId }: Extras, d: Dict["upload"]) {
   update(key, { state: "uploading", progress: undefined, ask: undefined });
   try {
     const upload = isImage(file) ? await shrinkImage(file).catch(() => file) : file;
@@ -253,6 +259,7 @@ async function send(file: File, key: string, { ocrText, ocrConfidence, flagged, 
     if (ocrConfidence != null) body.append("ocrConfidence", String(Math.round(ocrConfidence)));
     if (flagged.length) body.append("imageQuality", flagged.join(","));
     if (content) body.append("contentCheck", content);
+    if (courseId) body.append("courseId", courseId);
     const res = await fetch("/api/certificates", { method: "POST", body });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {

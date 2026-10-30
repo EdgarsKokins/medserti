@@ -15,6 +15,8 @@ import { getLocale } from "@/lib/i18n/server";
 import { todayLv } from "@/lib/format";
 import { reportServerError } from "@/lib/monitoring/errors";
 import { rateLimit } from "@/lib/password-reset";
+import { readCourseIndex } from "@/lib/courses/store";
+import { fillFromCourse } from "@/lib/courses/fromCourse";
 
 export const maxDuration = 60;
 
@@ -56,6 +58,12 @@ const needsLookup = (r: Awaited<ReturnType<typeof parseCertificate>>) =>
 const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable", "screen"]);
 const CONTENT_FLAGS = new Set(["noText", "notCertificate"]);
 
+/** One more parser note at the end */
+function addNote(notes: string | null, note: ParseNote): string {
+  const list: ParseNote[] = notes ? JSON.parse(notes) : [];
+  return JSON.stringify([...list, note]);
+}
+
 /** Put the "photo may be blurry" note first, so the review panel says why the fields may be wrong */
 function withImageNote(notes: string | null, reason: string): string {
   const list: ParseNote[] = notes ? JSON.parse(notes) : [];
@@ -90,6 +98,9 @@ export async function POST(req: Request) {
   const ocrConfidence = form?.get("ocrConfidence") != null && Number.isFinite(conf) ? Math.max(0, Math.min(100, conf)) : null;
   // the browser's "is this a certificate?" check said no and the user uploaded anyway. The server judges the text itself
   // (never trusting the browser alone); the browser's word counts only when the server had no text to judge.
+  // uploaded from a course in the list ("Pievienot sertifikātu"): the course fills what the certificate does not say
+  const courseField = form?.get("courseId");
+  const courseId = typeof courseField === "string" && courseField.length <= 120 ? courseField : null;
   const claim = form?.get("contentCheck");
   const contentClaim = typeof claim === "string" && CONTENT_FLAGS.has(claim) ? (claim as "noText" | "notCertificate") : null;
 
@@ -99,6 +110,7 @@ export async function POST(req: Request) {
     id,
     userId: user.id,
     fileName: file.name.slice(0, 200) || safeName,
+    courseId: null,
     filePath: `users/${user.id}/files/${id}/${safeName}`,
     contentType: type,
     uploadedAt: new Date().toISOString(),
@@ -122,8 +134,19 @@ export async function POST(req: Request) {
   // the account's first certificate: the browser counts it as a funnel step (Vercel Analytics, no personal data)
   let first = false;
   try {
-    const [read, all] = await Promise.all([parseCertificate(bytes, type, user.profile, ocrText, ocrConfidence), listCertificates(user.id)]);
-    const parsed = read.content == null && contentClaim ? withContent(read, contentClaim) : read;
+    const [read, all, courses] = await Promise.all([
+      parseCertificate(bytes, type, user.profile, ocrText, ocrConfidence),
+      listCertificates(user.id),
+      courseId ? readCourseIndex().catch(() => null) : null,
+    ]);
+    const course = courseId ? courses?.courses.find((c) => c.id === courseId) ?? null : null;
+    const claimed = read.content == null && contentClaim ? withContent(read, contentClaim) : read;
+    const fromCourse = course ? fillFromCourse(claimed.fields, course) : null;
+    const parsed = fromCourse?.filled.length
+      ? { ...claimed, fields: fromCourse.fields, notes: addNote(claimed.notes, { code: "fromCourse", p: { fields: fromCourse.filled.join(",") } }) }
+      : fromCourse
+        ? { ...claimed, fields: fromCourse.fields }
+        : claimed;
     first = all.length === 0;
     // no points printed on a Latvian event: look it up in the LĀB register (filled in for the user to confirm, never confirmed)
     const result = applyTipLookup(parsed, needsLookup(parsed) ? await lookupTip({
@@ -145,7 +168,8 @@ export async function POST(req: Request) {
       today: todayLv(),
       content: result.content,
     });
-    const auto = blocks.length === 0;
+    // fields from the course list are the user's to check, never confirmed for them
+    const auto = blocks.length === 0 && !fromCourse?.filled.length;
     done = {
       ...cert,
       ...result.fields,
@@ -154,6 +178,7 @@ export async function POST(req: Request) {
       fileHash,
       duplicateOf: findDuplicate(all, result.fields, fileHash),
       tipLookup: result.tipLookup,
+      courseId: course?.id ?? null,
       parseNotes: qualityReason ? withImageNote(result.notes, qualityReason) : result.notes,
     };
   } catch (err) {

@@ -103,6 +103,8 @@ export interface CmeCertificate {
   language?: string | null;
   /** the LĀB approved-TIP register looked up for a certificate with no points printed (lib/tipRegistry.ts) */
   tipLookup?: TipLookup | null;
+  /** the Medserti course list entry this certificate was uploaded for ("Pievienot sertifikātu" on a course) */
+  courseId?: string | null;
   /** 0-1, share of the key fields (title, date, points) the parser found */
   confidence: number | null;
   /** 0-1 per key field: how sure the parser is of each value it filled in; null once the user saves, or on older certificates */
@@ -145,6 +147,8 @@ export type ParseNoteCode =
   | "courseTotal"
   | "lecturer"
   | "lowConfidence"
+  // fields the course list filled in, for a certificate uploaded from that course (lib/courses/fromCourse.ts); p.fields
+  | "fromCourse"
   // added Oct 2026 for documents that did not read
   | "masterClass"
   | "foreignLanguage"
