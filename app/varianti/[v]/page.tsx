@@ -24,7 +24,7 @@ import snapshot from "../snapshot.json";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: { absolute: "Sākumlapas varianti · Medserti" }, robots: { index: false, follow: false } };
 
-const VARIANTS = { a: "A: trīs daļas zem esošā virsraksta", b: "B: “Visa tālākizglītība vienuviet”", c: "C: kursi pirmajā vietā" } as const;
+const VARIANTS = { a: "A: trīs daļas zem esošā virsraksta", b: "B: trīs daļas, viens ceļš", c: "C: kursi pirmajā vietā" } as const;
 type Variant = keyof typeof VARIANTS;
 
 /** Example rows for the "your report" visual (not real data), as on the live landing page */
@@ -99,10 +99,10 @@ export default async function LandingOption({ params }: { params: Promise<{ v: s
           <>
             <HeroAllInOne d={d} facts={facts} />
             <div className={s.wrap}>
+              <PartsB facts={facts} />
               <Pains d={d} />
               <Answer d={d} />
               <How d={d} />
-              <Courses d={d} facts={facts} />
               <Rest d={d} />
             </div>
           </>
@@ -158,49 +158,108 @@ function HeroCurrent({ d }: { d: D }) {
   );
 }
 
+/** Option B: one route, three parts, each in its own colour and with its own kind of picture, ending at the documents */
 function HeroAllInOne({ d, facts }: { d: D; facts: Facts }) {
-  const next = facts.next[0];
+  const next = facts.next.slice(0, 2);
   // sample doctor, not real data
   const have = 174;
   return (
     <section className={s.hero} aria-labelledby="landing-title">
       <div className={s.heroInner}>
         <div className={s.heroCopy}>
-          <h1 id="landing-title" className={s.heroTitle}>Visa jūsu tālākizglītība vienuviet</h1>
+          <h1 id="landing-title" className={s.heroTitle}>Visa jūsu resertifikācija vienuviet</h1>
           <p className={s.heroSub}>
-            Sertifikāti un TIP, nākamie kursi un tiešsaistes lekcijas. Medserti saskaita punktus pēc MK noteikumiem Nr. 391 un
-            parāda, kur iegūt trūkstošos.
+            Trīs daļas, kas kopā aptver visu ceļu līdz resertifikācijai: punkti, ko jau esat savākuši, kursi, kuros iegūt trūkstošos, un
+            lekcijas, ko noskatīties, kad jums ērti.
           </p>
           <Ctas d={d} />
         </div>
-        <div className={v.cards} aria-label="Medserti piemērs">
-          <div className={v.card}>
-            <p className={v.cardLabel}>1. Jūsu TIP</p>
-            <div className={v.cardRow}>
-              <span className={v.cardBig}>{have} / 250</span>
-              <span className="small muted">līdz {formatDate(DEADLINE, "lv")}</span>
+        <ol className={v.path} aria-label="Trīs daļas">
+          <li className={`${v.step} ${v.tone1}`}>
+            <span className={v.node} aria-hidden>1</span>
+            <div className={v.panel}>
+              <p className={v.stepLabel}>Saskaitiet · Sertifikāti un TIP</p>
+              <div className={v.cardRow}>
+                <span className={v.cardBig}>{have} / 250 TIP</span>
+                <span className="small muted">līdz {formatDate(DEADLINE, "lv")}</span>
+              </div>
+              <div className={v.track}><div className={v.fill} style={{ width: `${(have / 250) * 100}%` }} /></div>
+              <span className="small muted">Specialitātē 118 no 150 · Neatliekamā palīdzība 8 no 8</span>
             </div>
-            <div className={v.track}><div className={v.fill} style={{ width: `${(have / 250) * 100}%` }} /></div>
-            <span className="small muted">Savā specialitātē: 118 no 150 · Neatliekamā palīdzība: 8 no 8</span>
-          </div>
-          <div className={v.card}>
-            <p className={v.cardLabel}>2. Nākamais kurss jūsu specialitātei</p>
-            <div className={v.cardRow}>
-              <span className={v.cardTitle}>{next?.title ?? "Kardiologu biedrības konference"}</span>
-              <span className={v.cardTip}>+{formatNumber(next?.tip ?? 8, 1)} TIP</span>
+          </li>
+          <li className={`${v.step} ${v.tone2}`}>
+            <span className={v.node} aria-hidden>2</span>
+            <div className={v.panel}>
+              <p className={v.stepLabel}>Plānojiet · Nākamie kursi</p>
+              <ul className={v.mini}>
+                {(next.length ? next : [null, null]).map((c, i) => (
+                  <li key={c?.id ?? i}>
+                    <span className={v.miniDate}>
+                      <b>{c?.startDate?.slice(8, 10) ?? (i ? "21" : "15")}</b>
+                      {MONTHS_SHORT.lv[Number(c?.startDate?.slice(5, 7) ?? "11") - 1]}
+                    </span>
+                    <span className={v.cardTitle}>{c?.title ?? (i ? "Neirologu biedrības sēde" : "Kardiologu biedrības konference")}</span>
+                    <span className={v.cardTip}>+{formatNumber(c?.tip ?? (i ? 2 : 8), 1)}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <span className="small muted">{next?.startDate ? formatDate(next.startDate, "lv") : "15.11.2026."} · {next?.city ?? "Rīga"}</span>
-          </div>
-          <div className={v.card}>
-            <p className={v.cardLabel}>3. Tiešsaistes lekcija</p>
-            <div className={v.cardRow}>
-              <span className={v.cardTitle}>{facts.recording?.title ?? "Pneimokoku infekcijas: riski un risinājumi"}</span>
-              <span className={v.cardTip}>+{formatNumber(facts.recording?.tip ?? 1, 1)} TIP</span>
+          </li>
+          <li className={`${v.step} ${v.tone3}`}>
+            <span className={v.node} aria-hidden>3</span>
+            <div className={`${v.panel} ${v.videoPanel}`}>
+              <span className={v.thumb} aria-hidden>▶</span>
+              <div>
+                <p className={v.stepLabel}>Papildiniet · Tiešsaistes lekcijas</p>
+                <span className={v.cardTitle}>{facts.recording?.title ?? "Pneimokoku infekcijas: riski un risinājumi"}</span>
+                <span className="small muted"> · +{formatNumber(facts.recording?.tip ?? 1, 1)} TIP, skatāms jebkurā laikā</span>
+              </div>
             </div>
-            <span className="small muted">Skatieties, kad jums ērti</span>
-          </div>
-        </div>
+          </li>
+          <li className={`${v.step} ${v.goal}`}>
+            <span className={v.node} aria-hidden>✓</span>
+            <p className={v.goalText}>Resertifikācijas dokumenti, gatavi iesniegšanai</p>
+          </li>
+        </ol>
       </div>
+    </section>
+  );
+}
+
+/** Option B, under the hero: the same three parts in their colours, with what each covers */
+function PartsB({ facts }: { facts: Facts }) {
+  return (
+    <section className={s.section} aria-labelledby="parts-title">
+      <h2 id="parts-title" className={s.h2}>Trīs daļas, kas aptver visu resertifikāciju</h2>
+      <ol className={v.columns}>
+        <li className={v.tone1}>
+          <p className={v.colNo}>1 · Saskaitiet</p>
+          <h3 className={v.partTitle}>Sertifikāti un TIP</h3>
+          <ul className={v.covers}>
+            <li>Augšupielādējiet PDF vai foto, dati tiek nolasīti automātiski</li>
+            <li>TIP pēc MK noteikumiem Nr. 391: 60% specialitātē, neatliekamā palīdzība</li>
+            <li>Resertifikācijas dokumenti, sagatavoti no jūsu sertifikātiem</li>
+          </ul>
+        </li>
+        <li className={v.tone2}>
+          <p className={v.colNo}>2 · Plānojiet</p>
+          <h3 className={v.partTitle}>Nākamie kursi</h3>
+          <ul className={v.covers}>
+            <li>{facts.upcoming > 0 ? `${facts.upcoming} gaidāmi pasākumi ar TIP` : "Gaidāmie pasākumi ar TIP"} no {facts.sources || 7} avotiem</li>
+            <li>Atlasīti pēc jūsu specialitātes</li>
+            <li>Cena, TIP un pieteikšanās vienuviet</li>
+          </ul>
+        </li>
+        <li className={v.tone3}>
+          <p className={v.colNo}>3 · Papildiniet</p>
+          <h3 className={v.partTitle}>Tiešsaistes lekcijas</h3>
+          <ul className={v.covers}>
+            <li>{facts.recorded > 0 ? `${facts.recorded} ${lvPl(facts.recorded, "ierakstīta lekcija", "ierakstītas lekcijas")}` : "Ierakstītas lekcijas"} ar TIP</li>
+            <li>Skatāmas jebkurā laikā, bez braukšanas</li>
+            <li>Trūkstošajiem punktiem, kad tuvumā nav pasākumu</li>
+          </ul>
+        </li>
+      </ol>
     </section>
   );
 }
