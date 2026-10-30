@@ -13,8 +13,8 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
 import DashboardUpload from "@/components/dashboard/DashboardUpload";
-import { categoryBreakdown, cumulativeSeries, dictFor, headline } from "@/components/dashboard/model";
-import { todayLv } from "@/lib/format";
+import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, headline } from "@/components/dashboard/model";
+import { formatPeriod, todayLv } from "@/lib/format";
 
 /** Next events for this specialty (or all specialties), then free recordings, at most `n` */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
@@ -54,6 +54,7 @@ export default async function DashboardPage() {
   const d = dict.dashboard;
   const today = new Date();
   const p = computeProgress(user.profile, certs, today);
+  const outside = exclusions(p).outsideWindow;
   // a hand-set target replaces the rule, so its reason is not shown
   const basis = ruleBasis(user.profile);
   // nurses give only the date their registration runs to (Reg. 630 point 33)
@@ -72,6 +73,14 @@ export default async function DashboardPage() {
       )}
 
       <Hero p={p} h={headline(p, dict, locale)} specialty={user.profile.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
+
+      {/* said up front: wrong period dates in the profile make every certificate "not counted" (Kārlis' test, October 2026) */}
+      {outside > 0 && (
+        <div className="alert">
+          {dict.certs.outsideAlert(outside, formatPeriod(p.windowStart, p.windowEnd, locale))}{" "}
+          <Link href="/profile">{dict.certs.outsideAlertLink}</Link>
+        </div>
+      )}
 
       {/* the main next step once points are in; stands out once the total is reached */}
       {certs.length > 0 && (

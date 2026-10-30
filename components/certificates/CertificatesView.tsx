@@ -9,7 +9,7 @@ import { useDict } from "@/components/i18n/DictProvider";
 import { needsApprovalCheck, nurseTopicOf } from "@/lib/nurse";
 import { exclusionReason, type ExclusionReason } from "@/lib/rules";
 import { displayOrganizer, STATUS_CLASS } from "./format";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatNumber, formatPeriod } from "@/lib/format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
@@ -64,6 +64,10 @@ export default function CertificatesView({
     [certs, reasons],
   );
   const [infoId, setInfoId] = useState<string | null>(null);
+  const outsideCount = useMemo(
+    () => certs.filter((c) => { const r = reasons.get(c.id); return r === "beforeWindow" || r === "afterWindow"; }).length,
+    [certs, reasons],
+  );
   const reasonText = (r: ExclusionReason) =>
     r === "beforeWindow"
       ? (nurse ? d.reasons.beforeWindowNurse : d.reasons.beforeWindow)(formatDate(cycle.start!, locale))
@@ -176,7 +180,8 @@ export default function CertificatesView({
     router.refresh();
   }
 
-  const row = (c: CmeCertificate) => {
+  /** `inPast`: a row in "Iepriekšējie periodi", where being outside the period is the point, so the reason stays one click away */
+  const row = (c: CmeCertificate, inPast = false) => {
     const attention = c.status !== "confirmed";
     const org = c.organizer ? displayOrganizer(c.organizer) : "";
     const reason = reasons.get(c.id) ?? null;
@@ -185,7 +190,9 @@ export default function CertificatesView({
     const outside = reason === "beforeWindow" || reason === "afterWindow";
     const duplicate = reason === "duplicate" || (!!c.duplicateOf && c.status !== "confirmed");
     const explain = outside || reason === "duplicate" ? reason : null;
-    const infoOpen = infoId === c.id && !!explain;
+    // in the current list the reason is always shown: a red "Neieskaitīts" with the why behind a small button went unseen
+    const inline = !!explain && !inPast;
+    const infoOpen = inline || (infoId === c.id && !!explain);
     return (
       <li
         key={c.id}
@@ -221,7 +228,7 @@ export default function CertificatesView({
                   ? dict.review.autoConfirmed
                   : dict.status[c.status]}
           </span>
-          {explain && (
+          {explain && !inline && (
             <button
               type="button"
               className={styles.infoBtn}
@@ -319,6 +326,12 @@ export default function CertificatesView({
           <h2 id="certs-title">{d.allTitle}</h2>
           <span className="small muted">{d.summary(certs.length, formatNumber(confirmedPoints))}</span>
         </div>
+        {outsideCount > 0 && cycle.start && (
+          <p className="alert">
+            {d.outsideAlert(outsideCount, formatPeriod(cycle.start, cycle.end, locale))}{" "}
+            <a href="/profile">{d.outsideAlertLink}</a>
+          </p>
+        )}
         {certs.length === 0 ? (
           <p className="muted">{d.empty}</p>
         ) : (
@@ -331,19 +344,19 @@ export default function CertificatesView({
                 <span>{d.colStatus}</span>
                 <span />
               </li>
-              {(grouped ? waitingList : current).map(row)}
+              {(grouped ? waitingList : current).map((c) => row(c))}
             </ul>
             {grouped && (
               <details className={styles.group} open={confirmedOpen} onToggle={(e) => setConfirmedOpen(e.currentTarget.open)}>
                 <summary>{d.confirmedGroup(confirmedList.length)}</summary>
-                <ul className={styles.list}>{confirmedList.map(row)}</ul>
+                <ul className={styles.list}>{confirmedList.map((c) => row(c))}</ul>
               </details>
             )}
             {pastList.length > 0 && (
               <details className={styles.group}>
                 <summary>{d.pastGroup(pastList.length, formatNumber(pastPoints))}</summary>
                 <p className="small muted">{d.pastNote}</p>
-                <ul className={styles.list}>{pastList.map(row)}</ul>
+                <ul className={styles.list}>{pastList.map((c) => row(c, true))}</ul>
               </details>
             )}
           </>

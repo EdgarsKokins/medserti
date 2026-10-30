@@ -7,6 +7,9 @@ import { listCertificates } from "@/lib/db";
 import { isDemoUserId } from "@/lib/demo/id";
 import { profileComplete } from "@/lib/profile";
 import { t } from "@/lib/i18n";
+import { computeProgress } from "@/lib/rules";
+import { exclusions } from "@/components/dashboard/model";
+import { formatPeriod } from "@/lib/format";
 import type { UserRecord } from "@/lib/types";
 import s from "../kludas/kludas.module.css";
 
@@ -19,6 +22,7 @@ const USER_KEY = /^users\/([^/]+)\/user\.json$/;
 
 /**
  * Every account, newest first: who signed up, as what, and how far they got. Personal data, so admin only and no export.
+ * Period, counted TIP and certificates outside the period come from the same computeProgress as the user's overview.
  * One SCAN over users/, one MGET for the accounts and one HGETALL per account for its certificates: a few dozen Redis
  * commands per view at pilot size. Admin texts stay in Latvian.
  */
@@ -35,6 +39,8 @@ export default async function UsersAdminPage() {
     .filter((u): u is UserRecord => !!u && !isDemoUserId(u.id))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const certs = await Promise.all(users.map((u) => listCertificates(u.id)));
+  // the same progress the user sees, so a "my points do not count" report can be checked here
+  const progress = users.map((u, i) => computeProgress(u.profile, certs[i]));
   const professions = t("lv").professions;
   const complete = users.filter((u) => profileComplete(u.profile)).length;
   const withCerts = certs.filter((c) => c.length > 0).length;
@@ -63,6 +69,9 @@ export default async function UsersAdminPage() {
                   <th>Profils</th>
                   <th className={s.num}>Sertifikāti</th>
                   <th className={s.num}>Apstiprināti</th>
+                  <th>Periods</th>
+                  <th className={s.num}>TIP</th>
+                  <th className={s.num}>Ārpus perioda</th>
                 </tr>
               </thead>
               <tbody>
@@ -76,6 +85,9 @@ export default async function UsersAdminPage() {
                     <td>{profileComplete(u.profile) ? "Aizpildīts" : <span className="muted">Nav datumu</span>}</td>
                     <td className={s.num}>{certs[i].length}</td>
                     <td className={s.num}>{certs[i].filter((c) => c.status === "confirmed").length}</td>
+                    <td className={s.nowrap}>{formatPeriod(progress[i].windowStart, progress[i].windowEnd, "lv")}</td>
+                    <td className={`${s.num} ${s.nowrap}`}>{progress[i].total} / {progress[i].required}</td>
+                    <td className={s.num}>{exclusions(progress[i]).outsideWindow || <span className="muted">0</span>}</td>
                   </tr>
                 ))}
               </tbody>

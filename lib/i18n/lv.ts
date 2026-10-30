@@ -482,6 +482,9 @@ export const lv: Dict = {
     pastNote: "Šie sertifikāti ir pirms pašreizējā perioda un netiek skaitīti, bet paliek šeit kā Jūsu vēsture, ar failiem.",
     notCounted: "Neieskaitīts",
     whyNotCounted: "Kāpēc netiek ieskaitīts?",
+    outsideAlert: (n: number, period: string) =>
+      `${n} ${lvPl(n, "sertifikāts netiek ieskaitīts", "sertifikāti netiek ieskaitīti")}, jo ${lvPl(n, "tā datums ir", "to datumi ir")} ārpus jūsu perioda (${period}). Ja periods profilā norādīts nepareizi, izlabojiet to.`,
+    outsideAlertLink: "Atvērt profilu",
     reasons: {
       duplicate: "Netiek ieskaitīts, jo atkārto citu augšupielādētu sertifikātu.",
       failed: "Netiek ieskaitīts, jo failu neizdevās nolasīt.",
