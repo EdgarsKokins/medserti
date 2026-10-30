@@ -5,6 +5,11 @@ import type { Locale } from "./locale";
 const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** YYYY-MM-DD (a time after it is ignored) -> LV "27.11.2026.", RU "27.11.2026", EN "27 Nov 2026"; "" for no date */
+/** "01.03.2023. - 01.03.2028.", or only the start when the end is not known yet */
+export function formatPeriod(start: string, end: string | null, locale: Locale): string {
+  return end ? `${formatDate(start, locale)} - ${formatDate(end, locale)}` : formatDate(start, locale);
+}
+
 export function formatDate(iso: string | null | undefined, locale: Locale): string {
   if (!iso) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);

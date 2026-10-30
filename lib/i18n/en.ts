@@ -517,6 +517,9 @@ export const en = {
     pastNote: "These certificates are from before the current period and do not count, but stay here as your history, with their files.",
     notCounted: "Not counted",
     whyNotCounted: "Why is it not counted?",
+    outsideAlert: (n: number, period: string) =>
+      `${n} ${enPl(n, "certificate does", "certificates do")} not count: ${enPl(n, "its date is", "their dates are")} outside your period (${period}). If the period in your profile is wrong, correct it.`,
+    outsideAlertLink: "Open profile",
     reasons: {
       duplicate: "Not counted: it repeats another certificate you uploaded.",
       failed: "Not counted: the file could not be read.",
