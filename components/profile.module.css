@@ -35,6 +35,7 @@
 .comboOpt[aria-selected="true"] { font-weight: 600; }
 .comboOther { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 12px; color: var(--muted); }
 .comboEmpty { padding: 10px 12px; color: var(--muted); font-size: 0.9rem; }
+.comboSub { color: var(--muted); font-weight: 400; }
 .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 24px 0 0; border-top: 1px solid var(--border); }
 
 /* two columns of ~170px are too narrow for Latvian labels */

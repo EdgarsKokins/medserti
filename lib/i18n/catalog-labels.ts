@@ -287,7 +287,8 @@ export const LABELS: Record<string, string> = {
   "auth.valuePoints.#": "#. punkts",
   "auth.forgotLink": "Saite: aizmirsāt paroli?",
   "auth.profession": "Lauks: profesija (reģistrācijā)",
-  "auth.professionPick": "Profesijas izvēlne: tukšā vērtība",
+  "auth.professionPick": "Profesijas lauks: norāde, ko rakstīt",
+  "auth.professionNoMatch": "Profesijas lauks: nekas neatbilst ierakstītajam",
 
   "reset.forgotTitle": "Paroles pieprasīšanas virsraksts",
   "reset.forgotLead": "Paroles pieprasīšanas ievadteksts",
