@@ -330,6 +330,14 @@ function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
           recent={LEDGER.slice().reverse().slice(0, 3).map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip }))}
         />
       </div>
+      {/* doctors already see LĀB-approved events in LĀB's system: what Medserti adds (Kārlis' test, October 2026) */}
+      <section className={s.lab} aria-labelledby="lab-title">
+        <div>
+          <h3 id="lab-title" className={s.labTitle}>{d.landingB.labTitle}</h3>
+          <p className={s.labBody}>{d.landingB.labBody}</p>
+        </div>
+        <Checks items={d.landingB.labChecks} />
+      </section>
       <section id="how" className={s.stepsSection} aria-labelledby="how-title">
         <h3 id="how-title" className={s.panelH}>{a.how}</h3>
         <HowItWorks

@@ -23,8 +23,13 @@ const MAX_IMAGE_INPUT_BYTES = 30 * 1024 * 1024;
 const OK_TYPES = new Set<string>(FILE_TYPES);
 export const ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp";
 
-/** "check": the photo may be blurry, or the file may not be a certificate; waiting for the user's choice */
-export type UploadState = "queued" | "check" | "reading" | "uploading" | "done" | "failed";
+/**
+ * "check": the photo may be blurry, or the file may not be a certificate; waiting for the user's choice.
+ * "opening" -> "reading" (scans and photos only) -> "uploading" are the steps shown while a file is worked on
+ */
+export type UploadState = "queued" | "opening" | "check" | "reading" | "uploading" | "done" | "failed";
+/** a file being worked on: the upload area shows its steps, so a slow scan never looks frozen (Kārlis' test, October 2026) */
+export const ACTIVE_STATES: UploadState[] = ["opening", "reading", "uploading"];
 export interface UploadItem {
   key: string;
   name: string;
@@ -153,6 +158,7 @@ export async function startUpload(files: File[], d: Dict["upload"], courseId: st
       update(item.key, { state: "failed", message: d.onlyTypes });
       continue;
     }
+    update(item.key, { state: "opening" });
     let ocrText = "";
     let ocrConfidence: number | null = null;
     // what the browser read (a PDF's text layer, or OCR), for the "is this a certificate?" check; null when reading failed

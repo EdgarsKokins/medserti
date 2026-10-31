@@ -16,8 +16,9 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
 import DashboardUpload from "@/components/dashboard/DashboardUpload";
-import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, headline } from "@/components/dashboard/model";
+import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, fmtDate, headline } from "@/components/dashboard/model";
 import { formatPeriod, todayLv } from "@/lib/format";
+import { addMonths } from "@/lib/notifications";
 
 /** Next events for this specialty (or all specialties), at most `n`; recordings get their own block (pickRecorded) */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
@@ -75,6 +76,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const p = all3.find((x) => x.c.id === cert.id)!.p;
   const certProfile = asProfile(user.profile, cert);
   const outside = exclusions(p).outsideWindow;
+  const ready = p.checks.every((c) => c.met);
   // a hand-set target replaces the rule, so its reason is not shown
   const basis = ruleBasis(certProfile);
   // nurses give only the date their registration runs to (Reg. 630 point 33)
@@ -113,11 +115,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       )}
 
-      {/* the main next step once points are in; stands out once the total is reached */}
+      {/* the main next step once points are in, as its own card: a plain button next to the upload was missed (Kārlis' test,
+          October 2026). Stands out once every requirement is met. */}
       {certs.length > 0 && (
-        <Link href={cert.id === "main" ? "/export" : `/export?sert=${cert.id}`} className={`btn ${p.remaining === 0 ? "btn-primary" : ""} ${styles.exportLink}`}>
-          {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
-        </Link>
+        <section className={`${styles.recert} ${ready ? styles.recertReady : ""}`} aria-labelledby="recert-title">
+          <div className={styles.recertCopy}>
+            <h2 id="recert-title" className={styles.recertTitle}>{hours ? d.recertTitleNurse : d.recertTitle}</h2>
+            <p className={styles.recertBody}>{ready ? d.recertReady : hours ? d.recertBodyNurse : d.recertBody}</p>
+            {/* Reg. 391 point 46; nurses re-register under Reg. 630, which this line does not describe */}
+            {!hours && p.windowEnd && (p.daysLeft ?? -1) >= 0 && <p className="small muted">{d.recertDue(fmtDate(addMonths(p.windowEnd, -3), locale))}</p>}
+          </div>
+          <Link href={cert.id === "main" ? "/export" : `/export?sert=${cert.id}`} className={`btn ${ready ? "btn-primary" : ""} ${styles.recertBtn}`}>
+            {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
+          </Link>
+        </section>
       )}
 
       <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
