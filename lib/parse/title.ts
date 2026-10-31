@@ -28,6 +28,13 @@ const STOP_LINE =
 const ORGANISED_BY = /(?:organizet|rikot|rikotaj|organized by|organised by)\p{L}*(?:\s+\p{L}+)?$/u;
 const YEAR = /(?:19|20)\d{2}/;
 
+/** Quoted text up to the line naming the speaker: several lectures each print their speaker under the title */
+function untilSpeaker(s: string): string {
+  const lines = s.split("\n");
+  const stop = lines.findIndex((l, i) => i > 0 && SPEAKER.test(fold(l.trim())));
+  return (stop > 0 ? lines.slice(0, stop) : lines).join("\n");
+}
+
 function cleanTitle(s: string): string {
   return stripOcrNoise(s)
     // OCR often turns „ into » or ,, so strip any quote-like character at both ends
@@ -72,14 +79,17 @@ export function findTitle(t: Text): { value: string; confidence: number } {
 
   // 1. quoted text, skipping quoted organisation names (SIA „...") and regulation names
   const quoted: { value: string; index: number }[] = [];
-  for (const re of QUOTES) {
-    for (const m of raw.matchAll(re)) {
-      const before = raw.slice(Math.max(0, m.index - 30), m.index);
-      const value = cleanTitle(m[1]);
-      if (value.length >= 6 && !ORG_PREFIX.test(before) && !NOT_TITLE.test(fold(value)) && !quoted.some((q) => q.index === m.index))
-        quoted.push({ value, index: m.index });
-    }
-  }
+  const add = (inner: string, index: number) => {
+    const before = raw.slice(Math.max(0, index - 30), index);
+    const value = cleanTitle(untilSpeaker(inner));
+    // wordy: OCR of photos and logos leaves quote marks around debris ("4 ļ A ģ wo")
+    if (value.length >= 6 && wordy(value) && !ORG_PREFIX.test(before) && !NOT_TITLE.test(fold(value)) && !quoted.some((q) => q.index === index))
+      quoted.push({ value, index });
+  };
+  for (const re of QUOTES) for (const m of raw.matchAll(re)) add(m[1], m.index);
+  // a quote that opens a word and is never closed, or whose pair OCR lost: up to the next quote mark
+  // ("“D vitamīnu ... lietošanā." then the speaker line, then “Pacienta ...”), Kārlis' test, October 2026
+  for (const m of raw.matchAll(/[„“«"](?=\p{L})/gu)) add(raw.slice(m.index + 1).split(/[„“”«»"]/u)[0], m.index);
   quoted.sort((a, b) => a.index - b.index);
   if (quoted.length) {
     const anchorAt = TITLE_ANCHORS.map((re) => rx(re.source, "u").exec(t.fold)?.index ?? -1).filter((i) => i >= 0);
@@ -92,7 +102,8 @@ export function findTitle(t: Text): { value: string; confidence: number } {
   for (const re of TITLE_ANCHORS) {
     for (let i = 0; i < lines.length; i++) {
       const m = rx(re.source, "u").exec(folded[i]);
-      if (!m) continue;
+      // "Semināra atbalstītājs KRKA": the sponsor line, not the event
+      if (!m || SPONSOR.test(folded[i])) continue;
       const restFolded = folded[i].slice(m.index + m[0].length);
       // "Par dalību seminārā tiek piešķirti TIP punkti": a points line, the title is not after it
       if (/(?<![\p{L}])tip(?![\p{L}])|punkt|kredit/u.test(restFolded)) continue;
