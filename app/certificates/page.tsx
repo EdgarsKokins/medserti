@@ -10,6 +10,7 @@ import { todayLv } from "@/lib/format";
 import { readCourseIndex } from "@/lib/courses/store";
 import { assignments } from "@/lib/certAssign";
 import { asProfile, profileCerts } from "@/lib/profileCerts";
+import styles from "@/components/certificates/certificates.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -39,8 +40,14 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
           <h1>{d.title}</h1>
           <p className="muted">{d.leadShort}</p>
         </div>
+        {/* the page's main button: the upload area above the list is a drop zone, not a button, so the two do not compete */}
         {certificates.some((c) => c.status === "confirmed") && (
-          <Link href="/export" className="btn">{user.profile.profession === "nurse" ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →</Link>
+          <Link href="/export" className={`btn btn-primary ${styles.exportBtn}`}>
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9.5 1.5h-5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-8.5zM9.5 1.5v3.5h3M6 9h4M6 11.5h4" />
+            </svg>
+            {user.profile.profession === "nurse" ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
+          </Link>
         )}
       </div>
       <CertificatesView

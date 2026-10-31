@@ -62,6 +62,10 @@
 /* the tips sit inside an upload row: not rows themselves */
 .uploads li .qualityTips li { display: list-item; padding: 0; border: 0; font-size: inherit; }
 .qualityActions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* "Sagatavot resertifikācijas dokumentus" in the page head: the page's main button (usability test, October 2026) */
+.exportBtn { padding: 13px 24px; font-size: 1.02rem; font-weight: 600; gap: 10px; }
+@media (max-width: 640px) { .exportBtn { width: 100%; } }
+
 /* the file being worked on: its steps under the row, full width */
 .steps { flex: 1 0 100%; display: grid; gap: 10px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
 .stepList { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); }
