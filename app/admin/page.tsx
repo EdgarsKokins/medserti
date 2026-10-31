@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import { BLOCKS, catalog, emptyOverrides } from "@/lib/i18n/catalog";
 import { LOCALES } from "@/lib/i18n";
 import { readPreviousOverrides, readStoredOverrides } from "@/lib/i18n/overrides-server";
 import TranslationsAdmin from "@/components/admin/TranslationsAdmin";
 import AdminLogin from "@/components/admin/AdminLogin";
+import AdminNav from "@/components/admin/AdminNav";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Tekstu redaktors", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Teksti un tulkojumi", robots: { index: false, follow: false } };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ demoReset?: string }> }) {
+export default async function AdminPage() {
   if (!(await isAdmin())) {
     return (
       <main className="container">
@@ -35,6 +35,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const used = new Set(entries.map((e) => e.block));
   return (
     <main className="container">
+      {/* users, errors and the demo account have their own sections (AdminNav), not cards under the editor */}
+      <AdminNav current="texts" />
       <TranslationsAdmin
         entries={entries}
         blocks={BLOCKS.filter((b) => used.has(b.id))}
@@ -42,27 +44,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         hasPrevious={!!prev}
         stale={stale}
       />
-      {/* admin tools stay in Latvian like the editor above; the demo account is lib/demo */}
-      <section className="card" style={{ marginTop: 40 }} aria-labelledby="users-link">
-        <h2 id="users-link">Lietotāji</h2>
-        <p className="small muted">Visi reģistrētie konti: e-pasts, profesija, reģistrācijas datums un sertifikātu skaits.</p>
-        <Link href="/admin/lietotaji" className="btn">Atvērt lietotāju sarakstu</Link>
-      </section>
-      <section className="card" style={{ marginTop: 40 }} aria-labelledby="errors-link">
-        <h2 id="errors-link">Kļūdas un ziņojumi</h2>
-        <p className="small muted">Servera un pārlūka kļūdas un „Ziņot par problēmu” ziņojumi par pēdējām 7 dienām.</p>
-        <Link href="/admin/kludas" className="btn">Atvērt kļūdu sarakstu</Link>
-      </section>
-      <section className="card" style={{ marginTop: 40 }} aria-labelledby="demo-reset">
-        <h2 id="demo-reset">Demo konts</h2>
-        <p className="small muted">
-          Publiskais demo konts (Jānis Paraugs) ir tikai lasāms. Poga to izdzēš un izveido no jauna ar sākotnējiem datiem.
-        </p>
-        <form action="/api/admin/demo-reset" method="post" className="row">
-          <button className="btn" type="submit">Atjaunot demo kontu</button>
-          {(await searchParams).demoReset && <span className="badge badge-ok">Demo konts atjaunots</span>}
-        </form>
-      </section>
     </main>
   );
 }

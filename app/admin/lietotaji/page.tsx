@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import AdminLogin from "@/components/admin/AdminLogin";
+import AdminNav from "@/components/admin/AdminNav";
 import { getRecords, listRecordKeys } from "@/lib/records";
 import { listCertificates } from "@/lib/db";
 import { isDemoUserId } from "@/lib/demo/id";
@@ -26,7 +27,7 @@ const USER_KEY = /^users\/([^/]+)\/user\.json$/;
  * One SCAN over users/, one MGET for the accounts and one HGETALL per account for its certificates: a few dozen Redis
  * commands per view at pilot size. Admin texts stay in Latvian.
  */
-export default async function UsersAdminPage() {
+export default async function UsersAdminPage({ searchParams }: { searchParams: Promise<{ demoReset?: string }> }) {
   if (!(await isAdmin())) {
     return (
       <main className="container">
@@ -47,7 +48,7 @@ export default async function UsersAdminPage() {
 
   return (
     <main className="container stack">
-      <p className="small"><Link href="/admin">← Tekstu redaktors</Link></p>
+      <AdminNav current="users" />
       <h1>Lietotāji ({users.length})</h1>
       <p className="small muted">
         Profils aizpildīts: {complete}. Ar vismaz vienu sertifikātu: {withCerts}. Demo konts nav iekļauts. Personas dati: neeksportējiet
@@ -94,6 +95,17 @@ export default async function UsersAdminPage() {
             </table>
           </div>
         )}
+      </section>
+      {/* the demo account is a user too; lib/demo */}
+      <section className="card" aria-labelledby="demo-reset">
+        <h2 id="demo-reset">Demo konts</h2>
+        <p className="small muted">
+          Publiskais demo konts (Jānis Paraugs) ir tikai lasāms. Poga to izdzēš un izveido no jauna ar sākotnējiem datiem.
+        </p>
+        <form action="/api/admin/demo-reset" method="post" className="row">
+          <button className="btn" type="submit">Atjaunot demo kontu</button>
+          {(await searchParams).demoReset && <span className="badge badge-ok">Demo konts atjaunots</span>}
+        </form>
       </section>
     </main>
   );
