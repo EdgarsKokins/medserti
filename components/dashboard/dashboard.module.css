@@ -26,7 +26,18 @@
 .history > summary::before { content: "+"; font-family: var(--font-sans); color: var(--muted); width: 14px; }
 .history[open] > summary::before { content: "−"; }
 
-.exportLink { align-self: flex-start; margin-top: -16px; font-weight: 500; }
+/* recertification documents: the second main action on the overview, after the hero */
+.recert { display: flex; align-items: center; justify-content: space-between; gap: 14px 32px; flex-wrap: wrap; margin-top: -8px; padding: 20px 24px; border: 1px solid var(--border-strong); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); }
+.recertReady { background: var(--accent-soft); border-color: var(--accent); }
+.recertCopy { display: grid; gap: 4px; flex: 1 1 340px; min-width: 0; }
+.recertCopy p { margin: 0; }
+.recertTitle { margin: 0; font-size: 1.25rem; }
+.recertBody { max-width: 64ch; }
+.recertBtn { padding: 12px 22px; font-weight: 500; white-space: nowrap; }
+@media (max-width: 640px) {
+  .recert { padding: 18px 16px; }
+  .recertBtn { width: 100%; white-space: normal; text-align: center; min-height: 44px; }
+}
 
 /* more than one certificate: pick which one the page shows */
 .certSwitch { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: -16px; }

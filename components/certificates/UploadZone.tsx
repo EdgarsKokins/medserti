@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import {
   ACCEPT,
+  ACTIVE_STATES,
   decideCheck,
   getServerUploadSnapshot,
   getUploadSnapshot,
@@ -18,6 +19,7 @@ import styles from "./certificates.module.css";
 
 const STATE_CLASS: Record<UploadState, string> = {
   queued: "badge",
+  opening: "badge",
   check: "badge badge-warn",
   reading: "badge",
   uploading: "badge",
@@ -73,8 +75,8 @@ export default function UploadZone({
   const finished = items.filter((it) => it.state === "done" || it.state === "failed").length;
   const failed = items.filter((it) => it.state === "failed").length;
   const grouped = items.length >= GROUP_FROM;
-  // collapsed, the list still shows what needs the user: failed files and photos to check
-  const listed = grouped && !expanded ? items.filter((it) => it.state === "failed" || it.state === "check") : items;
+  // collapsed, the list still shows what needs the user (failed files, photos to check) and the file being worked on
+  const listed = grouped && !expanded ? items.filter((it) => it.state === "failed" || it.state === "check" || ACTIVE_STATES.includes(it.state)) : items;
   const qualityTitle = (issues: string[]) =>
     issues.includes("screen") ? d.qualityScreen : issues.includes("small") ? d.qualitySmall : issues.includes("dark") ? d.qualityDark : issues.includes("bright") ? d.qualityBright : d.qualityBlurry;
 
@@ -155,6 +157,7 @@ export default function UploadZone({
                   {it.state === "reading" && it.progress ? ` ${it.progress}%` : ""}
                 </span>
               </span>
+              {ACTIVE_STATES.includes(it.state) && <UploadSteps state={it.state} progress={it.progress} />}
               {it.state === "check" && it.ask && (
                 <div className={styles.quality} role="alert">
                   {it.ask.kind === "quality" ? (
@@ -197,6 +200,32 @@ export default function UploadZone({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Open, read, recognise: the step a file is on, with a bar that always moves. A text PDF skips the reading step.
+ * The note that a scan can take a minute fades in only after a few seconds (CSS), so quick files never show it.
+ */
+function UploadSteps({ state, progress }: { state: UploadState; progress?: number }) {
+  const d = useDict().upload;
+  const at = state === "opening" ? 0 : state === "reading" ? 1 : 2;
+  const measured = state === "reading" && progress != null;
+  return (
+    <div className={styles.steps} role="status">
+      <ol className={styles.stepList}>
+        {[d.steps.open, d.steps.read, d.steps.parse].map((label, i) => (
+          <li key={label} className={i < at ? styles.stepDone : i === at ? styles.stepNow : undefined} aria-current={i === at ? "step" : undefined}>
+            <span className={styles.stepMark} aria-hidden>{i < at ? "✓" : i + 1}</span>
+            {label}
+          </li>
+        ))}
+      </ol>
+      <span className={`${styles.stepBar} ${measured ? "" : styles.stepBarMoving}`} aria-hidden>
+        <span style={measured ? { width: `${progress}%` } : undefined} />
+      </span>
+      <span className={`small muted ${styles.slowHint}`}>{d.slowHint}</span>
     </div>
   );
 }

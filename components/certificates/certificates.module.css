@@ -62,6 +62,24 @@
 /* the tips sit inside an upload row: not rows themselves */
 .uploads li .qualityTips li { display: list-item; padding: 0; border: 0; font-size: inherit; }
 .qualityActions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* the file being worked on: its steps under the row, full width */
+.steps { flex: 1 0 100%; display: grid; gap: 10px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+.stepList { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); }
+.uploads li .stepList li { display: inline-flex; align-items: center; justify-content: flex-start; flex-wrap: nowrap; gap: 8px; padding: 0; border: 0; }
+.stepMark { flex: none; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 1px solid var(--border-strong); }
+.stepNow { color: var(--text); font-weight: 600; }
+.stepNow .stepMark { border-color: var(--accent); color: var(--accent); }
+.stepDone .stepMark { border-color: var(--ok); background: var(--ok); color: var(--on-ink); }
+.stepBar { display: block; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.stepBar span { display: block; height: 100%; background: var(--accent); transition: width 0.3s ease; }
+.stepBarMoving span { width: 35%; animation: stepSlide 1.4s ease-in-out infinite; }
+@keyframes stepSlide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+.slowHint { opacity: 0; animation: slowIn 0.3s ease 8s forwards; }
+@keyframes slowIn { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .stepBarMoving span { width: 100%; opacity: 0.45; animation: none; }
+  .slowHint { animation-duration: 0s; }
+}
 @media (max-width: 640px) {
   .qualityActions :global(.btn) { flex: 1 1 100%; min-height: 44px; }
 }
