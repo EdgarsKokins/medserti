@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isAdmin } from "@/lib/admin";
 import { adminViews, logAdminView } from "@/lib/admin-audit";
 import AdminLogin from "@/components/admin/AdminLogin";
+import AdminNav from "@/components/admin/AdminNav";
 import { getUser, listCertificates } from "@/lib/db";
 import { isDemoUserId } from "@/lib/demo/id";
 import { computeProgress, exclusionReason, type ExclusionReason } from "@/lib/rules";
@@ -57,7 +58,8 @@ export default async function UserCertificatesAdminPage({ params }: { params: Pr
 
   return (
     <main className="container stack">
-      <p className="small"><Link href="/admin/lietotaji">← Lietotāji</Link></p>
+      <AdminNav current="users" />
+      <p className="small"><Link href="/admin/lietotaji">← Visi lietotāji</Link></p>
       <h1>{user.profile.fullName || user.email}</h1>
       <p className="small muted">
         {user.email} · {dict.professions[user.profile.profession] ?? user.profile.profession}

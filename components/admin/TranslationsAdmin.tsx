@@ -228,7 +228,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
     <div className={s.admin}>
       <header className={s.head}>
         <div>
-          <h1>Tekstu redaktors</h1>
+          <h1>Teksti un tulkojumi</h1>
           <p className="muted">Šeit varat labot jebkuru lapas tekstu latviski, angliski un krieviski. Izmaiņas stājas spēkā pēc saglabāšanas.</p>
         </div>
         <div className={s.headActions}>

@@ -36,7 +36,7 @@ export default function AdminLogin() {
 
   return (
     <form className={s.login} onSubmit={submit}>
-      <h1>Tekstu redaktors</h1>
+      <h1>Administrēšana</h1>
       <p className="muted">Ievadiet paroli, lai labotu lapas tekstus.</p>
       <div className="field">
         <label htmlFor="admin-password">Parole</label>

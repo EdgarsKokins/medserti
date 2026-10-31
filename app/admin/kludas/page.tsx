@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { isAdmin } from "@/lib/admin";
 import AdminLogin from "@/components/admin/AdminLogin";
+import AdminNav from "@/components/admin/AdminNav";
 import { KEEP_DAYS } from "@/lib/monitoring/day";
 import { readErrorDays, type ErrorItem } from "@/lib/monitoring/errors";
 import { readFeedbackDays } from "@/lib/monitoring/feedback";
@@ -53,7 +53,7 @@ export default async function ErrorsAdminPage() {
 
   return (
     <main className="container stack">
-      <p className="small"><Link href="/admin">← Tekstu redaktors</Link></p>
+      <AdminNav current="errors" />
       <h1>Kļūdas un ziņojumi</h1>
       <p className="small muted">
         Pēdējās {DAYS} dienas. Ieraksti tiek glabāti {KEEP_DAYS} dienas, pēc tam tie izdzēšas automātiski. Par katru jaunu kļūdu dienā
