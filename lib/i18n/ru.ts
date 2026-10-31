@@ -50,7 +50,8 @@ export const ru: Dict = {
     genericError: "Произошла ошибка. Попробуйте ещё раз.",
     passwordHint: "8–32 символа",
     profession: "Профессия",
-    professionPick: "Выберите профессию",
+    professionPick: "Например, врач или невролог",
+    professionNoMatch: "Не найдено. Выберите «Другой медицинский работник».",
     forgotLink: "Забыли пароль?",
     valueTitle: "Как работает Medserti",
     valuePoints: [

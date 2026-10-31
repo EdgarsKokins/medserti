@@ -52,7 +52,8 @@ export const en = {
     genericError: "Something went wrong. Please try again.",
     passwordHint: "8–32 characters",
     profession: "Profession",
-    professionPick: "Choose your profession",
+    professionPick: "E.g. doctor or neurologist",
+    professionNoMatch: "Not found. Pick “Other medical practitioner”.",
     forgotLink: "Forgot your password?",
     valueTitle: "How Medserti works",
     valuePoints: [

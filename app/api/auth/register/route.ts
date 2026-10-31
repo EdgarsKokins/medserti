@@ -7,6 +7,7 @@ import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { LEGAL_UPDATED } from "@/lib/legal";
 import { PROFESSIONS } from "@/lib/types";
+import { specialtiesFor } from "@/lib/specialties";
 import { clientIp, rateLimit } from "@/lib/password-reset";
 import { passwordBreached, passwordTooLong } from "@/lib/password-policy";
 import { EMAIL_MAX, tidyName, validEmail, validName, validPassword } from "@/lib/validation";
@@ -17,6 +18,8 @@ const Body = z.object({
   fullName: z.string().trim().min(1).refine(validName).transform(tidyName),
   // sets the program from the first visit: nurses re-register on hours (Reg. 630), everyone else recertifies on TIP
   profession: z.enum(PROFESSIONS),
+  // the profession was found by typing a specialty ("neirologs"): kept only if it is one of that profession's
+  specialtyCode: z.string().trim().max(10).optional(),
   // checkbox value; the form sends nothing when it is unticked
   consent: z.literal("on"),
   // the user saw the breached-password warning and chose to keep this password
@@ -37,7 +40,8 @@ export async function POST(req: Request) {
     if (field === "consent") return NextResponse.json({ error: d.legal.consent.required }, { status: 400 });
     return NextResponse.json({ error: field && FIELD_ERROR[field] ? m[FIELD_ERROR[field]] : m.invalidInput }, { status: 400 });
   }
-  const { email, password, fullName, profession, acceptBreached } = parsed.data;
+  const { email, password, fullName, profession, specialtyCode, acceptBreached } = parsed.data;
+  const specialty = specialtiesFor(profession).find((sp) => sp.code === specialtyCode) ?? null;
   if (passwordTooLong(password)) return NextResponse.json({ error: m.passwordLong }, { status: 400 });
   // 5 sign-up attempts per IP per hour, counted once the form itself is valid
   if (!(await rateLimit(`register-ip:${clientIp(req)}`, 5, HOUR)))
@@ -60,8 +64,8 @@ export async function POST(req: Request) {
     profile: {
       fullName,
       profession,
-      specialty: "",
-      specialtyCode: null,
+      specialty: specialty?.lv ?? "",
+      specialtyCode: specialty?.code ?? null,
       certificationKind: "specialty",
       certificateNumber: "",
       certificateIssued: null,

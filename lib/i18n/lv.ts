@@ -48,7 +48,8 @@ export const lv: Dict = {
     genericError: "Radās kļūda. Mēģiniet vēlreiz.",
     passwordHint: "8–32 rakstzīmes",
     profession: "Profesija",
-    professionPick: "Izvēlieties profesiju",
+    professionPick: "Piemēram, ārsts vai neirologs",
+    professionNoMatch: "Nav atrasts. Izvēlieties „Cita ārstniecības persona”.",
     forgotLink: "Aizmirsāt paroli?",
     valueTitle: "Kā darbojas Medserti",
     valuePoints: [
