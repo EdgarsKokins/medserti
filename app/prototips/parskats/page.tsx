@@ -8,34 +8,37 @@ import { matchesSpecialty } from "@/lib/parse";
 import { readCourseIndex } from "@/lib/courses/store";
 import type { Course } from "@/lib/courses/types";
 import type { Check } from "@/lib/rules";
+import { addMonths } from "@/lib/notifications";
 import { todayLv } from "@/lib/format";
-import { dictFor, fmtDate, fmtNum, timeLeft } from "@/components/dashboard/model";
+import { fmtDate, fmtNum } from "@/components/dashboard/model";
 import ProtoBar from "../ProtoBar";
 import NotifyButton from "../NotifyButton";
 import s from "../prototips.module.css";
 
 /**
- * PROTOTYPE (branch "prototypes", never merged): the dashboard as "your plan" for Ralfs Gauja #10 and Ineta Ūdra #13.
- * The doctor by name, how far each requirement is, and three cards that each say what they do for this doctor:
- * certificates counted, courses that close the gap they are short on, lectures watched in Medserti (not launched yet).
+ * PROTOTYPE (branch "prototypes", never merged): the dashboard as one next step plus a learning feed, for Ralfs Gauja
+ * #10 and Ineta Ūdra #13. One sentence on where the doctor stands, the one thing worth doing next, then courses picked
+ * for them and Medserti's own lectures (not launched yet). Numbers kept to one slim strip.
  * Real data of the signed-in user, or of the demo account when nobody is signed in; Latvian only.
  */
-const CHECK_LABEL: Record<Check["id"], string> = {
-  total: "Kopā",
-  specialty: "Savā specialitātē",
-  emergency_points: "Neatliekamā palīdzība",
-  emergency_practical: "NMP praktiskās stundas",
-  infection_control: "Infekciju kontrole",
-  patient_safety: "Pacientu drošība",
-  nursing: "Māsas kompetences",
-};
 
-/** "Jums trūkst 12 TIP …": where the doctor is short */
-const GAP_WHERE: Record<Check["id"], string> = {
-  total: "",
+// dative month names: "līdz 2028. gada novembrim"
+const MONTH_DAT = ["janvārim", "februārim", "martam", "aprīlim", "maijam", "jūnijam", "jūlijam", "augustam", "septembrim", "oktobrim", "novembrim", "decembrim"];
+const MONTH_SHORT = ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"];
+
+/** Vocative of a Latvian first name for the greeting: Jānis → Jāni, Edgars → Edgar, Anna → Anna (prototype rule) */
+function vocative(fullName: string): string {
+  const first = fullName.trim().split(/\s+/)[0] ?? "";
+  if (/is$/.test(first)) return first.slice(0, -1);
+  if (/[sš]$/.test(first)) return first.slice(0, -1);
+  return first;
+}
+
+/** "Jums vēl trūkst 4 TIP …": where the doctor is short */
+const GAP_WHERE: Partial<Record<Check["id"], string>> = {
   specialty: "savā specialitātē",
   emergency_points: "neatliekamajā palīdzībā",
-  emergency_practical: "NMP praktiskajās nodarbībās",
+  emergency_practical: "neatliekamās palīdzības praktiskajās nodarbībās",
   infection_control: "infekciju kontrolē",
   patient_safety: "pacientu drošībā",
   nursing: "māsas kompetences tēmās",
@@ -44,13 +47,14 @@ const GAP_WHERE: Record<Check["id"], string> = {
 // no course field says "emergency care", so the prototype matches the title and audience
 const EMERGENCY = /neatliek|reanim|pirm[āa] palīdz|\bNMP\b|\bBLS\b|\bALS\b|kardiopulmon/i;
 
+type Next = { lead: string; why: string | null; course: Course | null; href: string; cta: string };
+
 export default async function ProtoDashboard() {
   // signed out (e.g. opened in another browser): show the demo account, so the prototype opens anywhere
   const signedIn = await currentUser();
   if (!signedIn) await ensureDemo();
   const user = signedIn ?? (await getUser(DEMO_USER_ID))!;
   const [certs, idx] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null)]);
-  const d = dictFor("lv").dashboard;
   const today = new Date();
   const todayIso = todayLv(today);
   const cert = pickCert(user.profile, null);
@@ -62,110 +66,167 @@ export default async function ProtoDashboard() {
     .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
 
   const done = p.checks.every((c) => c.met);
-  const left = p.windowEnd && (p.daysLeft ?? -1) >= 0 ? timeLeft(todayIso, p.windowEnd) : null;
-  const leftText = left ? (left.years || left.months ? d.timeLeftShort(left.years, left.months) : d.daysLeftShort(p.daysLeft!)) : null;
   const waiting = certs.filter((c) => c.status === "needs_review").length;
-  const confirmed = certs.filter((c) => c.status === "confirmed").length;
   const gap = (c: Check) => Math.max(0, c.need - c.have);
-
-  // card 2 points at the requirement the doctor is short on, and the courses that cover it
   const open = p.checks.filter((c) => !c.met && c.id !== "total").sort((a, b) => gap(b) - gap(a))[0];
+  const own = upcoming.filter(mine);
   const covering =
-    open?.id === "specialty" ? upcoming.filter(mine)
+    open?.id === "specialty" ? own
     : open?.id === "emergency_points" || open?.id === "emergency_practical" ? upcoming.filter((c) => EMERGENCY.test(`${c.title} ${c.audience}`))
-    : upcoming;
-  const gapLine = open
-    ? `Jums trūkst ${fmtNum(gap(open))} ${open.id === "emergency_practical" ? "stundu" : "TIP"} ${GAP_WHERE[open.id]}`
-    : !done ? `Jums trūkst ${fmtNum(p.remaining)} TIP` : null;
-  const soonest = covering[0];
+    : own.length ? own : upcoming;
 
-  // the card to act on now: certificates to check or none yet, else courses while anything is missing
-  const focus = waiting || confirmed === 0 ? 1 : !done ? 2 : 3;
-  const pct = (have: number, need: number) => (need ? Math.min(100, (have / need) * 100) : 0);
+  const end = p.windowEnd ? new Date(p.windowEnd + "T00:00:00Z") : null;
+  const by = end ? ` līdz ${end.getUTCFullYear()}. gada ${MONTH_DAT[end.getUTCMonth()]}` : "";
+  const name = vocative(user.profile.fullName);
+
+  // the one thing worth doing next, most urgent first
+  let next: Next;
+  if (certs.length === 0) {
+    next = { lead: "Sāciet ar sertifikātiem, kas Jums jau ir.", why: "Augšupielādējiet PDF vai foto, un punkti tiks saskaitīti automātiski.", course: null, href: "/certificates", cta: "Pievienot sertifikātus" };
+  } else if (waiting) {
+    next = {
+      lead: `Vispirms pārbaudiet ${waiting} ${waiting === 1 ? "sertifikātu" : "sertifikātus"}, ko augšupielādējāt.`,
+      why: "Tas aizņem minūti, un tad punkti tiks ieskaitīti.",
+      course: null,
+      href: "/certificates",
+      cta: "Pārbaudīt",
+    };
+  } else if (done) {
+    next = {
+      lead: "Visas prasības ir izpildītas.",
+      why: p.windowEnd ? `Sagatavojiet un iesniedziet dokumentus līdz ${fmtDate(addMonths(p.windowEnd, -3), "lv")}.` : "Sagatavojiet dokumentus resertifikācijai.",
+      course: null,
+      href: "/export",
+      cta: "Sagatavot dokumentus",
+    };
+  } else {
+    const c = covering[0] ?? upcoming[0] ?? null;
+    const short = open ? gap(open) : 0;
+    const why = open && c && covering.includes(c)
+      ? `Jums vēl trūkst ${fmtNum(short)} ${open.id === "emergency_practical" ? "stundu" : "TIP"} ${GAP_WHERE[open.id]}, un šis kurss ${c.tip != null && c.tip >= short ? "tos sedz" : "palīdz tos savākt"}.`
+      : c && mine(c) ? "Tuvākais kurss Jūsu specialitātē." : null;
+    next = c
+      ? { lead: "Vislabāk sākt ar šo kursu.", why, course: c, href: `/courses?open=${encodeURIComponent(c.id)}`, cta: "Skatīt kursu" }
+      : { lead: "Tuvākajā laikā Jums piemērotu kursu nav.", why: "Paziņosim, tiklīdz parādīsies jauni.", course: null, href: "/courses", cta: "Visi kursi" };
+  }
+
+  const feed = upcoming
+    .filter((c) => c.id !== next.course?.id)
+    .sort((a, b) => Number(mine(b)) - Number(mine(a)) || a.startDate!.localeCompare(b.startDate!))
+    .slice(0, 4)
+    .sort((a, b) => a.startDate!.localeCompare(b.startDate!));
+  const pct = p.required ? Math.min(100, (p.total / p.required) * 100) : 0;
 
   return (
     <>
       <ProtoBar
         title="Pārskats"
-        active="Jūsu plāns"
+        active="Nākamais solis"
         links={[
-          { href: "/prototips/parskats", label: "Jūsu plāns" },
+          { href: "/prototips/parskats", label: "Nākamais solis" },
           // signed out, the current dashboard opens through the demo sign-in, as "Apskatīt demo" does
           { href: signedIn ? "/dashboard" : "/api/auth/demo", label: "Pašreizējais pārskats" },
         ]}
       />
       <main className={`container ${s.page}`}>
-        {/* 1. who, how far, and each requirement */}
-        <section className={`${s.hello} ${done ? s.done : ""}`} aria-labelledby="hi">
-          <div className={s.helloTop}>
-            <div>
-              <p className={s.greet}>Labdien, {user.profile.fullName || "kolēģi"}</p>
-              {specialty && <p className="muted">{specialty}</p>}
-            </div>
-            {leftText && p.windowEnd && <p className={s.deadline}>Sertifikāts derīgs līdz {fmtDate(p.windowEnd, "lv")}<br /><span className="muted">{leftText}</span></p>}
-          </div>
-          <h1 id="hi" className={s.statusLine}>
-            {done ? <>Visas prasības izpildītas: <b>{fmtNum(p.total)} TIP</b></> : <>Trūkst <b>{fmtNum(p.remaining)} TIP</b></>}
-          </h1>
-          <ul className={s.reqs}>
-            {p.checks.map((c) => (
-              <li key={c.id} className={c.met ? s.reqMet : ""}>
-                <span className={s.reqLabel}>{CHECK_LABEL[c.id]}</span>
-                <span className={s.reqNum}>
-                  {c.met ? "✓ " : ""}{fmtNum(c.have)} / {fmtNum(c.need)} {c.id === "emergency_practical" ? "st." : "TIP"}
-                </span>
-                <span className={s.reqTrack} aria-hidden><span style={{ width: `${pct(c.have, c.need)}%` }} /></span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* 2. three things Medserti does for this doctor, in order */}
-        <ol className={s.plan}>
-          <li className={`${s.planCard} ${focus === 1 ? s.planFocus : ""}`}>
-            <div className={s.planHead}><span className={s.planNum}>1</span>{focus === 1 && <span className={s.now}>Tagad</span>}</div>
-            <h2>Saskaitiet</h2>
-            <p className={s.planValue}>Neviens punkts nepazūd: katrs sertifikāts saskaitīts un gatavs iesniegšanai.</p>
-            <p className={s.planStat}><b>{fmtNum(p.total)} TIP</b> saskaitīti</p>
-            <p className={s.planSub}>{waiting ? `${waiting} ${waiting === 1 ? "sertifikāts gaida" : "sertifikāti gaida"} Jūsu pārbaudi` : `${confirmed} sertifikāti apstiprināti`}</p>
-            <Link href="/certificates" className={`btn ${focus === 1 ? "btn-primary" : ""} ${s.planBtn}`}>{waiting ? "Pārbaudīt" : "Pievienot sertifikātu"}</Link>
-          </li>
-
-          <li className={`${s.planCard} ${focus === 2 ? s.planFocus : ""}`}>
-            <div className={s.planHead}><span className={s.planNum}>2</span>{focus === 2 && <span className={s.now}>Tagad</span>}</div>
-            <h2>Plānojiet</h2>
-            <p className={s.planValue}>Tikai kursi, kas der tieši Jums, un tie, kas palīdz aizpildīt trūkstošo.</p>
-            {gapLine ? (
-              <p className={s.planStat}>{gapLine}. Šim der <b>{covering.length} {covering.length === 1 ? "kurss" : "kursi"}</b></p>
+        {/* 1. where you stand, in one sentence, and the one next step */}
+        <section className={s.hero} aria-labelledby="hi">
+          <p className={s.heroHello}>Labdien{name ? `, ${name}` : ""}!</p>
+          <h1 id="hi" className={s.heroLine}>
+            {done ? (
+              <>Jums ir savākti visi vajadzīgie punkti.</>
             ) : (
-              <p className={s.planStat}><b>{upcoming.length}</b> kursi Jūsu specialitātei</p>
+              <>Jums vēl jāsavāc <span className={s.heroNum}>{fmtNum(p.remaining)} TIP</span>{by}.</>
             )}
-            {soonest ? (
-              <Link href={`/courses?open=${encodeURIComponent(soonest.id)}`} className={s.planNext}>
-                <span className="small muted">Tuvākais · {fmtDate(soonest.startDate, "lv")}{soonest.city ? ` · ${soonest.city === "Online" ? "Tiešsaistē" : soonest.city}` : ""}{soonest.tip ? ` · +${fmtNum(soonest.tip)} TIP` : ""}</span>
-                <span className={s.planNextTitle}>{soonest.title}</span>
+          </h1>
+
+          <div className={s.next}>
+            <p className={s.nextLead}>{next.lead}</p>
+            {next.course ? (
+              <Link href={next.href} className={s.nextCourse}>
+                <DateBlock iso={next.course.startDate} />
+                <span className={s.nextBody}>
+                  <span className={s.nextTitle}>{next.course.title}</span>
+                  <span className={s.meta}>
+                    {[next.course.city === "Online" ? "Tiešsaistē" : next.course.city, next.course.time, next.course.organizer].filter(Boolean).join(" · ")}
+                  </span>
+                  {next.why && <span className={s.nextWhy}>{next.why}</span>}
+                </span>
+                {next.course.tip != null && <span className={s.tipBadge}>+{fmtNum(next.course.tip)} TIP</span>}
               </Link>
             ) : (
-              <p className={s.planSub}>Tuvākajā laikā šādu kursu nav.</p>
+              next.why && <p className={s.nextWhy}>{next.why}</p>
             )}
-            <Link href="/courses" className={`btn ${focus === 2 ? "btn-primary" : ""} ${s.planBtn}`}>Atrast kursus</Link>
-          </li>
-
-          <li className={`${s.planCard} ${focus === 3 ? s.planFocus : ""}`}>
-            <div className={s.planHead}><span className={s.planNum}>3</span><span className={s.soonTag}>Drīzumā</span></div>
-            <h2>Mācieties Medserti</h2>
-            <p className={s.planValue}>Lekcijas ar TIP, ko skatāties tepat. Sertifikāts un punkti pievienojas paši.</p>
-            <div className={s.planSoon}>
-              <span className="small muted">Kad būs pieejamas pirmās lekcijas Jūsu specialitātei, nosūtīsim e-pastu.</span>
+            <div className={s.nextActions}>
+              <Link href={next.href} className="btn btn-primary">{next.cta}</Link>
+              {next.course && <Link href="/courses" className={s.quiet}>Citi kursi →</Link>}
             </div>
-            <span className={s.planBtn}><NotifyButton /></span>
-          </li>
-        </ol>
+          </div>
 
-        <p className={`muted ${s.details}`}>
-          Grafiks, sadalījums pa kategorijām un visi sertifikāti: <Link href="/certificates">Sertifikāti → Detaļas</Link>
-        </p>
+          <div className={s.strip}>
+            <span className={s.stripTrack} aria-hidden><span style={{ width: `${pct}%` }} /></span>
+            <span className={s.stripText}>
+              {fmtNum(p.total)} no {p.required} TIP · <Link href="/certificates">Sertifikāti un detaļas</Link>
+            </span>
+          </div>
+        </section>
+
+        {/* 2. courses picked for this doctor */}
+        <section aria-labelledby="feed1" className={s.feedSection}>
+          <div className={s.feedHead}>
+            <h2 id="feed1">{specialty ? `${specialty}: tuvākie kursi` : "Tuvākie kursi"}</h2>
+            <Link href="/courses" className={s.quiet}>Visi kursi →</Link>
+          </div>
+          {feed.length ? (
+            <ul className={s.feed}>
+              {feed.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={s.feedCard}>
+                    <span className={s.feedTop}>
+                      <DateBlock iso={c.startDate} small />
+                      {c.tip != null && <span className={s.tipBadge}>+{fmtNum(c.tip)} TIP</span>}
+                    </span>
+                    <span className={s.feedTitle}>{c.title}</span>
+                    <span className={s.meta}>{c.city === "Online" ? "Tiešsaistē" : (c.city ?? "Vieta nav norādīta")}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">Tuvākajā laikā Jūsu specialitātei kursu nav.</p>
+          )}
+        </section>
+
+        {/* 3. Medserti's own lectures: not launched, so honest placeholders and a way to say "I want this" */}
+        <section aria-labelledby="feed2" className={s.feedSection}>
+          <div className={s.feedHead}>
+            <h2 id="feed2">Skatieties Medserti</h2>
+            <span className={s.soonTag}>Drīzumā</span>
+          </div>
+          <div className={s.lectures}>
+            <div className={s.lectureIntro}>
+              <p>Lekcijas ar TIP, ko varēsiet noskatīties tepat, kad Jums ir laiks. Sertifikāts un punkti pievienosies paši.</p>
+              <NotifyButton />
+            </div>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={s.lectureTile} aria-hidden>
+                <span className={s.play}>▶</span>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </>
+  );
+}
+
+function DateBlock({ iso, small }: { iso: string | null | undefined; small?: boolean }) {
+  if (!iso) return null;
+  const [, m, d] = iso.split("-").map(Number);
+  return (
+    <span className={`${s.date} ${small ? s.dateSmall : ""}`}>
+      <span className={s.dateDay}>{d}</span>
+      <span className={s.dateMonth}>{MONTH_SHORT[m - 1]}</span>
+    </span>
   );
 }
