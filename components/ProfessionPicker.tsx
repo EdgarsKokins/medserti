@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { fold } from "@/lib/text";
-import { specialtiesFor, specialtyByCode } from "@/lib/specialties";
+import { specialtiesFor } from "@/lib/specialties";
 import type { Profession } from "@/lib/types";
 import s from "./profile.module.css";
 
@@ -21,7 +21,8 @@ interface Option {
 /**
  * Sign-up profession: type to filter, pick with click, Enter or arrows (Kārlis' test, October 2026: he started typing
  * and the select did not react). A specialty name finds its profession: "neiro" offers Ārsts · Neirologs.
- * Sends `profession` and, when picked through a specialty, `specialtyCode` as hidden fields.
+ * Sends `profession` as a hidden field; a specialty picked on the way goes to `onPick`, and the form's own specialty
+ * field shows it.
  */
 export default function ProfessionPicker({
   id,
@@ -31,6 +32,7 @@ export default function ProfessionPicker({
   labels,
   invalid,
   describedBy,
+  initial = null,
   onPick,
 }: {
   id: string;
@@ -40,10 +42,12 @@ export default function ProfessionPicker({
   labels: { placeholder: string; noMatch: string };
   invalid?: boolean;
   describedBy?: string;
-  onPick: () => void;
+  /** chosen before the form opened (a specialty picked on the landing page's course sample) */
+  initial?: { profession: Profession; specialty: string | null } | null;
+  onPick: (picked: { profession: Profession; specialty: string | null }) => void;
 }) {
   const listId = useId();
-  const [value, setValue] = useState<Option | null>(null);
+  const [value, setValue] = useState<Option | null>(initial ? { ...initial, label: names[initial.profession] } : null);
   const [query, setQuery] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -68,13 +72,13 @@ export default function ProfessionPicker({
     if (open) document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [open, active, listId]);
 
-  const shown = value ? (value.specialty ? `${names[value.profession]} · ${specialtyByCode(value.specialty)?.[locale] ?? ""}` : names[value.profession]) : "";
+  const shown = value ? names[value.profession] : "";
 
   function pick(o: Option) {
     setValue(o);
     setQuery(null);
     setOpen(false);
-    onPick();
+    onPick({ profession: o.profession, specialty: o.specialty });
   }
 
   function openList() {
@@ -86,7 +90,6 @@ export default function ProfessionPicker({
   return (
     <div className={s.combo}>
       <input type="hidden" name="profession" value={value?.profession ?? ""} />
-      {value?.specialty && <input type="hidden" name="specialtyCode" value={value.specialty} />}
       <input
         id={id}
         role="combobox"

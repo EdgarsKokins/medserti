@@ -7,8 +7,13 @@ import { EMPTY_STATE, prefsOf, type NotifyState } from "@/lib/notifications";
 import { stateKey } from "@/lib/notify-run";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { CITIES } from "@/lib/courses/cities";
 
-const Body = z.object({ reminders: z.boolean(), courseAlerts: z.boolean() });
+const Body = z.object({
+  reminders: z.boolean(),
+  courseAlerts: z.boolean(),
+  courseCity: z.string().refine((c) => CITIES.includes(c)).nullable().optional(),
+});
 
 /** Profile, "E-pasta paziņojumi": which emails this account gets. Also remembers the UI language for them. */
 export async function PUT(req: Request) {
@@ -23,11 +28,12 @@ export async function PUT(req: Request) {
   const fresh = await getUser(g.user.id);
   if (!fresh || (fresh.sessionVersion ?? 0) !== (g.user.sessionVersion ?? 0)) return NextResponse.json({ error: m.notSignedIn }, { status: 401 });
   const turnedOn = parsed.data.courseAlerts && !prefsOf(fresh).courseAlerts;
-  await saveUser({ ...fresh, notifications: parsed.data, locale });
+  const notifications = { ...parsed.data, courseCity: parsed.data.courseCity ?? null };
+  await saveUser({ ...fresh, notifications, locale });
   // course emails list what appears after this moment, not the whole catalogue
   if (turnedOn) {
     const state = { ...EMPTY_STATE, ...(await getRecord<NotifyState>(stateKey(fresh.id))) };
     await setRecord(stateKey(fresh.id), { ...state, coursesSince: new Date().toISOString() });
   }
-  return NextResponse.json({ ok: true, notifications: parsed.data });
+  return NextResponse.json({ ok: true, notifications });
 }

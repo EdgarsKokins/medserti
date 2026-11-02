@@ -1,5 +1,6 @@
 /** Shared helpers for course scrapers. No package dependencies so the same code runs in Node scripts and on Vercel. */
 import { fold } from "../text";
+import { CITIES } from "./cities";
 
 const USER_AGENT = "MedsertiBot/0.1 (+https://medserti.lv; course listings with links back to the source)";
 
@@ -69,12 +70,7 @@ export function tipIn(s: string): number | null {
   return m ? Number(m[1].replace(",", ".")) : null;
 }
 
-const CITIES = [
-  "Rīga", "Daugavpils", "Liepāja", "Jelgava", "Jūrmala", "Ventspils", "Rēzekne", "Valmiera", "Ogre", "Cēsis",
-  "Sigulda", "Tukums", "Kuldīga", "Talsi", "Saldus", "Bauska", "Dobele", "Madona", "Jēkabpils", "Gulbene",
-  "Alūksne", "Krāslava", "Ludza", "Smiltene", "Limbaži", "Aizkraukle", "Preiļi", "Balvi", "Salaspils", "Mārupe",
-  "Ķekava", "Olaine", "Vecumnieki", "Iecava", "Kandava", "Līvāni", "Valka", "Ādaži", "Carnikava", "Baldone",
-];
+
 /** strip Latvian diacritics so "Riga" matches "Rīga" */
 // match the stem so locative forms ("Rīgā", "Liepājā", "Cēsīs") also hit
 const CITY_RX = CITIES.map((c) => [c, new RegExp(`(?<![a-z])${fold(c).slice(0, Math.max(4, c.length - 1))}[a-z]*`)] as const);

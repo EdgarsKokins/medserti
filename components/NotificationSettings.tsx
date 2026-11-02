@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDict } from "@/components/i18n/DictProvider";
 import { inHours } from "@/lib/locale";
 import type { NotificationPrefs } from "@/lib/types";
+import { CITIES } from "@/lib/courses/cities";
 import s from "@/components/profile.module.css";
 
 /** Profile, "E-pasta paziņojumi": which emails the account gets (lib/notifications.ts sends them) */
@@ -14,9 +15,10 @@ export default function NotificationSettings({ initial, email, nurse }: { initia
   const [saved, setSaved] = useState(initial);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const dirty = prefs.reminders !== saved.reminders || prefs.courseAlerts !== saved.courseAlerts;
+  const dirty =
+    prefs.reminders !== saved.reminders || prefs.courseAlerts !== saved.courseAlerts || (prefs.courseCity ?? null) !== (saved.courseCity ?? null);
 
-  const toggle = (k: keyof NotificationPrefs) => {
+  const toggle = (k: "reminders" | "courseAlerts") => {
     setMsg(null);
     setPrefs((p) => ({ ...p, [k]: !p[k] }));
   };
@@ -58,6 +60,26 @@ export default function NotificationSettings({ initial, email, nurse }: { initia
             <span className="small muted">{nurse ? m.courseAlertsHintNurse : m.courseAlertsHint}</span>
           </span>
         </label>
+        {prefs.courseAlerts && (
+          <div className={`field ${s.fullRow}`}>
+            <label htmlFor="course-city">{m.courseCity}</label>
+            <select
+              id="course-city"
+              value={prefs.courseCity ?? ""}
+              aria-describedby="course-city-hint"
+              onChange={(e) => {
+                setMsg(null);
+                setPrefs((p) => ({ ...p, courseCity: e.target.value || null }));
+              }}
+            >
+              <option value="">{m.courseCityAny}</option>
+              {[...CITIES].sort((a, b) => a.localeCompare(b, "lv")).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <span id="course-city-hint" className="small muted">{m.courseCityHint}</span>
+          </div>
+        )}
         <div className={s.fullRow}>
           <button type="button" className="btn btn-primary" disabled={busy || !dirty} onClick={save}>
             {m.save}
