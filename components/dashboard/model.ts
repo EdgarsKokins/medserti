@@ -14,6 +14,17 @@ export const dayMs = (iso: string) => Date.parse(iso.slice(0, 10) + "T00:00:00Z"
 
 export const certTitle = (c: CmeCertificate) => c.title?.trim() || c.fileName;
 
+/**
+ * Whole years and months from `today` to `end` (both YYYY-MM-DD). A count of days read as one long number
+ * (Ineta Ūdra's test, November 2026), and the profile now asks only for the month and year anyway.
+ */
+export function timeLeft(today: string, end: string): { years: number; months: number } {
+  const [ty, tm, td] = today.split("-").map(Number);
+  const [ey, em, ed] = end.split("-").map(Number);
+  const total = Math.max(0, (ey - ty) * 12 + (em - tm) - (ed < td ? 1 : 0));
+  return { years: Math.floor(total / 12), months: total % 12 };
+}
+
 export type Tone = "ok" | "warn" | "bad" | "neutral";
 
 export interface Headline {

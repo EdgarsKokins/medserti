@@ -295,3 +295,11 @@ test("a profile saved as a method certificate counts as a specialty certificate 
   const fs = profile({ profession: "functional_specialist", certificationKind: "method", specialtyCode: "fs-ot", certificateExpires: "2027-06-01" });
   assert.equal(ruleBasis(fs), "functionalTransition");
 });
+
+test("time left on the overview: whole years and months, a day short of a month counts as less", async () => {
+  const { timeLeft } = await import("../components/dashboard/model");
+  assert.deepEqual(timeLeft("2026-11-02", "2029-03-31"), { years: 2, months: 4 });
+  assert.deepEqual(timeLeft("2026-11-02", "2026-12-02"), { years: 0, months: 1 });
+  assert.deepEqual(timeLeft("2026-11-02", "2026-12-01"), { years: 0, months: 0 });
+  assert.deepEqual(timeLeft("2026-11-30", "2027-11-30"), { years: 1, months: 0 });
+});
