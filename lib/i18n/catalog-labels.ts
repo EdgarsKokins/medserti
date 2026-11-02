@@ -745,6 +745,7 @@ export const LABELS: Record<string, string> = {
   "upload.dropTouch": "Augšupielādes laukums (telefonā)",
   "upload.takePhoto": "Poga: nofotografēt",
   "upload.hint": "Norāde par failiem",
+  "upload.phoneTip": "Datorā: kā nofotografēt papīra sertifikātu ar telefonu",
   "upload.states.queued": "Gaida",
   "upload.states.opening": "Atver failu",
   "upload.states.reading": "Nolasa attēlu",

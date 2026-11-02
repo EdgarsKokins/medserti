@@ -614,6 +614,7 @@ export const en = {
     dropTouch: "Tap to choose a file or take a photo of the certificate",
     takePhoto: "Take a photo",
     hint: "PDF up to 4 MB, or a photo (JPG, PNG, WEBP). You can select several at once.",
+    phoneTip: "Paper certificate? Open medserti.lv on your phone, sign in and tap “Take a photo”. The points are read from the photo.",
     states: {
       queued: "Waiting",
       opening: "Opening...",

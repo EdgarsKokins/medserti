@@ -618,6 +618,7 @@ export const lv: Dict = {
     dropTouch: "Pieskarieties, lai izvēlētos failu vai nofotografētu sertifikātu",
     takePhoto: "Nofotografēt",
     hint: "PDF līdz 4 MB vai fotoattēls (JPG, PNG, WEBP). Var izvēlēties vairākus failus uzreiz.",
+    phoneTip: "Papīra sertifikāts? Atveriet medserti.lv telefonā, pieslēdzieties un spiediet „Nofotografēt”. Punkti tiks nolasīti no foto.",
     states: {
       queued: "Gaida",
       opening: "Atver...",
