@@ -7,8 +7,8 @@ import { addYears, RULES } from "@/lib/rules";
 import { OTHER_SPECIALTY, specialtyByCode, type Specialty } from "@/lib/specialties";
 import { MAX_EXTRA_CERTS } from "@/lib/profileCerts";
 import { CERT_NO_MAX, SPECIALTY_MAX } from "@/lib/validation";
-import { formatDate } from "@/lib/format";
 import SpecialtyPicker from "./SpecialtyPicker";
+import MonthYearInput from "./MonthYearInput";
 import s from "./profile.module.css";
 
 /**
@@ -76,20 +76,17 @@ export default function ExtraCertificates({
                 <input id={`extra-no-${i}`} value={c.certificateNumber} maxLength={CERT_NO_MAX} onChange={(e) => update(i, { certificateNumber: e.target.value })} />
               </div>
               <div className="field">
-                <label htmlFor={`extra-issued-${i}`}>{d.issued}</label>
-                <input
-                  id={`extra-issued-${i}`}
-                  type="date"
-                  value={c.certificateIssued ?? ""}
-                  aria-invalid={errors[i] ? true : undefined}
-                  aria-describedby={errors[i] ? `extra-issued-${i}-error` : undefined}
-                  onChange={(e) => update(i, { certificateIssued: e.target.value || null, certificateExpires: null })}
+                <label htmlFor={`extra-until-${i}`}>{d.validUntil}</label>
+                <MonthYearInput
+                  id={`extra-until-${i}`}
+                  value={until}
+                  locale={locale}
+                  labels={{ month: d.month, year: d.year }}
+                  invalid={!!errors[i]}
+                  describedBy={errors[i] ? `extra-until-${i}-error` : undefined}
+                  onChange={(v) => update(i, { certificateExpires: v, certificateIssued: null })}
                 />
-                {errors[i] ? (
-                  <span id={`extra-issued-${i}-error`} className={s.error}>{errors[i]}</span>
-                ) : (
-                  until && <span className={s.hint}>{d.extraValidUntil(formatDate(until, locale))}</span>
-                )}
+                {errors[i] && <span id={`extra-until-${i}-error`} className={s.error}>{errors[i]}</span>}
               </div>
               <div className={s.fullRow}>
                 <button type="button" className={s.inlineBtn} onClick={() => onChange(value.filter((_, j) => j !== i))}>

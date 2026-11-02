@@ -11,12 +11,13 @@ import { profileComplete } from "@/lib/profile";
 import { CERT_NO_MAX, NAME_MAX, SPECIALTY_MAX, validCertNo, validName, validPlainText } from "@/lib/validation";
 import SpecialtyPicker from "./SpecialtyPicker";
 import ExtraCertificates from "./ExtraCertificates";
+import MonthYearInput from "./MonthYearInput";
 import s from "./profile.module.css";
 import { formatDate, todayLv } from "@/lib/format";
 import { reportFailure } from "@/components/monitoring/report";
 import { trackEvent } from "@/components/monitoring/track";
 
-type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "certNo" | "issued" | "expires", string>>;
+type FieldErrors = Partial<Record<"fullName" | "specialtyText" | "certNo" | "expires", string>>;
 
 /**
  * readOnly: the demo account, fields shown but disabled and no save button.
@@ -46,10 +47,6 @@ export default function ProfileForm({
     const list = specialtiesFor(initial.profession);
     return r.code && r.code !== OTHER_SPECIALTY && list.length > 0 && !list.some((x) => x.code === r.code) ? { code: null, text: "" } : r;
   });
-  // an end date that is not issue + 5 years was set by hand; keep it and show the field
-  const [customEnd, setCustomEnd] = useState(
-    () => !!initial.certificateExpires && (!initial.certificateIssued || initial.certificateExpires !== addYears(initial.certificateIssued, RULES.validityYears)),
-  );
   const [errors, setErrors] = useState<FieldErrors>({});
   // "Citi sertifikāti": row index -> what is missing
   const [extraErrors, setExtraErrors] = useState<Record<number, string>>({});
@@ -90,7 +87,8 @@ export default function ProfileForm({
     else if (!spec.code) setSpec(only);
   };
 
-  const defaultExpiry = p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null;
+  // a profile saved with a start date only (before the month field) shows the month that start implies
+  const validUntil = p.certificateExpires ?? (p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null);
 
   // the requirement always follows the rules; an override stored before is ignored
   const target = ruleTarget;
@@ -100,7 +98,7 @@ export default function ProfileForm({
     const end = certificateWindow(q).end;
     return !!end && end < today;
   };
-  const dateField = nurse ? "expires" : customEnd ? "expires" : "issued";
+  const dateField = "expires";
   const checkEnded = () => {
     if (!ended(p)) return false;
     setErrors((e) => ({ ...e, [dateField]: dict.api.certExpired }));
@@ -115,9 +113,8 @@ export default function ProfileForm({
     if (spec.code === OTHER_SPECIALTY && !spec.text.trim()) e.specialtyText = d.specialtyOtherRequired;
     else if (spec.code === OTHER_SPECIALTY && !validPlainText(spec.text, SPECIALTY_MAX)) e.specialtyText = dict.api.specialtyInvalid;
     if (!validCertNo(p.certificateNumber)) e.certNo = dict.api.certNoInvalid;
-    if (!nurse && p.certificateIssued && p.certificateIssued > today) e.issued = dict.api.issuedFuture;
-    // the dates set the period points count in: without them nothing on the dashboard can be right
-    if (nurse ? !p.certificateExpires : customEnd ? !p.certificateExpires : !p.certificateIssued) e[dateField] = d.dateRequired;
+    // the date sets the period points count in: without it nothing on the dashboard can be right
+    if (!validUntil) e[dateField] = d.dateRequired;
     if (ended(p)) e[dateField] = dict.api.certExpired;
     return e;
   }
@@ -130,8 +127,7 @@ export default function ProfileForm({
     const extraFound: Record<number, string> = {};
     (p.extraCertificates ?? []).forEach((c, i) => {
       if (!c.specialty.trim()) extraFound[i] = d.specialtyOtherRequired;
-      else if (!c.certificateIssued) extraFound[i] = d.dateRequired;
-      else if (c.certificateIssued > today) extraFound[i] = dict.api.issuedFuture;
+      else if (!c.certificateExpires && !c.certificateIssued) extraFound[i] = d.dateRequired;
     });
     setExtraErrors(extraFound);
     const firstBad = (Object.keys(found) as (keyof FieldErrors)[])[0];
@@ -143,7 +139,7 @@ export default function ProfileForm({
     }
     const badExtra = Object.keys(extraFound)[0];
     if (badExtra != null) {
-      document.getElementById(`extra-issued-${badExtra}`)?.focus();
+      document.getElementById(`extra-until-${badExtra}`)?.focus();
       return;
     }
     const listed = specialtyByCode(spec.code);
@@ -301,99 +297,28 @@ export default function ProfileForm({
             />
             {errorText("certNo")}
           </div>
-          {nurse ? (
-            // the register shows the date the registration runs to; the 5-year term behind it follows (Reg. 630 point 33)
-            <div className="field">
-              <label htmlFor="expires">{d.registrationUntil}</label>
-              <input
-                id="expires"
-                type="date"
-                value={p.certificateExpires ?? ""}
-                onChange={(e) => {
-                  set("certificateExpires", e.target.value || null);
-                  clearError("expires");
-                }}
-                onBlur={checkEnded}
-                {...errorProps("expires")}
-              />
-              {errorText("expires")}
-              <span className={s.hint}>{d.registrationUntilHint}</span>
-            </div>
-          ) : (
-            <>
-            <div className="field">
-              <label htmlFor="issued">{d.issued}</label>
-              <input
-                id="issued"
-                type="date"
-                max={today}
-                value={p.certificateIssued ?? ""}
-                onBlur={checkEnded}
-                {...errorProps("issued")}
-                onChange={(e) => {
-                  const v = e.target.value || null;
-                  setMsg(null);
-                  clearError("issued");
-                  clearError("expires");
-                  setP((prev) => ({
-                    ...prev,
-                    certificateIssued: v,
-                    // a hand-set end date stays; otherwise the end follows the rule
-                    certificateExpires: customEnd ? prev.certificateExpires : v ? addYears(v, RULES.validityYears) : null,
-                  }));
-                }}
-              />
-              {errorText("issued")}
-              {!customEnd && (
-                <span className={s.hint}>
-                  {defaultExpiry && <>{d.ruleDefault(formatDate(defaultExpiry, locale), RULES.validityYears)} </>}
-                  <button
-                    type="button"
-                    className={s.inlineBtn}
-                    aria-controls="expires"
-                    onClick={() => {
-                      setCustomEnd(true);
-                      requestAnimationFrame(() => document.getElementById("expires")?.focus());
-                    }}
-                  >
-                    {d.customEnd}
-                  </button>
-                </span>
-              )}
-            </div>
-            {customEnd && (
-              <div className="field">
-                <label htmlFor="expires">{d.expires}</label>
-                <input
-                  id="expires"
-                  type="date"
-                  value={p.certificateExpires ?? ""}
-                  onChange={(e) => {
-                    set("certificateExpires", e.target.value || null);
-                    clearError("expires");
-                  }}
-                  onBlur={checkEnded}
-                  {...errorProps("expires")}
-                />
-                {errorText("expires")}
-                {defaultExpiry && (
-                  <span className={s.hint}>
-                    <button
-                      type="button"
-                      className={s.inlineBtn}
-                      onClick={() => {
-                        setCustomEnd(false);
-                        set("certificateExpires", defaultExpiry);
-                      }}
-                    >
-                      {d.useRuleEnd(formatDate(defaultExpiry, locale))}
-                    </button>
-                  </span>
-                )}
-              </div>
-            )}
-            </>
-          )}
+          {/* only the month and year it is valid until: few know the day, and testers reached for the end date first
+              (Ineta Ūdra, Ralfs Gauja, November 2026). The period is the 5 years before it (Reg. 391 point 6, Reg. 630 point 33). */}
+          <div className="field">
+            <label htmlFor="expires">{nurse ? d.registrationUntil : d.validUntil}</label>
+            <MonthYearInput
+              id="expires"
+              value={validUntil}
+              locale={locale}
+              labels={{ month: d.month, year: d.year }}
+              invalid={!!errors.expires}
+              describedBy={errors.expires ? "expires-error" : "expires-hint"}
+              onBlur={checkEnded}
+              onChange={(v) => {
+                setMsg(null);
+                clearError("expires");
+                // an exact start saved before no longer matches a new month: the start follows the month
+                setP((prev) => ({ ...prev, certificateExpires: v, certificateIssued: null }));
+              }}
+            />
+            {errorText("expires")}
+            <span id="expires-hint" className={s.hint}>{nurse ? d.registrationUntilHint : d.validUntilHint}</span>
+          </div>
         </div>
       </section>
 

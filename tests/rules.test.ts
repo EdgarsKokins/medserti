@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import JSZip from "jszip";
-import { cappedPoints, certificateWindow, computeProgress, practicalCap, ruleBasis, ruleRequiredPoints } from "@/lib/rules";
+import { cappedPoints, certificateWindow, computeProgress, monthEnd, practicalCap, ruleBasis, ruleRequiredPoints } from "@/lib/rules";
 import { categoryBreakdown } from "@/components/dashboard/model";
 import { buildRecertificationSheet, toBuffer, type ExportCertificate, type ExportPerson } from "@/lib/export/docs";
 import type { CmeCertificate, Profile } from "@/lib/types";
@@ -59,6 +59,15 @@ test("L3: expiry only -> start is expiry minus 5 years, an old certificate does 
   assert.equal(p.counted.length, 1);
   assert.equal(p.total, 10);
   assert.equal(p.windowStart, "2022-06-01");
+});
+
+test("valid until a month: the period runs from the first of that month 5 years earlier to its last day", () => {
+  assert.equal(monthEnd("2029-03"), "2029-03-31");
+  assert.equal(monthEnd("2028-02"), "2028-02-29");
+  const prof = profile({ certificateIssued: null, certificateExpires: monthEnd("2029-03") });
+  assert.deepEqual(certificateWindow(prof), { start: "2024-03-01", end: "2029-03-31" });
+  // a course early in the starting month counts: the day the certificate was issued is not known
+  assert.equal(computeProgress(prof, [cert({ date: "2024-03-05" })], NOW).counted.length, 1);
 });
 
 test("L3: no dates at all -> start is 5 years before today, end stays open", () => {
@@ -233,7 +242,8 @@ test("nurse: registration ending before 2027 needs 100 hours and no topic minimu
   assert.equal(p.required, 100);
   assert.deepEqual(p.checks.map((c) => c.id), ["total"]);
   assert.equal(p.allMet, true);
-  assert.equal(p.windowStart, "2021-12-31");
+  // the date is read as a month: the period starts on its first day, 5 years earlier
+  assert.equal(p.windowStart, "2021-12-01");
 });
 
 test("nurse: registration ending in 2027 or later adds the four topic minimums", () => {

@@ -44,20 +44,29 @@ export function addYears(isoDate: string, years: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** "2029-03" -> "2029-03-31": the profile asks for the month and year a certificate is valid until */
+export function monthEnd(yearMonth: string): string {
+  const [y, m] = yearMonth.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+}
+
 /**
  * The period certificates count in. The start is never open: with only an expiry date it is 5 years before it
  * (Reg. 391 point 6, Reg. 630 point 33), and with no dates at all it is 5 years before today, since an older
  * certificate cannot count towards any open recertification. The end stays open until a date is known.
+ * The profile gives the expiry as a month (stored as its last day), so a start worked out from it is the first
+ * day of that month 5 years earlier: an unknown day adds a few days of courses rather than dropping some.
  */
 export function certificateWindow(
   p: Pick<Profile, "profession" | "certificateIssued" | "certificateExpires">,
   today = todayLv(),
 ): { start: string; end: string | null } {
+  const monthStart = (iso: string) => `${iso.slice(0, 7)}-01`;
   // nurses enter only the date their registration runs to; the term behind it is 5 years (Reg. 630 point 33)
   if (p.profession === "nurse" && p.certificateExpires)
-    return { start: addYears(p.certificateExpires, -NURSE_RULES.validityYears), end: p.certificateExpires };
+    return { start: monthStart(addYears(p.certificateExpires, -NURSE_RULES.validityYears)), end: p.certificateExpires };
   const end = p.certificateExpires ?? (p.certificateIssued ? addYears(p.certificateIssued, RULES.validityYears) : null);
-  const start = p.certificateIssued ?? (end ? addYears(end, -RULES.validityYears) : addYears(today, -RULES.validityYears));
+  const start = p.certificateIssued ?? (end ? monthStart(addYears(end, -RULES.validityYears)) : addYears(today, -RULES.validityYears));
   return { start, end };
 }
 

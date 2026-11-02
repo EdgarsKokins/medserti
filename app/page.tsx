@@ -232,7 +232,7 @@ function Hero({ d, locale, facts }: { d: Dict; locale: Locale; facts: Facts }) {
             </ul>
           </Step>
           <Step n={3} verb={b.parts[2].verb} label={`${b.parts[2].verb} · ${b.parts[2].title}`} link={b.stepLink(3, b.parts[2].verb)} video>
-            <span className={s.thumb} aria-hidden>▶</span>
+            <span className={s.thumb} aria-hidden><LectureIcon size={26} /></span>
             <div>
               <p className={s.stepLabel}>{`${b.parts[2].verb} · ${b.parts[2].title}`}</p>
               <span className={s.cardTitle}>{facts.recording?.title ?? b.sampleLecture}</span>
@@ -246,6 +246,19 @@ function Hero({ d, locale, facts }: { d: Dict; locale: Locale; facts: Facts }) {
         </ol>
       </div>
     </section>
+  );
+}
+
+/**
+ * Part 3, online lectures: a presentation board, not a play button. Testers pressed the ▶ and took the page for broken
+ * (Ineta Ūdra, November 2026); nothing here plays.
+ */
+function LectureIcon({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="3.5" width="18" height="12.5" rx="1.5" />
+      <path d="M7 8h10M7 11.5h6M12 16v4M8.5 20.5 12 18l3.5 2.5" />
+    </svg>
   );
 }
 
@@ -414,7 +427,7 @@ function PanelOnline({ d, facts, recordingsLine }: { d: Dict; facts: Facts; reco
           <Checks items={[recordingsLine, ...b.onlineChecks]} />
         </div>
         <Frame url="medserti.lv/courses?tab=recorded">
-          <div className={s.video}><span className={s.play}>▶</span></div>
+          <div className={s.video}><span className={s.play} aria-hidden><LectureIcon size={30} /></span></div>
           <div className={s.frameBody}>
             <span className={s.cardTitle}>{r?.title ?? b.sampleLecture}</span>
             <span className="small muted">{b.recordingMeta(lectureTip, r && !r.free ? r.price ?? "" : b.free)}</span>
