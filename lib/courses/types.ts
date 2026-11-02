@@ -105,6 +105,13 @@ export const isNurseCourse = (c: Pick<Course, "source" | "audience">) =>
   c.source === "lma" || /(?<![\p{L}])(?:mās(?:a|as|ām|u)|nurses?)(?![\p{L}])/iu.test(c.audience);
 
 /**
+ * Courses that train emergency care (Reg. 391 point 51; Reg. 630 point 26.3 for nurses). No source marks this, so the
+ * title and audience are matched: "neatliekamā palīdzība", "NMP", reanimation, first aid, BLS/ALS, CPR.
+ */
+export const isEmergencyCourse = (c: Pick<Course, "title" | "audience">) =>
+  /neatliekam|reanim|pirm(?:ā|a|o|ās) palīdzīb|kardiopulmon|(?<![\p{L}])(?:NMP|BLS|ALS|CPR|emergency|resuscitation)(?![\p{L}])/iu.test(`${c.title} ${c.audience}`);
+
+/**
  * What only an opened course needs: link, venue, time, approval, programme reference and registration contact.
  * The /courses list leaves these out of its rows and loads them per course (/api/courses/item) when one is opened.
  */

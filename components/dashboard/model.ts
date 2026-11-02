@@ -25,6 +25,19 @@ export function timeLeft(today: string, end: string): { years: number; months: n
   return { years: Math.floor(total / 12), months: total % 12 };
 }
 
+/**
+ * The first name for the dashboard greeting. Latvian addresses people in the vocative: a masculine first name drops
+ * its ending (Jānis → Jāni, Edgars → Edgar, Andrejs → Andrej); feminine names in -a or -e stay as they are.
+ * English and Russian use the first name as written.
+ */
+export function greetName(fullName: string, locale: Locale): string {
+  const first = fullName.trim().split(/\s+/)[0] ?? "";
+  if (locale !== "lv") return first;
+  if (/is$/.test(first)) return first.slice(0, -1);
+  if (/[sš]$/.test(first)) return first.slice(0, -1);
+  return first;
+}
+
 export type Tone = "ok" | "warn" | "bad" | "neutral";
 
 export interface Headline {

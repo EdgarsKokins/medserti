@@ -1,0 +1,154 @@
+import Link from "next/link";
+import type { Progress } from "@/lib/rules";
+import type { CmeCertificate } from "@/lib/types";
+import type { Course } from "@/lib/courses/types";
+import type { Locale } from "@/lib/i18n";
+import { certTitle, dictFor, fmtDate, fmtNum } from "./model";
+import DashboardUpload from "./DashboardUpload";
+import LectureNotify from "./LectureNotify";
+import styles from "./tiles.module.css";
+
+/**
+ * The dashboard's first screen (Ralfs Gauja #10, Ineta Ūdra #13, November 2026): a greeting, TIP as one small ring,
+ * and three equal tiles, each with real content: the latest certificates, the next courses, Medserti's own lectures.
+ */
+export function Greeting({ name, p, locale, hours, href }: { name: string; p: Progress; locale: Locale; hours: boolean; href: string }) {
+  const d = dictFor(locale, hours).dashboard;
+  const done = p.checks.every((c) => c.met);
+  const pct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
+  return (
+    <header className={styles.top}>
+      <h1 className={styles.hello}>{d.hello(name)}</h1>
+      <Link href={href} className={`${styles.pill} ${done ? styles.pillDone : ""}`}>
+        <span className={styles.ring} style={{ ["--pct" as string]: `${done ? 100 : pct}%` }} aria-hidden />
+        <span>
+          <b>{d.pill(fmtNum(p.total), p.required)}</b>
+          <span className={styles.pillSub}>{done ? d.pillDone : p.windowEnd ? d.pillUntil(fmtDate(p.windowEnd, locale)) : ""}</span>
+        </span>
+      </Link>
+    </header>
+  );
+}
+
+export function Tiles({
+  locale,
+  hours,
+  latest,
+  waiting,
+  hasCerts,
+  ready,
+  exportHref,
+  courses,
+  helpsId,
+  lecturesAsked,
+  readOnly,
+}: {
+  locale: Locale;
+  hours: boolean;
+  /** at most three, the ones to check first */
+  latest: CmeCertificate[];
+  waiting: number;
+  hasCerts: boolean;
+  /** every requirement met: the tile's action becomes preparing the documents */
+  ready: boolean;
+  exportHref: string;
+  /** at most three, by date */
+  courses: Course[];
+  /** the course that covers an unmet emergency care requirement, tagged */
+  helpsId: string | null;
+  lecturesAsked: boolean;
+  readOnly: boolean;
+}) {
+  const dict = dictFor(locale, hours);
+  const d = dict.dashboard;
+  const cs = dict.courses;
+  const unit = hours ? d.hoursUnit : "TIP";
+  const month = (iso: string) => new Intl.DateTimeFormat(locale === "lv" ? "lv-LV" : locale === "ru" ? "ru-RU" : "en-GB", { month: "short", timeZone: "UTC" }).format(new Date(iso + "T00:00:00Z")).replace(".", "");
+
+  return (
+    <div className={styles.tiles}>
+      <section className={`${styles.tile} ${styles.blue}`} aria-labelledby="tile-certs">
+        <span className={styles.icon}><IconDoc /></span>
+        <h2 id="tile-certs" className={styles.name}>{d.tileCerts}</h2>
+        <p className={styles.status}>{waiting ? d.certsWaiting(waiting) : ready ? d.certsReady : hasCerts ? d.certsOk : d.certsNone}</p>
+        {latest.length > 0 && (
+          <ul className={styles.rows}>
+            {latest.map((c) => (
+              <li key={c.id}>
+                <Link href="/certificates" className={styles.row}>
+                  <span className={c.status === "needs_review" ? styles.dotWarn : styles.dotOk} title={c.status === "needs_review" ? d.certWaiting : d.certConfirmed} />
+                  <span className="sr-only">{c.status === "needs_review" ? d.certWaiting : d.certConfirmed}:</span>
+                  <span className={styles.rowText}>
+                    <span className={styles.rowTitle}>{certTitle(c)}</span>
+                    <span className={styles.rowSub}>{c.date ? fmtDate(c.date, locale) : d.certNoDate}</span>
+                  </span>
+                  {c.points != null && <span className={styles.rowTip}>{fmtNum(c.points)} {unit}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {waiting ? (
+          <Link href="/certificates" className={styles.go}>{d.certsCheck} →</Link>
+        ) : ready ? (
+          <Link href={exportHref} className={styles.go}>{hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →</Link>
+        ) : (
+          <DashboardUpload className={styles.go} readOnly={readOnly} />
+        )}
+      </section>
+
+      <section className={`${styles.tile} ${styles.green}`} aria-labelledby="tile-courses">
+        <span className={styles.icon}><IconCal /></span>
+        <h2 id="tile-courses" className={styles.name}>{d.tileCourses}</h2>
+        <p className={styles.status}>{courses.length ? d.coursesNext : d.coursesNone}</p>
+        {courses.length > 0 && (
+          <ul className={styles.rows}>
+            {courses.map((c) => (
+              <li key={c.id}>
+                <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={styles.row}>
+                  <span className={styles.date} aria-hidden>
+                    <span>{Number(c.startDate!.slice(8, 10))}</span>
+                    <span>{month(c.startDate!)}</span>
+                  </span>
+                  <span className={styles.rowText}>
+                    <span className={styles.rowTitle}>{c.title}</span>
+                    <span className={styles.rowSub}>
+                      <span className="sr-only">{fmtDate(c.startDate, locale)} · </span>
+                      {c.city === "Online" ? cs.online : c.city === "Latvija" ? cs.wholeLatvia : (c.city ?? d.placeNotListed)}
+                      {c.id === helpsId && <span className={styles.tag} title={d.coursesHelpsHint}>{d.coursesHelps}</span>}
+                    </span>
+                  </span>
+                  {c.tip != null && <span className={styles.rowTip}>{fmtNum(c.tip)} TIP</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link href="/courses" className={styles.go}>{d.allCourses} →</Link>
+      </section>
+
+      <section className={`${styles.tile} ${styles.peach}`} aria-labelledby="tile-lectures">
+        <span className={styles.icon}><IconPlay /></span>
+        <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>
+        <p className={styles.status}>{d.lecturesSoon}</p>
+        <div className={styles.screen} role="img" aria-label={d.lecturesAbout} title={d.lecturesAbout}>
+          <span className={styles.play} aria-hidden>▶</span>
+        </div>
+        <div className={styles.goRow}>
+          <LectureNotify asked={lecturesAsked} readOnly={readOnly} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const svg = { width: 34, height: 34, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const IconDoc = () => (
+  <svg {...svg}><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><path d="M14 3v4h4" /><path d="M9 13l2 2 4-4" /></svg>
+);
+const IconCal = () => (
+  <svg {...svg}><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /><circle cx="12" cy="15" r="1.4" fill="currentColor" /></svg>
+);
+const IconPlay = () => (
+  <svg {...svg}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" /></svg>
+);

@@ -8,15 +8,15 @@ import { asProfile, pickCert, profileCerts } from "@/lib/profileCerts";
 import { specialtyLabel } from "@/lib/specialties";
 import { matchesSpecialty } from "@/lib/parse";
 import { readCourseIndex } from "@/lib/courses/store";
-import { isNurseCourse, type Course } from "@/lib/courses/types";
+import { isEmergencyCourse, isNurseCourse, type Course } from "@/lib/courses/types";
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import styles from "@/components/dashboard/dashboard.module.css";
 import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
-import { CoursePicks, Hero, Requirements } from "@/components/dashboard/Overview";
-import DashboardUpload from "@/components/dashboard/DashboardUpload";
-import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, fmtDate, headline } from "@/components/dashboard/model";
+import { Requirements } from "@/components/dashboard/Overview";
+import { Greeting, Tiles } from "@/components/dashboard/Tiles";
+import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, fmtDate, greetName, headline } from "@/components/dashboard/model";
 import { formatPeriod, todayLv } from "@/lib/format";
 import { addMonths } from "@/lib/notifications";
 import { profileComplete } from "@/lib/profile";
@@ -34,16 +34,17 @@ function pickCourses(courses: Course[], specialty: string, todayIso: string, n =
   return events;
 }
 
-/** Recordings for this specialty first, then for all specialties; free ones first within each, at most `n` */
-function pickRecorded(courses: Course[], specialty: string, n = 3): Course[] {
-  const score = (c: Course) => (specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty) ? 2 : c.allSpecialties ? 1 : 0);
-  return courses
-    .filter((c) => c.kind === "recorded")
-    .map((c) => ({ c, s: score(c) }))
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s || Number(b.c.free) - Number(a.c.free))
-    .slice(0, n)
-    .map((x) => x.c);
+/**
+ * The first upcoming emergency care course the user can attend: shown in the courses tile while the emergency care
+ * requirement is not met, even when it is not among the next few
+ */
+function pickEmergency(courses: Course[], specialty: string, todayIso: string, nurse: boolean): Course | null {
+  const fits = (c: Course) => (nurse ? isNurseCourse(c) : c.allSpecialties || (!!specialty && matchesSpecialty(`${c.audience} ${c.title}`, specialty)));
+  return (
+    courses
+      .filter((c) => c.kind === "event" && c.startDate && c.startDate >= todayIso && isEmergencyCourse(c) && fits(c))
+      .sort((a, b) => a.startDate!.localeCompare(b.startDate!))[0] ?? null
+  );
 }
 
 /** Nurses: next courses for nurses (LMA list, or an audience naming nurses) */
@@ -53,9 +54,6 @@ function pickNurseCourses(courses: Course[], todayIso: string, n = 4): Course[] 
     .sort((a, b) => a.startDate!.localeCompare(b.startDate!))
     .slice(0, n);
 }
-
-/** Nurses: recordings for nurses */
-const pickNurseRecorded = (courses: Course[], n = 3) => courses.filter((c) => isNurseCourse(c) && c.kind === "recorded").slice(0, n);
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).nav.dashboard };
@@ -83,8 +81,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // the profile asks only for the month and year the certificate (nurses: registration) is valid until
   const profileIncomplete = !profileComplete(user.profile);
   const all = courseIdx?.courses ?? [];
-  const picks = hours ? pickNurseCourses(all, todayLv(today)) : pickCourses(all, cert.specialty.trim(), todayLv(today));
-  const online = hours ? pickNurseRecorded(all) : pickRecorded(all, cert.specialty.trim());
+  const todayIso = todayLv(today);
+  let picks = hours ? pickNurseCourses(all, todayIso, 3) : pickCourses(all, cert.specialty.trim(), todayIso, 3);
+  // an unmet emergency care minimum: the next course that covers it is tagged, and takes the last place if it is later
+  const emergencyOpen = p.checks.some((c) => !c.met && (c.id === "emergency_points" || c.id === "emergency_practical"));
+  const helps = emergencyOpen ? pickEmergency(all, cert.specialty.trim(), todayIso, hours) : null;
+  if (helps && !picks.some((c) => c.id === helps.id)) picks = [...picks.slice(0, 2), helps].sort((a, b) => a.startDate!.localeCompare(b.startDate!));
+  // this certificate's uploads, the ones to check first, then the newest
+  const mine = [...p.counted, ...p.excluded];
+  const waiting = mine.filter((c) => c.status === "needs_review").length;
+  const latest = mine
+    .filter((c) => c.status !== "failed")
+    .sort((a, b) => Number(b.status === "needs_review") - Number(a.status === "needs_review") || (b.date ?? "").localeCompare(a.date ?? ""))
+    .slice(0, 3);
+  const exportHref = cert.id === "main" ? "/export" : `/export?sert=${cert.id}`;
+  const h = headline(p, dict, locale);
 
   return (
     <main className="container stack" style={{ gap: 40 }}>
@@ -106,7 +117,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </nav>
       )}
 
-      <Hero p={p} h={headline(p, dict, locale)} specialty={cert.specialty} nurse={hours} basis={basis} locale={locale} today={today} />
+      <Greeting name={greetName(user.profile.fullName, locale)} p={p} locale={locale} hours={hours} href="#more" />
 
       {/* said up front: wrong period dates in the profile make every certificate "not counted" (Kārlis' test, October 2026) */}
       {outside > 0 && (
@@ -116,58 +127,70 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       )}
 
-      {/* the main next step once points are in, as its own card: a plain button next to the upload was missed (Kārlis' test,
-          October 2026). Stands out once every requirement is met. */}
-      {certs.length > 0 && (
-        <section className={`${styles.recert} ${ready ? styles.recertReady : ""}`} aria-labelledby="recert-title">
-          <div className={styles.recertCopy}>
-            <h2 id="recert-title" className={styles.recertTitle}>{hours ? d.recertTitleNurse : d.recertTitle}</h2>
-            <p className={styles.recertBody}>{ready ? d.recertReady : hours ? d.recertBodyNurse : d.recertBody}</p>
-            {/* Reg. 391 point 46; nurses re-register under Reg. 630, which this line does not describe */}
-            {!hours && p.windowEnd && (p.daysLeft ?? -1) >= 0 && <p className="small muted">{d.recertDue(fmtDate(addMonths(p.windowEnd, -3), locale))}</p>}
-          </div>
-          <Link href={cert.id === "main" ? "/export" : `/export?sert=${cert.id}`} className={`btn ${ready ? "btn-primary" : ""} ${styles.recertBtn}`}>
-            {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
-          </Link>
-        </section>
-      )}
+      <Tiles
+        locale={locale}
+        hours={hours}
+        latest={latest}
+        waiting={waiting}
+        hasCerts={mine.length > 0}
+        ready={ready}
+        exportHref={exportHref}
+        courses={picks}
+        helpsId={helps?.id ?? null}
+        lecturesAsked={!!user.lecturesInterestAt}
+        readOnly={isDemoUser(user)}
+      />
 
-      <DashboardUpload locale={locale} readOnly={isDemoUser(user)} />
-
-      <div className={styles.twoCol}>
-        <Requirements p={p} locale={locale} hours={hours} />
-        {/* where the missing points come from: the next events, then recordings to watch any time */}
-        <div className="stack" style={{ gap: 32 }}>
-          <CoursePicks courses={picks} locale={locale} />
-          <CoursePicks courses={online} locale={locale} online />
-        </div>
-      </div>
-
-      {certs.length > 0 && (
-        <details className={styles.history}>
-          <summary>{d.history}</summary>
-          <div className="stack" style={{ gap: 40, marginTop: 24 }}>
-            <section>
-              <h2>{d.chartTitle}</h2>
-              <div className="card">
-                <ProgressChart
-                  series={cumulativeSeries(p, hours)}
-                  required={p.required}
-                  windowStart={p.windowStart}
-                  windowEnd={p.windowEnd}
-                  today={todayLv(today)}
-                  labels={dict.chart}
-                  locale={locale}
-                />
-              </div>
-            </section>
-            <div className={styles.twoCol}>
-              <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} hours={hours} />
-              <RecentActivity p={p} locale={locale} />
+      {/* everything the first screen leaves out, one click away: where each requirement stands, the documents, the history */}
+      <details id="more" className={styles.history}>
+        <summary>{d.more}</summary>
+        <div className="stack" style={{ gap: 40, marginTop: 24 }}>
+          {(h.message || basis) && (
+            <div className="stack" style={{ gap: 6 }}>
+              {h.message && <p style={{ margin: 0 }}>{h.message}</p>}
+              {basis && <p className="small muted" style={{ margin: 0 }}>{basis === "nurse" ? dict.profile.nurseRule : dict.profile.functionalTransition}</p>}
             </div>
+          )}
+          <div className={styles.twoCol}>
+            <Requirements p={p} locale={locale} hours={hours} />
+            {certs.length > 0 && (
+              <section className={`${styles.recert} ${ready ? styles.recertReady : ""}`} aria-labelledby="recert-title">
+                <div className={styles.recertCopy}>
+                  <h2 id="recert-title" className={styles.recertTitle}>{hours ? d.recertTitleNurse : d.recertTitle}</h2>
+                  <p className={styles.recertBody}>{ready ? d.recertReady : hours ? d.recertBodyNurse : d.recertBody}</p>
+                  {/* Reg. 391 point 46; nurses re-register under Reg. 630, which this line does not describe */}
+                  {!hours && p.windowEnd && (p.daysLeft ?? -1) >= 0 && <p className="small muted">{d.recertDue(fmtDate(addMonths(p.windowEnd, -3), locale))}</p>}
+                </div>
+                <Link href={exportHref} className={`btn ${ready ? "btn-primary" : ""} ${styles.recertBtn}`}>
+                  {hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →
+                </Link>
+              </section>
+            )}
           </div>
-        </details>
-      )}
+          {certs.length > 0 && (
+            <>
+              <section>
+                <h2>{d.chartTitle}</h2>
+                <div className="card">
+                  <ProgressChart
+                    series={cumulativeSeries(p, hours)}
+                    required={p.required}
+                    windowStart={p.windowStart}
+                    windowEnd={p.windowEnd}
+                    today={todayIso}
+                    labels={dict.chart}
+                    locale={locale}
+                  />
+                </div>
+              </section>
+              <div className={styles.twoCol}>
+                <CategoryBars p={p} rows={categoryBreakdown(p, locale)} locale={locale} hours={hours} />
+                <RecentActivity p={p} locale={locale} />
+              </div>
+            </>
+          )}
+        </div>
+      </details>
     </main>
   );
 }
