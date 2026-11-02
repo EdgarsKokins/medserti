@@ -35,8 +35,11 @@
 .dropActive .dropIcon { color: var(--accent); }
 .dropMain { font-family: var(--font-sans); font-weight: 500; font-size: 1rem; color: var(--text); }
 .dropTouch, .photoBtn { display: none; }
+.phoneTip { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; font-size: 0.88rem; color: var(--muted); text-align: left; }
+.phoneTip svg { flex: none; color: var(--accent); }
 /* phones and tablets: nothing to drag, so say "tap" and offer the camera */
 @media (hover: none) and (pointer: coarse) {
+  .phoneTip { display: none; }
   .dropMouse { display: none; }
   .dropTouch { display: inline; }
   .photoBtn { display: inline-flex; align-self: center; align-items: center; gap: 8px; min-height: 44px; }

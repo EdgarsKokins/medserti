@@ -122,6 +122,14 @@ export default function UploadZone({
           onChange={(e) => handle(e.target.files)}
         />
       </div>
+      {/* computers only (see .phoneTip): paper certificates are easiest to add with the phone's camera (Ineta Ūdra #8) */}
+      <p className={styles.phoneTip}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
+          <rect x="7" y="2.5" width="10" height="19" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M11 18.5h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        {d.phoneTip}
+      </p>
       {/* phones only (see .photoBtn): opens the camera straight away */}
       <button type="button" className={`btn ${styles.photoBtn}`} disabled={busy} onClick={() => camera.current?.click()}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
