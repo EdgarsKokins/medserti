@@ -457,6 +457,25 @@ export default function ExportView({
           )}
         </div>
       </form>
+
+      {/* what follows the download, so the documents do not end at the ZIP (Ineta Ūdra's test, November 2026) */}
+      <section className={s.next} aria-labelledby="next-title">
+        <h2 id="next-title" className={s.h2}>{d.nextTitle}</h2>
+        <ol className={s.nextList}>
+          {d.nextSteps.map((x, i) => (
+            <li key={i}>
+              {x}
+              {i === 2 && (
+                <>
+                  {" "}
+                  {by && d.nextDeadline(formatDate(by, locale))}{" "}
+                  <a href="https://latvija.gov.lv/Services/6463" target="_blank" rel="noreferrer">{d.nextService} ↗</a>
+                </>
+              )}
+            </li>
+          ))}
+        </ol>
+      </section>
     </main>
   );
 }

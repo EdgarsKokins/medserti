@@ -45,3 +45,7 @@
   .summary { grid-template-columns: minmax(0, 1fr); }
   .go { width: 100%; }
 }
+
+/* after the download: the steps up to the new certificate */
+.next { padding-top: 8px; border-top: 1px solid var(--border); }
+.nextList { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; max-width: 70ch; line-height: 1.5; }

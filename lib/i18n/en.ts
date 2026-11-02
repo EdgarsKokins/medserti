@@ -300,6 +300,16 @@ export const en = {
     filesDone: "Certificate files downloaded.",
     buildFailed: "Could not create the ZIP file. Please try again.",
     cta: "Prepare recertification documents",
+    nextTitle: "What to do after the download",
+    nextSteps: [
+      "Add the professional activity report approved by your institution's head and the payment receipt (LĀB price list: EUR 48.38). Both are on the list in the ZIP file.",
+      "Sign the application and the recertification sheet with eParaksts or by hand.",
+      "Submit the documents through the latvija.gov.lv e-service.",
+      "The certification commission reviews them and sends its decision to the email or e-address you gave in the application.",
+      "Once the certificate is renewed, enter its new end date in your profile. Medserti starts a new period, and the current certificates stay under \"Earlier periods\".",
+    ],
+    nextDeadline: (date: string) => `Deadline: ${date} (Regulation No. 391, point 46).`,
+    nextService: "Open the e-service",
   },
   about: {
     title: "Who we are",
@@ -821,6 +831,10 @@ export const en = {
     timeElapsed: (pct: number) => `${pct}% of the period passed`,
     today: "Today",
     daysLeftShort: (n: number) => `${n} ${enPl(n, "day", "days")} left`,
+    timeLeftShort: (years: number, months: number) =>
+      years > 0
+        ? `${years} ${enPl(years, "year", "years")}${months ? ` ${months} ${enPl(months, "month", "months")}` : ""} left`
+        : `${months} ${enPl(months, "month", "months")} left`,
     paceShort: (n: string) => `≈ ${n} TIP a month to finish on time`,
     validUntilShort: (date: string) => `certificate valid until ${date}`,
     hoursUnit: "acad. h",

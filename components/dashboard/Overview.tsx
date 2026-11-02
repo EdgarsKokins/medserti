@@ -4,7 +4,8 @@ import { t, type Locale } from "@/lib/i18n";
 import type { RuleBasis } from "@/lib/rules";
 import type { Course } from "@/lib/courses/types";
 import { specialtyLabel } from "@/lib/specialties";
-import { dayMs, dictFor, fmtDate, fmtNum, missingPhrases, type Headline } from "./model";
+import { dayMs, dictFor, fmtDate, fmtNum, missingPhrases, timeLeft, type Headline } from "./model";
+import { todayLv } from "@/lib/format";
 import { DateBlock } from "./DateBlock";
 import styles from "./overview.module.css";
 
@@ -46,6 +47,8 @@ export function Hero({
     timePct = Math.max(0, Math.min(100, ((today.getTime() - a) / (b - a)) * 100));
   }
   const behind = timePct != null && pointsPct + 5 < timePct;
+  // under a month left, the days say more
+  const left = p.windowEnd && p.daysLeft != null && p.daysLeft >= 0 ? timeLeft(todayLv(today), p.windowEnd) : null;
   const missing = missingPhrases(p, d, n);
   // listed specialties show in the UI language; unlisted free text as typed
   const eyebrow = [specialtyLabel(specialty, locale), p.windowEnd ? (nurse ? d.registrationUntilShort : d.validUntilShort)(fmtDate(p.windowEnd, locale)) : null].filter(Boolean).join(" · ");
@@ -62,7 +65,7 @@ export function Hero({
           <div className={styles.heroSide}>
             {p.daysLeft >= 0 ? (
               <>
-                <div className={styles.daysLeft}>{d.daysLeftShort(p.daysLeft)}</div>
+                <div className={styles.daysLeft}>{left && (left.years || left.months) ? d.timeLeftShort(left.years, left.months) : d.daysLeftShort(p.daysLeft)}</div>
                 {p.perMonthNeeded != null && p.remaining > 0 && (
                   <div className={behind ? styles.pace : "muted"}>{d.paceShort(n(p.perMonthNeeded))}</div>
                 )}

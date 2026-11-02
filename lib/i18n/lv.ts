@@ -302,6 +302,16 @@ export const lv: Dict = {
     filesDone: "Sertifikātu faili lejupielādēti.",
     buildFailed: "ZIP failu neizdevās izveidot. Mēģiniet vēlreiz.",
     cta: "Sagatavot resertifikācijas dokumentus",
+    nextTitle: "Kas jādara pēc lejupielādes",
+    nextSteps: [
+      "Pievienojiet profesionālās darbības pārskatu, ko apstiprinājis iestādes vadītājs, un maksājuma apliecinājumu (LĀB cenrādis: EUR 48,38). Viss ir ZIP failā esošajā sarakstā.",
+      "Parakstiet iesniegumu un resertifikācijas lapu ar eParakstu vai ar roku.",
+      "Iesniedziet dokumentus e-pakalpojumā latvija.gov.lv.",
+      "Sertifikācijas komisija izskata dokumentus un lēmumu paziņo uz e-pastu vai e-adresi, ko norādījāt iesniegumā.",
+      "Kad sertifikāts ir atjaunots, ierakstiet jauno derīguma termiņu profilā. Medserti sāks jaunu periodu, un līdzšinējie sertifikāti paliks sadaļā „Iepriekšējie periodi”.",
+    ],
+    nextDeadline: (date: string) => `Termiņš: ${date} (MK noteikumi Nr. 391, 46. punkts).`,
+    nextService: "Atvērt e-pakalpojumu",
   },
   about: {
     title: "Kas mēs esam",
@@ -828,6 +838,10 @@ export const lv: Dict = {
     timeElapsed: (pct: number) => `pagājuši ${pct}% perioda`,
     today: "Šodien",
     daysLeftShort: (n: number) => `${lvPl(n, "atlikusi", "atlikušas")} ${n} ${lvPl(n, "diena", "dienas")}`,
+    timeLeftShort: (years: number, months: number) =>
+      years > 0
+        ? `${lvPl(years, "atlicis", "atlikuši")} ${years} ${lvPl(years, "gads", "gadi")}${months ? ` ${months} ${lvPl(months, "mēnesis", "mēneši")}` : ""}`
+        : `${lvPl(months, "atlicis", "atlikuši")} ${months} ${lvPl(months, "mēnesis", "mēneši")}`,
     paceShort: (n: string) => `≈ ${n} TIP mēnesī, lai paspētu`,
     validUntilShort: (date: string) => `sertifikāts derīgs līdz ${date}`,
     hoursUnit: "akad. st.",
