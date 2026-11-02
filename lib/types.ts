@@ -32,6 +32,8 @@ export interface NotificationPrefs {
   reminders: boolean;
   /** weekly email with new courses for the user's specialty */
   courseAlerts: boolean;
+  /** practice city: the course email leaves out in-person courses elsewhere; missing or null = all of Latvia */
+  courseCity?: string | null;
 }
 
 export interface Profile {

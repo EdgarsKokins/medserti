@@ -130,13 +130,16 @@ export function addMonths(iso: string, months: number): string {
 /**
  * Courses for the weekly email: first seen after `since`, still ahead (events) or available (recordings, programmes),
  * and fitting the user: their specialty named in the audience or title, or courses for nurses. All-specialty courses
- * are left out, or every email would be the same long list.
+ * are left out, or every email would be the same long list. With a practice city, in-person courses in another town
+ * are left out too (Ineta Ūdra's test, November 2026); online, hybrid and unplaced ones stay.
  */
 export function newCoursesFor(u: UserRecord, courses: Course[], firstSeen: Record<string, string>, since: string, today: string): Course[] {
   const nurse = u.profile.profession === "nurse";
   const specialty = u.profile.specialty.trim();
   if (!nurse && !specialty) return [];
+  const city = prefsOf(u).courseCity ?? null;
   return courses
+    .filter((c) => !city || c.format !== "in_person" || !c.city || c.city === city || c.city === "Latvija")
     .filter((c) => (firstSeen[c.id] ?? "") > since)
     .filter((c) => (c.kind === "event" ? !!c.startDate && c.startDate >= today : !c.availableUntil || c.availableUntil >= today))
     .filter((c) => (nurse ? isNurseCourse(c) : matchesSpecialty(`${c.audience} ${c.title}`, specialty)))

@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { localePath, type Locale } from "@/lib/locale";
 import { useDict } from "@/components/i18n/DictProvider";
 import type { Profession } from "@/lib/types";
+import { OTHER_SPECIALTY, specialtiesFor } from "@/lib/specialties";
 import { EMAIL_MAX, NAME_MAX, PASSWORD_MAX, validEmail, validName, validPassword } from "@/lib/validation";
 import DemoButton from "./DemoButton";
 import ProfessionPicker from "./ProfessionPicker";
+import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./auth.module.css";
 import { trackEvent } from "@/components/monitoring/track";
 
@@ -17,8 +19,20 @@ type Field = "fullName" | "profession" | "email" | "password" | "consent";
 /** Sign-up profession list, in the order practitioners look for it; the profile can change it later */
 const PROFESSIONS: Profession[] = ["doctor", "dentist", "nurse", "physician_assistant", "midwife", "functional_specialist", "other_practitioner"];
 
-export default function AuthForm({ mode, locale }: { mode: "login" | "register"; locale: Locale }) {
+export default function AuthForm({
+  mode,
+  locale,
+  initial = null,
+}: {
+  mode: "login" | "register";
+  locale: Locale;
+  /** sign-up: profession and specialty chosen before (the landing page's course sample, ?specialitate=) */
+  initial?: { profession: Profession; specialty: string | null } | null;
+}) {
   const router = useRouter();
+  const [profession, setProfession] = useState<Profession | null>(initial?.profession ?? null);
+  const [specialty, setSpecialty] = useState<string | null>(initial?.specialty ?? null);
+  const specList = profession ? specialtiesFor(profession) : [];
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Field, string>>>({});
   const [busy, setBusy] = useState(false);
@@ -136,9 +150,31 @@ export default function AuthForm({ mode, locale }: { mode: "login" | "register";
                 labels={{ placeholder: a.professionPick, noMatch: a.professionNoMatch }}
                 invalid={!!fieldErrors.profession}
                 describedBy={describedBy("profession")}
-                onPick={() => clearField("profession")}
+                initial={initial}
+                onPick={(p) => {
+                  clearField("profession");
+                  setProfession(p.profession);
+                  // a specialty typed into the profession field is taken; otherwise keep one that fits the new profession
+                  setSpecialty((prev) => p.specialty ?? (specialtiesFor(p.profession).some((x) => x.code === prev) ? prev : null));
+                }}
               />
               {errorText("profession")}
+            </div>
+          )}
+          {/* testers wanted to pick the specialty right away (Ineta Ūdra's test, November 2026); optional, the profile has it too */}
+          {mode === "register" && specList.length > 0 && (
+            <div className="field">
+              <label htmlFor="specialty">{a.specialty}</label>
+              <SpecialtyPicker
+                id="specialty"
+                code={specialty}
+                list={specList}
+                locale={locale}
+                labels={{ other: d.profile.specialtyOther, placeholder: d.profile.specialtyPlaceholder, noMatch: d.profile.specialtyNoMatch }}
+                onChange={setSpecialty}
+              />
+              {specialty && specialty !== OTHER_SPECIALTY && <input type="hidden" name="specialtyCode" value={specialty} />}
+              <span className={s.hint}>{a.specialtyHint}</span>
             </div>
           )}
           <div className="field">

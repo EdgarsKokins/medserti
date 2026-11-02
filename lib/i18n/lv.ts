@@ -50,6 +50,8 @@ export const lv: Dict = {
     profession: "Profesija",
     professionPick: "Piemēram, ārsts vai neirologs",
     professionNoMatch: "Nav atrasts. Izvēlieties „Cita ārstniecības persona”.",
+    specialty: "Specialitāte",
+    specialtyHint: "Nav obligāti. Pēc tās atlasām Jums kursus.",
     forgotLink: "Aizmirsāt paroli?",
     valueTitle: "Kā darbojas Medserti",
     valuePoints: [
@@ -418,6 +420,9 @@ export const lv: Dict = {
     courseAlerts: "Jauni kursi manai specialitātei",
     courseAlertsHint: "Reizi nedēļā, pirmdienās, ja sarakstā parādās jauni kursi jūsu specialitātei.",
     courseAlertsHintNurse: "Reizi nedēļā, pirmdienās, ja sarakstā parādās jauni kursi māsām.",
+    courseCity: "Prakses pilsēta",
+    courseCityAny: "Visa Latvija",
+    courseCityHint: "Klātienes kursus sūtām tikai šajā pilsētā. Tiešsaistes kursi un ieraksti nāk vienmēr.",
     save: "Saglabāt",
     saved: "Saglabāts.",
     failed: "Neizdevās saglabāt. Mēģiniet vēlreiz.",

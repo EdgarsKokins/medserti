@@ -54,6 +54,8 @@ export const en = {
     profession: "Profession",
     professionPick: "E.g. doctor or neurologist",
     professionNoMatch: "Not found. Pick “Other medical practitioner”.",
+    specialty: "Specialty",
+    specialtyHint: "Optional. We use it to pick courses for you.",
     forgotLink: "Forgot your password?",
     valueTitle: "How Medserti works",
     valuePoints: [
@@ -416,6 +418,9 @@ export const en = {
     courseAlerts: "New courses for my specialty",
     courseAlertsHint: "Once a week, on Mondays, when new courses for your specialty appear in the list.",
     courseAlertsHintNurse: "Once a week, on Mondays, when new courses for nurses appear in the list.",
+    courseCity: "Practice city",
+    courseCityAny: "All of Latvia",
+    courseCityHint: "In-person courses only in this city. Online courses and recordings always come.",
     save: "Save",
     saved: "Saved.",
     failed: "Could not save. Please try again.",

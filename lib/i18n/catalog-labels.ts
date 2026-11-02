@@ -286,6 +286,8 @@ export const LABELS: Record<string, string> = {
   "auth.profession": "Lauks: profesija (reģistrācijā)",
   "auth.professionPick": "Profesijas lauks: norāde, ko rakstīt",
   "auth.professionNoMatch": "Profesijas lauks: nekas neatbilst ierakstītajam",
+  "auth.specialty": "Reģistrācija: specialitātes lauks",
+  "auth.specialtyHint": "Reģistrācija: specialitāte nav obligāta",
 
   "reset.forgotTitle": "Paroles pieprasīšanas virsraksts",
   "reset.forgotLead": "Paroles pieprasīšanas ievadteksts",
@@ -535,6 +537,9 @@ export const LABELS: Record<string, string> = {
   "notify.courseAlerts": "Profils: jauni kursi",
   "notify.courseAlertsHint": "Profils: jauno kursu skaidrojums",
   "notify.courseAlertsHintNurse": "Profils: jauno kursu skaidrojums (māsas)",
+  "notify.courseCity": "E-pasta paziņojumi: prakses pilsēta",
+  "notify.courseCityAny": "E-pasta paziņojumi: visa Latvija",
+  "notify.courseCityHint": "E-pasta paziņojumi: pilsētas skaidrojums",
   "notify.save": "E-pasta paziņojumi: poga Saglabāt",
   "notify.saved": "E-pasta paziņojumi: saglabāts",
   "notify.failed": "E-pasta paziņojumi: neizdevās saglabāt",

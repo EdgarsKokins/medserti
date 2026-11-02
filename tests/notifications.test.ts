@@ -62,6 +62,20 @@ test("weekly course email: new since the last one, still ahead, for the user's s
   assert.deepEqual((list as { id: string }[]).map((c) => c.id), ["new-neuro", "new-recording"]);
 });
 
+test("weekly course email with a practice city: in-person courses elsewhere are left out, online ones stay", () => {
+  const user = { profile: { profession: "doctor", specialty: "Neirologs" }, notifications: { reminders: true, courseAlerts: true, courseCity: "Liepāja" } } as never;
+  const courses = [
+    course("riga", { audience: "Neirologi", format: "in_person", city: "Rīga" }),
+    course("liepaja", { audience: "Neirologi", format: "in_person", city: "Liepāja" }),
+    course("online", { audience: "Neirologi", format: "online_live", city: "Online" }),
+    course("hybrid", { audience: "Neirologi", format: "hybrid", city: "Rīga" }),
+    course("unplaced", { audience: "Neirologi", format: "in_person", city: null }),
+  ];
+  const seen = Object.fromEntries(courses.map((c: { id: string }) => [c.id, "2026-11-02T07:00:00Z"]));
+  const list = n.newCoursesFor(user, courses, seen, "2026-10-26T07:00:00Z", "2026-11-09");
+  assert.deepEqual((list as { id: string }[]).map((c) => c.id).sort(), ["hybrid", "liepaja", "online", "unplaced"]);
+});
+
 test("daily run: a due reminder goes once, and not when turned off", async () => {
   const { createUser, getUser, saveUser } = await import("../lib/db");
   const { runNotifications } = await import("../lib/notify-run");
