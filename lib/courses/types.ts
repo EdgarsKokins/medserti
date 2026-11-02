@@ -1,4 +1,4 @@
-export type CourseSource = "lab_tip" | "lab_courses" | "kursiarstiem" | "medicinaskursi" | "lumpii" | "lma" | "evisit" | "lfa";
+export type CourseSource = "lab_tip" | "lab_courses" | "kursiarstiem" | "medicinaskursi" | "lumpii" | "lma" | "evisit" | "lfa" | "lupsk" | "lza" | "kosmetologs";
 
 /** in_person: live in a venue; online_live: live stream; recorded: e-learning / recording; hybrid: live + recording */
 export type CourseFormat = "in_person" | "online_live" | "recorded" | "hybrid";
@@ -89,6 +89,9 @@ export const SOURCE_URLS: Record<CourseSource, string> = {
   lma: "https://www.masuasociacija.lv/konferences-seminari-kursi/",
   evisit: "https://www.evisit.eu/current-events/index",
   lfa: "https://fizioterapeitiem.lv/events",
+  lupsk: "https://psk.lu.lv/talakizglitiba",
+  lza: "https://www.lza-zobi.lv/lv/kursi",
+  kosmetologs: "https://www.kosmetologs.lv/lv/seminars",
 };
 
 /**
