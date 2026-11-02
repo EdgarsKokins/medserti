@@ -16,6 +16,9 @@ import { MONTHS_SHORT } from "@/components/dashboard/DateBlock";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { languageAlternates, localePath } from "@/lib/locale";
+import { matchesSpecialty } from "@/lib/parse";
+import { specialtiesFor, specialtyByCode } from "@/lib/specialties";
+import SampleSpecialty from "@/components/landing/SampleSpecialty";
 import s from "./landing.module.css";
 import { formatDate, formatNumber, todayLv } from "@/lib/format";
 
@@ -62,6 +65,31 @@ async function courseFacts() {
 }
 type Facts = Awaited<ReturnType<typeof courseFacts>>;
 
+const SAMPLE = 5;
+/** Specialties offered on the public sample: doctors, dentists and functional specialists (nurses have their own list) */
+const SAMPLE_SPECIALTIES = [...specialtiesFor("doctor"), ...specialtiesFor("functional_specialist")];
+
+/**
+ * A few upcoming events for visitors who have not signed up: testers wanted to see the course list first
+ * (Ineta Ūdra, Ralfs Gauja, November 2026). With a specialty: its events and those for every specialty.
+ */
+async function courseSample(code: string | null) {
+  const sp = SAMPLE_SPECIALTIES.find((x) => x.code === code) ?? null;
+  try {
+    const idx = await readCourseIndex();
+    const today = todayLv();
+    const rows = (idx?.courses ?? [])
+      .filter((c) => c.kind === "event" && c.startDate && c.startDate >= today && c.tip != null)
+      .map((c) => ({ c, match: !!sp && matchesSpecialty(`${c.audience} ${c.title}`, sp.lv) }))
+      .filter((r) => !sp || r.match || r.c.allSpecialties)
+      // the specialty's own events first, then those for every specialty, each by date
+      .sort((a, b) => Number(b.match) - Number(a.match) || (a.c.startDate ?? "").localeCompare(b.c.startDate ?? ""));
+    return { specialty: sp, rows: rows.slice(0, SAMPLE), total: rows.length };
+  } catch {
+    return { specialty: sp, rows: [] as { c: Course; match: boolean }[], total: 0 };
+  }
+}
+
 /** Example rows for the "your report" visual (not real data) */
 const LEDGER = [
   { date: "2024-03-12", lv: "Akūts koronārais sindroms", en: "Acute coronary syndrome", ru: "Острый коронарный синдром", tip: 12 },
@@ -88,16 +116,16 @@ const tip = (n: number | null | undefined) => formatNumber(n ?? 0, 1);
  * the parts are tabs over one explanation panel, so the page stays short. Signed-in users go straight to their
  * dashboard; the demo visitor who comes back here leaves the demo.
  */
-export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; specialitate?: string | string[] }> }) {
   const userId = await currentUserId();
   const demo = isDemoUserId(userId);
   if (userId && !demo) redirect("/dashboard");
   const locale = await getLocale();
   const d = t(locale);
-  const { deleted } = await searchParams;
+  const { deleted, specialitate } = await searchParams;
   const a = d.landingA;
   const b = d.landingB;
-  const facts = await courseFacts();
+  const [facts, sample] = await Promise.all([courseFacts(), courseSample(typeof specialitate === "string" ? specialitate : null)]);
   const eventsLine = facts.upcoming > 0 ? b.events(facts.upcoming, facts.sources) : b.eventsNoCount;
   const recordingsLine = facts.recorded > 0 ? b.recordings(facts.recorded) : b.recordingsNoCount;
 
@@ -148,6 +176,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               ]}
             />
           </section>
+
+          <CourseSample d={d} locale={locale} sample={sample} />
 
           <section className={s.section} aria-labelledby="founders-title">
             <div className={s.founders}>
@@ -365,6 +395,52 @@ function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
         />
       </section>
     </div>
+  );
+}
+
+/** The public course sample: next events, optionally for one specialty, and the way to the full list */
+function CourseSample({ d, locale, sample }: { d: Dict; locale: Locale; sample: Awaited<ReturnType<typeof courseSample>> }) {
+  const b = d.landingB;
+  const options = SAMPLE_SPECIALTIES.map((x) => ({ code: x.code, label: x[locale] })).sort((x, y) => x.label.localeCompare(y.label, locale));
+  return (
+    <section id="kursi" className={s.section} aria-labelledby="sample-title">
+      <h2 id="sample-title" className={s.h2}>{b.sampleTitle}</h2>
+      <div className={s.sample}>
+        <p className={s.answerBody}>{b.sampleLead}</p>
+        <SampleSpecialty value={sample.specialty?.code ?? ""} options={options} label={b.sampleSpecialty} any={b.sampleAny} />
+        {sample.rows.length ? (
+          <ul className={s.sampleList}>
+            {sample.rows.map(({ c, match }) => (
+              <li key={c.id}>
+                <span className={s.miniDate}>
+                  <b>{c.startDate?.slice(8, 10)}</b>
+                  {MONTHS_SHORT[locale][Number(c.startDate?.slice(5, 7) ?? "1") - 1]}
+                </span>
+                <span className={s.sampleMain}>
+                  <span className={s.sampleTitle}>{c.title}</span>
+                  <span className="small muted">
+                    {[c.city === "Online" ? b.online : c.city, c.organizer].filter(Boolean).join(" · ")}
+                  </span>
+                  {sample.specialty && <span className={`tag ${match ? "tag-accent" : ""}`}>{match ? b.sampleMatch : b.sampleForAll}</span>}
+                </span>
+                <span className={s.sampleSide}>
+                  <span className={s.sampleTip}>+{tip(c.tip)} <small>TIP</small></span>
+                  <span className={c.free || c.price ? s.samplePrice : "small muted"}>{c.free ? b.free : (c.price ?? b.samplePriceNone)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">{b.sampleNone}</p>
+        )}
+        {sample.total > 0 && <p className="small muted" style={{ margin: 0 }}>{b.sampleTotal(sample.total)}</p>}
+        <div>
+          <Link href={specialtyByCode(sample.specialty?.code) ? `/register?specialitate=${sample.specialty!.code}` : "/register"} className="btn btn-primary">
+            {b.sampleCta}
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
