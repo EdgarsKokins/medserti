@@ -6,6 +6,7 @@
  */
 export const PARAM_NAMES: Record<string, string[]> = {
   "landingA.remaining": ["n"],
+  "landingB.sampleTotal": ["n"],
   "rules.validFor": ["years"],
   "profile.summary": ["n", "date"],
   "certs.waiting": ["n"],
@@ -110,7 +111,6 @@ export const PARAM_NAMES: Record<string, string[]> = {
   "courses.needLine": ["n"],
   "courses.mySpecialtyHint": ["specialty"],
   "courses.results": ["n"],
-  "landingB.sampleTotal": ["n"],
   "courses.annex": ["n"],
   "courses.hours": ["h"],
   "courses.details.more": ["n"],
