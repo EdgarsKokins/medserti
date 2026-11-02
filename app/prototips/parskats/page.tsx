@@ -63,19 +63,18 @@ export default async function ProtoDashboard() {
   const name = vocative(user.profile.fullName);
   const until = p.windowEnd ? `līdz ${MONTH_SHORT[Number(p.windowEnd.slice(5, 7)) - 1].toLowerCase()} ${p.windowEnd.slice(0, 4)}` : "";
 
-  // course tile: the one that covers what the doctor is short on, else the soonest for their specialty
-  const nextCourse = (!done && open ? covering[0] : null) ?? upcoming.find(mine) ?? upcoming[0] ?? null;
   const pct = Math.min(100, (p.total / (p.required || 1)) * 100);
-  // the small visual in each tile: a stack of the latest certificates (waiting ones on top), the next three course dates
-  const stack = [...certs]
+  // the latest certificates, the ones waiting for a check first
+  const latest = [...certs]
     .filter((c) => c.status !== "failed")
     .sort((a, b) => Number(b.status === "needs_review") - Number(a.status === "needs_review") || (b.date ?? "").localeCompare(a.date ?? ""))
     .slice(0, 3);
-  const leaves = [
-    ...(nextCourse ? [nextCourse] : []),
-    // the highlighted one leads, then the next two after it, so the dates read left to right
-    ...upcoming.filter((c) => c.id !== nextCourse?.id && mine(c) && c.startDate! >= (nextCourse?.startDate ?? "")).slice(0, 2),
-  ];
+  // the next three courses for the specialty; the one covering what the doctor is short on takes the last place if it is later
+  const helps = !done && open ? covering[0] ?? null : null;
+  const own3 = (own.length ? own : upcoming).slice(0, 3);
+  const nextCourses = (helps && !own3.some((c) => c.id === helps.id) ? [...own3.slice(0, 2), helps] : own3).sort((a, b) =>
+    a.startDate!.localeCompare(b.startDate!),
+  );
 
   return (
     <>
@@ -101,56 +100,67 @@ export default async function ProtoDashboard() {
         </header>
 
         <div className={s.tiles}>
-          <Link href="/certificates" className={`${s.tile2} ${s.tBlue}`}>
+          <section className={`${s.tile2} ${s.tBlue}`} aria-labelledby="t1">
             <span className={s.icon}><IconDoc /></span>
-            <span className={s.tileName}>Sertifikāti</span>
+            <h2 id="t1" className={s.tileName}>Sertifikāti</h2>
             <span className={s.tileStatus}>{waiting ? `${waiting} jāpārbauda` : certs.length ? "Viss kārtībā ✓" : "Pievienojiet pirmo"}</span>
-            {stack.length > 0 && (
-              <span className={s.visual}>
-                <span className={s.stack}>
-                  {stack.map((c) => (
-                    <span key={c.id} className={s.paper}>
-                      <span className={c.status === "needs_review" ? s.dotWarn : s.dotOk} aria-hidden />
-                      <span className={s.paperTitle}>{c.title || "Sertifikāts"}</span>
-                      {c.points != null && <span className={s.paperTip}>{fmtNum(c.points)}</span>}
-                    </span>
-                  ))}
-                </span>
-              </span>
+            {latest.length > 0 && (
+              <ul className={s.rows}>
+                {latest.map((c) => (
+                  <li key={c.id}>
+                    <Link href="/certificates" className={s.rowItem}>
+                      <span className={c.status === "needs_review" ? s.dotWarn : s.dotOk} title={c.status === "needs_review" ? "Jāpārbauda" : "Apstiprināts"} />
+                      <span className={s.rowText}>
+                        <span className={s.rowTitle}>{c.title || "Sertifikāts"}</span>
+                        <span className={s.rowSub}>{c.date ? shortDate(c.date) + " " + c.date.slice(0, 4) : "Datums nav nolasīts"}</span>
+                      </span>
+                      {c.points != null && <span className={s.rowTip}>{fmtNum(c.points)} TIP</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
-            <span className={s.tileGo}>{waiting ? "Pārbaudīt" : "Pievienot"} →</span>
-          </Link>
+            <Link href="/certificates" className={s.tileGo}>{waiting ? "Pārbaudīt" : "Pievienot sertifikātu"} →</Link>
+          </section>
 
-          <Link href={nextCourse ? `/courses?open=${encodeURIComponent(nextCourse.id)}` : "/courses"} className={`${s.tile2} ${s.tGreen}`}>
+          <section className={`${s.tile2} ${s.tGreen}`} aria-labelledby="t2">
             <span className={s.icon}><IconCal /></span>
-            <span className={s.tileName}>Kursi</span>
-            <span className={s.tileStatus}>
-              {nextCourse ? `${shortDate(nextCourse.startDate!)} · ${nextCourse.city === "Online" ? "Tiešsaistē" : (nextCourse.city ?? "")}` : "Drīz būs jauni"}
-            </span>
-            {leaves.length > 0 && (
-              <span className={s.visual}>
-                <span className={s.leaves}>
-                  {leaves.map((c) => (
-                    <span key={c.id} className={`${s.leaf} ${c.id === nextCourse?.id ? s.leafOn : ""}`}>
-                      <span className={s.leafDay}>{Number(c.startDate!.slice(8, 10))}</span>
-                      <span className={s.leafMonth}>{MONTH_SHORT[Number(c.startDate!.slice(5, 7)) - 1]}</span>
-                    </span>
-                  ))}
-                </span>
-              </span>
+            <h2 id="t2" className={s.tileName}>Kursi</h2>
+            <span className={s.tileStatus}>{nextCourses.length ? "Tuvākie Jums" : "Drīz būs jauni"}</span>
+            {nextCourses.length > 0 && (
+              <ul className={s.rows}>
+                {nextCourses.map((c) => (
+                  <li key={c.id}>
+                    <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={s.rowItem}>
+                      <span className={s.rowDate}>
+                        <span>{Number(c.startDate!.slice(8, 10))}</span>
+                        <span>{MONTH_SHORT[Number(c.startDate!.slice(5, 7)) - 1]}</span>
+                      </span>
+                      <span className={s.rowText}>
+                        <span className={s.rowTitle}>{c.title}</span>
+                        <span className={s.rowSub}>
+                          {c.city === "Online" ? "Tiešsaistē" : (c.city ?? "Vieta nav norādīta")}
+                          {c.id === helps?.id && <span className={s.rowTag}>Jums noder</span>}
+                        </span>
+                      </span>
+                      {c.tip != null && <span className={s.rowTip}>{fmtNum(c.tip)} TIP</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             )}
-            <span className={s.tileGo}>Skatīt →</span>
-          </Link>
+            <Link href="/courses" className={s.tileGo}>Visi kursi →</Link>
+          </section>
 
-          <div className={`${s.tile2} ${s.tPeach}`}>
+          <section className={`${s.tile2} ${s.tPeach}`} aria-labelledby="t3">
             <span className={s.icon}><IconPlay /></span>
-            <span className={s.tileName}>Lekcijas</span>
+            <h2 id="t3" className={s.tileName}>Lekcijas</h2>
             <span className={s.tileStatus}>Drīzumā</span>
             <span className={s.visual}>
               <span className={s.screen} aria-hidden><span className={s.screenPlay}>▶</span></span>
             </span>
             <span className={s.tileGo}><NotifyButton /></span>
-          </div>
+          </section>
         </div>
       </main>
     </>
