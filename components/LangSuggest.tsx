@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { LOCALE_COOKIE, localePath, type Locale } from "@/lib/locale";
 
 /**
@@ -9,13 +8,13 @@ import { LOCALE_COOKIE, localePath, type Locale } from "@/lib/locale";
  * (many Latvian doctors run Russian-language browsers). Either answer is remembered, so the offer shows once.
  */
 export default function LangSuggest({ path, text, yes, no }: { path: string; text: string; yes: string; no: string }) {
-  const router = useRouter();
   const [open, setOpen] = useState(true);
   if (!open) return null;
   const choose = (l: Locale) => {
     document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
     if (l === "lv") return setOpen(false);
-    router.push(localePath(path, l));
+    // a full load, as in LangSwitch: a client-side move keeps the Latvian header and texts of the root layout
+    window.location.assign(localePath(path, l));
   };
   return (
     <div className="lang-suggest" role="note" lang="ru">
