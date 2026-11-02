@@ -8,7 +8,7 @@ const NATIVE: Record<Locale, string> = { lv: "Latviešu", en: "English", ru: "Р
 
 /**
  * LV / EN / RU picker in the footers. The choice is a cookie, so the server renders the right language.
- * A public page has its own address per language (/ru/par-mums), so there the picker goes to that address.
+ * A public page has its own address per language (/ru/par-mums), so there the picker loads that address.
  */
 export default function LangSwitch({ locale, label }: { locale: Locale; label: string }) {
   const router = useRouter();
@@ -17,7 +17,10 @@ export default function LangSwitch({ locale, label }: { locale: Locale; label: s
     if (l === locale) return;
     document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
     const { path } = splitLocalePath(pathname);
-    if (isPublicPath(path)) router.push(localePath(path, l) + window.location.search);
+    // a full load, not router.push: a client-side move to /ru swaps only the page, so the root layout (header buttons,
+    // <html lang>, the texts client components read) stayed in the old language (02 Nov 2026).
+    // router.refresh re-renders the layout too, so pages without a language address keep it.
+    if (isPublicPath(path)) window.location.assign(localePath(path, l) + window.location.search);
     else router.refresh();
   }
   return (
