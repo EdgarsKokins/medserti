@@ -1,0 +1,42 @@
+/* prototype-only styles (branch "prototypes", never merged) */
+.bar { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px 16px; background: #fff7d6; border-bottom: 1px solid #e8d48a; font-size: 0.9rem; }
+.barLinks { display: flex; flex-wrap: wrap; gap: 6px; }
+.barLinks a { padding: 4px 12px; border: 1px solid #d9c46e; border-radius: 6px; color: var(--text); text-decoration: none; background: #fff; }
+.barOn { background: var(--ink) !important; color: var(--on-ink) !important; border-color: var(--ink) !important; }
+.barOther { margin-left: auto; }
+
+.page { display: flex; flex-direction: column; gap: 32px; }
+.status { display: flex; flex-direction: column; gap: 14px; }
+.statusLine { font-family: var(--font-serif); font-size: clamp(1.6rem, 3.4vw, 2.3rem); line-height: 1.15; margin: 0; }
+.statusLine b { color: var(--accent); }
+.statusSub { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.track { height: 12px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.fill { height: 100%; background: var(--accent); border-radius: 6px; }
+.done .fill { background: var(--ok); }
+
+.todo { border: 1px solid var(--border-strong); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--surface); padding: 18px 22px; }
+.todo h2 { margin: 0 0 10px; font-size: 1.2rem; }
+.todoList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.todoList li { display: flex; align-items: center; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--border); }
+.todoList li:first-child { border-top: none; }
+.todoText { font-size: 1.05rem; display: flex; gap: 12px; align-items: baseline; }
+.todoNum { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card { display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.cardHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.cardNum { font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.card h3 { margin: 0; font-size: 1.15rem; }
+.big { font-family: var(--font-serif); font-size: 2rem; line-height: 1; }
+.mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mini li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+.miniTitle { font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.miniTip { color: var(--accent); font-weight: 600; white-space: nowrap; }
+.soon { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); background: var(--bg); }
+.cardFoot { margin-top: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.details { font-size: 0.95rem; }
+
+@media (max-width: 860px) {
+  .cards { grid-template-columns: 1fr; }
+  .barOther { margin-left: 0; }
+}

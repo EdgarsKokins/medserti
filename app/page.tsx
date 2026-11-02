@@ -19,6 +19,23 @@ import { languageAlternates, localePath } from "@/lib/locale";
 import { matchesSpecialty } from "@/lib/parse";
 import { specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import SampleSpecialty from "@/components/landing/SampleSpecialty";
+import ProtoBar from "./prototips/ProtoBar";
+
+/** PROTOTYPE (branch "prototypes", never merged): hero line options for Ineta Ūdra #1, /?prototips=1&hero=A */
+const HERO_OPTIONS: Record<string, { title: string; sub: string }> = {
+  A: {
+    title: "Ziniet, cik TIP Jums vēl trūkst",
+    sub: "Augšupielādējiet sertifikātus. Medserti saskaita TIP pēc MK noteikumiem Nr. 391, parāda, kas trūkst, un atrod kursus, kas to aizpilda.",
+  },
+  B: {
+    title: "Resertifikācija bez Excel un papīru kaudzes",
+    sub: "Sertifikātu PDF vai foto → TIP saskaitīti → LĀB veidlapas gatavas iesniegšanai.",
+  },
+  C: {
+    title: "Saskaitiet TIP. Atrodiet kursus. Iesniedziet dokumentus.",
+    sub: "Bezmaksas rīks ārstiem: punkti, tuvākie kursi ar TIP un LĀB veidlapas vienuviet.",
+  },
+};
 import s from "./landing.module.css";
 import { formatDate, formatNumber, todayLv } from "@/lib/format";
 
@@ -116,10 +133,12 @@ const tip = (n: number | null | undefined) => formatNumber(n ?? 0, 1);
  * the parts are tabs over one explanation panel, so the page stays short. Signed-in users go straight to their
  * dashboard; the demo visitor who comes back here leaves the demo.
  */
-export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; specialitate?: string | string[] }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; specialitate?: string | string[]; prototips?: string; hero?: string }> }) {
   const userId = await currentUserId();
   const demo = isDemoUserId(userId);
-  if (userId && !demo) redirect("/dashboard");
+  const { prototips, hero } = await searchParams;
+  const proto = prototips === "1";
+  if (userId && !demo && !proto) redirect("/dashboard");
   const locale = await getLocale();
   const d = t(locale);
   const { deleted, specialitate } = await searchParams;
@@ -146,7 +165,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             <div className="alert alert-ok" role="status">{d.legal.deleteAccount.done}</div>
           </div>
         )}
-        <Hero d={d} locale={locale} facts={facts} />
+        {proto && (
+          <ProtoBar
+            title="Sākumlapas virsraksts"
+            active={hero && HERO_OPTIONS[hero] ? hero : "Pašreizējais"}
+            links={[...Object.keys(HERO_OPTIONS).map((k) => ({ href: `/?prototips=1&hero=${k}`, label: k })), { href: "/?prototips=1", label: "Pašreizējais" }]}
+          />
+        )}
+        <Hero d={d} locale={locale} facts={facts} override={proto && hero ? HERO_OPTIONS[hero] : undefined} />
 
         <div className={s.wrap}>
           <section className={s.section} aria-labelledby="pain-title">
@@ -223,15 +249,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
 }
 
 /** The three parts as one route: TIP progress, next course dates, an online lecture, ending at the documents */
-function Hero({ d, locale, facts }: { d: Dict; locale: Locale; facts: Facts }) {
+function Hero({ d, locale, facts, override }: { d: Dict; locale: Locale; facts: Facts; override?: { title: string; sub: string } }) {
   const b = d.landingB;
   const next = facts.next.slice(0, 2);
   return (
     <section className={s.hero} aria-labelledby="landing-title">
       <div className={s.heroInner}>
         <div className={s.heroCopy}>
-          <h1 id="landing-title" className={s.heroTitle}>{b.heroTitle}</h1>
-          <p className={s.heroSub}>{b.heroSub}</p>
+          <h1 id="landing-title" className={s.heroTitle}>{override?.title ?? b.heroTitle}</h1>
+          <p className={s.heroSub}>{override?.sub ?? b.heroSub}</p>
           <div className={s.ctas}>
             <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{d.landingA.start}</Link>
             <DemoButton label={d.demo.try} className={`btn ${s.ctaGhost}`} />
