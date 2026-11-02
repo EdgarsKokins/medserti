@@ -105,6 +105,11 @@ export interface CmeCertificate {
   category: CmeCategory;
   /** counts toward the 60% own-specialty share */
   inSpecialty: boolean;
+  /**
+   * How Medserti decided "in the specialty": the certificate names it (text), the course it was added from lists it
+   * (course), or LĀB's approval of the same event lists it as the audience (registry). null: not decided as yes.
+   */
+  inSpecialtyBy?: "text" | "course" | "registry" | null;
   /** emergency medical care training (min 8 TIP required) */
   emergencyCare: boolean;
   /** practical hours within emergency care training (min 4 required) */
@@ -192,6 +197,8 @@ export interface RegistryEvent {
   /** every listed day, for series held on several separate days */
   days: string[];
   organizer: string;
+  /** target audience as LĀB lists it ("Neirologs; Algologs"); missing on lookups stored before it was read */
+  audience?: string;
   tip: number | null;
   /** LĀB lecture programme, "application:8456" */
   detailRef: string | null;

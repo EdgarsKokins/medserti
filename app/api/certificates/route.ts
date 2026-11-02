@@ -17,6 +17,7 @@ import { reportServerError } from "@/lib/monitoring/errors";
 import { rateLimit } from "@/lib/password-reset";
 import { readCourseIndex } from "@/lib/courses/store";
 import { fillFromCourse } from "@/lib/courses/fromCourse";
+import { decideSpecialty } from "@/lib/specialtyDecision";
 import { assignedCert } from "@/lib/certAssign";
 import { asProfile, pickCert } from "@/lib/profileCerts";
 
@@ -159,6 +160,8 @@ export async function POST(req: Request) {
       dateConfidence: parsed.fields.fieldConfidence?.date ?? 0,
       text: ocrText ?? "",
     }) : null);
+    const nurse = user.profile.profession === "nurse";
+    const spec = nurse ? null : await decideSpecialty(result, user.profile.specialty.trim(), course, ocrText ?? "");
     // confirm without the user only when nothing is a guess (rules in lib/parse/confidence.ts)
     const blocks = autoConfirmBlocks({
       source: result.source,
@@ -175,6 +178,7 @@ export async function POST(req: Request) {
     done = {
       ...cert,
       ...result.fields,
+      ...spec,
       status: auto ? "confirmed" : result.status,
       autoConfirmed: auto,
       fileHash,

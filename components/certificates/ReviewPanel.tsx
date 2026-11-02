@@ -225,6 +225,17 @@ export default function ReviewPanel({
     : null;
 
   const notes = useMemo(() => parseNoteLines(cert.parseNotes, dict), [cert.parseNotes, dict]);
+
+  // The short check: three things to compare with the certificate, each marked as right, then confirm. Testers lost
+  // their way in the full form and confirmed without looking (Ineta Ūdra's test, November 2026). Anything that needs
+  // more than these three (a register pick, a duplicate, an odd file, a course abroad) opens the full form instead.
+  const [quick, setQuick] = useState(
+    () => !readOnly && !nurse && cert.status !== "confirmed" && !cert.duplicateOf && !flag && !abroad && !(lookup && lookup.status !== "match"),
+  );
+  const [ok, setOk] = useState<Record<QuickKey, boolean>>({ date: false, points: false, specialty: false });
+  const [editing, setEditing] = useState<Record<QuickKey, boolean>>({ date: !initial.date, points: initial.points == null, specialty: false });
+  const mark = (k: QuickKey, v = true) => setOk((o) => ({ ...o, [k]: v }));
+  const allOk = ok.date && ok.points && ok.specialty;
   const countries = useMemo(() => {
     const [lv, ...rest] = COUNTRY_CODES;
     return [lv, ...rest.sort((a, b) => countryName(a, locale).localeCompare(countryName(b, locale), locale))];
@@ -294,6 +305,86 @@ export default function ReviewPanel({
           </a>
         </div>
 
+        {quick ? (
+          <div className={styles.quick}>
+            <div>
+              <p className={styles.quickTitle}>{f.title || cert.fileName}</p>
+              {f.organizer && <p className="small muted" style={{ margin: "2px 0 0" }}>{f.organizer}</p>}
+            </div>
+            <p className="small muted" style={{ margin: 0 }}>{d.quickLead}</p>
+            <ul className={styles.quickList}>
+              <QuickRow
+                label={d.fDate}
+                value={f.date ? (f.endDate ? `${formatDate(f.date, locale)} - ${formatDate(f.endDate, locale)}` : formatDate(f.date, locale)) : d.quickMissing}
+                unsure={!!check("date")}
+                ok={ok.date}
+                editing={editing.date}
+                labels={d}
+                onOk={() => mark("date", !ok.date)}
+                onEdit={() => setEditing((e) => ({ ...e, date: true }))}
+                editor={
+                  <>
+                    <input id="c-date" type="date" max={today} aria-label={d.fDate} value={f.date ?? ""} onChange={(e) => (set("date", e.target.value || null), mark("date", !!e.target.value))} {...fieldProps("date")} />
+                    {fieldError("date")}
+                  </>
+                }
+                note={
+                  notice && (
+                    <p className={`alert small ${styles.dateNote}`} role="note">
+                      {notice.kind === "older5" ? d.older5 : notice.kind === "beforePeriod" ? d.beforePeriod(formatDate(notice.date, locale)) : d.afterPeriod(formatDate(notice.date, locale))}
+                    </p>
+                  )
+                }
+              />
+              <QuickRow
+                label={d.fPoints}
+                value={f.points != null ? formatNumber(f.points, 2) : d.quickMissing}
+                unsure={!!check("points")}
+                ok={ok.points}
+                editing={editing.points}
+                labels={d}
+                onOk={() => mark("points", !ok.points)}
+                onEdit={() => setEditing((e) => ({ ...e, points: true }))}
+                editor={
+                  <>
+                    <input id="c-points" type="number" min={0} max={1000} step="0.5" aria-label={d.fPoints} value={f.points ?? ""} onChange={(e) => (set("points", toNum(e.target.value)), mark("points", e.target.value.trim() !== ""))} {...fieldProps("points")} />
+                    {fieldError("points")}
+                  </>
+                }
+                note={lookup?.status === "match" ? <p className="small muted" style={{ margin: 0 }}>{d.quickFromRegistry(lookup.candidates[0].approvalId)}</p> : null}
+              />
+              <QuickRow
+                label={d.fInSpecialty(target?.label ?? specialty)}
+                value={f.inSpecialty ? d.yes : d.no}
+                ok={ok.specialty}
+                editing={editing.specialty}
+                labels={d}
+                onOk={() => mark("specialty", !ok.specialty)}
+                onEdit={() => setEditing((e) => ({ ...e, specialty: true }))}
+                editor={
+                  <div className={styles.quickChoice} role="radiogroup" aria-label={d.fInSpecialty(target?.label ?? specialty)}>
+                    {[true, false].map((v) => (
+                      <label key={String(v)} className={styles.checkRow}>
+                        <input type="radio" name="c-spec-quick" checked={f.inSpecialty === v} onChange={() => (set("inSpecialty", v), mark("specialty"))} />
+                        {v ? d.yes : d.no}
+                      </label>
+                    ))}
+                  </div>
+                }
+                // certificates read before Medserti kept its reason have none to show
+                note={
+                  f.inSpecialty !== initial.inSpecialty ? (
+                    <p className="small muted" style={{ margin: 0 }}>{d.quickByYou}</p>
+                  ) : cert.inSpecialtyBy !== undefined ? (
+                    <p className="small muted" style={{ margin: 0 }}>{d.quickBy[cert.inSpecialtyBy ?? "none"]}</p>
+                  ) : null
+                }
+              />
+            </ul>
+            {f.emergencyCare && <p className="small muted" style={{ margin: 0 }}>{d.quickEmergency}</p>}
+          </div>
+        ) : (
+        <>
         {cert.duplicateOf && !confirmed && (
           <div className={`alert small ${styles.notes}`} role="note">{d.duplicateNote}</div>
         )}
@@ -478,6 +569,8 @@ export default function ReviewPanel({
           )}
         </div>
         </fieldset>
+        </>
+        )}
       </div>
 
       <div className={styles.panelFoot}>
@@ -505,6 +598,20 @@ export default function ReviewPanel({
               </button>
             </div>
           </div>
+        ) : quick ? (
+          <>
+            {!allOk && <p className="small muted" style={{ margin: 0 }}>{d.quickHint}</p>}
+            <div className={styles.footBtns}>
+              <button type="button" className="btn btn-primary" disabled={busy || !allOk} onClick={() => save("confirmed")}>
+                {busy ? d.saving : d.confirm}
+              </button>
+              <button type="button" className="btn" disabled={busy} onClick={() => setQuick(false)}>{d.quickAll}</button>
+              <button type="button" className="btn" disabled={busy} onClick={requestClose}>{d.cancel}</button>
+              <button type="button" className={`btn btn-danger ${styles.deleteBtn}`} disabled={busy} onClick={() => setAsk("delete")}>
+                {d.delete}
+              </button>
+            </div>
+          </>
         ) : (
           <div className={styles.footBtns}>
             <button
@@ -528,5 +635,51 @@ export default function ReviewPanel({
         </div>
       </div>
     </dialog>
+  );
+}
+
+type QuickKey = "date" | "points" | "specialty";
+
+/** One line of the short check: the value, "Pareizi" to mark it as right, "Labot" to change it */
+function QuickRow({
+  label,
+  value,
+  unsure = false,
+  ok,
+  editing,
+  editor,
+  note,
+  labels,
+  onOk,
+  onEdit,
+}: {
+  label: string;
+  value: string;
+  unsure?: boolean;
+  ok: boolean;
+  editing: boolean;
+  editor: React.ReactNode;
+  note?: React.ReactNode;
+  labels: { quickOk: string; quickEdit: string; checkField: string };
+  onOk: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <li className={`${styles.quickRow} ${ok ? styles.quickRowOk : ""}`}>
+      <div className={styles.quickMain}>
+        <span className={styles.quickLabel}>
+          {label}
+          {unsure && !ok && <span className={`badge badge-warn ${styles.checkMark}`}>{labels.checkField}</span>}
+        </span>
+        {editing ? editor : <span className={styles.quickValue}>{value}</span>}
+        {note}
+      </div>
+      <div className={styles.quickBtns}>
+        <button type="button" className={`btn ${ok ? styles.quickOn : ""}`} aria-pressed={ok} onClick={onOk}>
+          {ok ? "✓ " : ""}{labels.quickOk}
+        </button>
+        {!editing && <button type="button" className="btn" onClick={onEdit}>{labels.quickEdit}</button>}
+      </div>
+    </li>
   );
 }

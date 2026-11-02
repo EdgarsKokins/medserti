@@ -248,12 +248,27 @@
 .checkRow { display: flex; gap: 8px; align-items: center; }
 .checkRow label { font-size: 0.95rem; color: var(--text); }
 .wide { grid-column: 1 / -1; }
+/* the short check: three lines to compare with the certificate */
+.quick { padding: 22px 26px; display: flex; flex-direction: column; gap: 14px; }
+.quickTitle { margin: 0; font-weight: 600; font-size: 1.1rem; overflow-wrap: anywhere; }
+.quickList { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.quickRow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.quickRowOk .quickValue { color: var(--ok); }
+.quickMain { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px; }
+.quickLabel { font-size: 0.85rem; color: var(--muted); }
+.quickValue { font-size: 1.2rem; font-weight: 600; }
+.quickBtns { display: flex; gap: 8px; }
+.quickOn { border-color: var(--ok); color: var(--ok); background: var(--ok-soft); }
+.quickChoice { display: flex; gap: 20px; }
 
 @media (max-width: 640px) {
   .panel { width: calc(100% - 16px); max-height: calc(100dvh - 16px); }
   .panelHead, .panelBody { padding: 18px 16px; }
   .panelFoot { padding: 12px 16px; }
   .notes { margin: 14px 16px 0; }
+  .quick { padding: 18px 16px; }
+  .quickBtns { flex: 1 1 100%; }
+  .quickBtns > .btn { flex: 1 1 auto; }
   .panelTitle { font-size: 1.35rem; }
   .footBtns > .btn { flex: 1 1 auto; }
   .deleteBtn { margin-left: 0; }
