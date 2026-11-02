@@ -66,6 +66,16 @@ export default async function ProtoDashboard() {
   // course tile: the one that covers what the doctor is short on, else the soonest for their specialty
   const nextCourse = (!done && open ? covering[0] : null) ?? upcoming.find(mine) ?? upcoming[0] ?? null;
   const pct = Math.min(100, (p.total / (p.required || 1)) * 100);
+  // the small visual in each tile: a stack of the latest certificates (waiting ones on top), the next three course dates
+  const stack = [...certs]
+    .filter((c) => c.status !== "failed")
+    .sort((a, b) => Number(b.status === "needs_review") - Number(a.status === "needs_review") || (b.date ?? "").localeCompare(a.date ?? ""))
+    .slice(0, 3);
+  const leaves = [
+    ...(nextCourse ? [nextCourse] : []),
+    // the highlighted one leads, then the next two after it, so the dates read left to right
+    ...upcoming.filter((c) => c.id !== nextCourse?.id && mine(c) && c.startDate! >= (nextCourse?.startDate ?? "")).slice(0, 2),
+  ];
 
   return (
     <>
@@ -95,6 +105,19 @@ export default async function ProtoDashboard() {
             <span className={s.icon}><IconDoc /></span>
             <span className={s.tileName}>Sertifikāti</span>
             <span className={s.tileStatus}>{waiting ? `${waiting} jāpārbauda` : certs.length ? "Viss kārtībā ✓" : "Pievienojiet pirmo"}</span>
+            {stack.length > 0 && (
+              <span className={s.visual}>
+                <span className={s.stack}>
+                  {stack.map((c) => (
+                    <span key={c.id} className={s.paper}>
+                      <span className={c.status === "needs_review" ? s.dotWarn : s.dotOk} aria-hidden />
+                      <span className={s.paperTitle}>{c.title || "Sertifikāts"}</span>
+                      {c.points != null && <span className={s.paperTip}>{fmtNum(c.points)}</span>}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            )}
             <span className={s.tileGo}>{waiting ? "Pārbaudīt" : "Pievienot"} →</span>
           </Link>
 
@@ -104,7 +127,18 @@ export default async function ProtoDashboard() {
             <span className={s.tileStatus}>
               {nextCourse ? `${shortDate(nextCourse.startDate!)} · ${nextCourse.city === "Online" ? "Tiešsaistē" : (nextCourse.city ?? "")}` : "Drīz būs jauni"}
             </span>
-            {nextCourse && <span className={s.tilePeek}>{nextCourse.title}</span>}
+            {leaves.length > 0 && (
+              <span className={s.visual}>
+                <span className={s.leaves}>
+                  {leaves.map((c) => (
+                    <span key={c.id} className={`${s.leaf} ${c.id === nextCourse?.id ? s.leafOn : ""}`}>
+                      <span className={s.leafDay}>{Number(c.startDate!.slice(8, 10))}</span>
+                      <span className={s.leafMonth}>{MONTH_SHORT[Number(c.startDate!.slice(5, 7)) - 1]}</span>
+                    </span>
+                  ))}
+                </span>
+              </span>
+            )}
             <span className={s.tileGo}>Skatīt →</span>
           </Link>
 
@@ -112,6 +146,9 @@ export default async function ProtoDashboard() {
             <span className={s.icon}><IconPlay /></span>
             <span className={s.tileName}>Lekcijas</span>
             <span className={s.tileStatus}>Drīzumā</span>
+            <span className={s.visual}>
+              <span className={s.screen} aria-hidden><span className={s.screenPlay}>▶</span></span>
+            </span>
             <span className={s.tileGo}><NotifyButton /></span>
           </div>
         </div>
