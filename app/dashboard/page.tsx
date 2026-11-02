@@ -19,6 +19,7 @@ import DashboardUpload from "@/components/dashboard/DashboardUpload";
 import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, fmtDate, headline } from "@/components/dashboard/model";
 import { formatPeriod, todayLv } from "@/lib/format";
 import { addMonths } from "@/lib/notifications";
+import { profileComplete } from "@/lib/profile";
 
 /** Next events for this specialty (or all specialties), at most `n`; recordings get their own block (pickRecorded) */
 function pickCourses(courses: Course[], specialty: string, todayIso: string, n = 4): Course[] {
@@ -79,8 +80,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const ready = p.checks.every((c) => c.met);
   // a hand-set target replaces the rule, so its reason is not shown
   const basis = ruleBasis(certProfile);
-  // nurses give only the date their registration runs to (Reg. 630 point 33)
-  const profileIncomplete = hours ? !user.profile.certificateExpires : !user.profile.certificateIssued;
+  // the profile asks only for the month and year the certificate (nurses: registration) is valid until
+  const profileIncomplete = !profileComplete(user.profile);
   const all = courseIdx?.courses ?? [];
   const picks = hours ? pickNurseCourses(all, todayLv(today)) : pickCourses(all, cert.specialty.trim(), todayLv(today));
   const online = hours ? pickNurseRecorded(all) : pickRecorded(all, cert.specialty.trim());
