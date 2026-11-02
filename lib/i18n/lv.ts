@@ -1191,6 +1191,7 @@ export const lv: Dict = {
       lumpii: "LUMPII",
       lma: "Latvijas Māsu asociācija",
       evisit: "Evisit",
+      lfa: "Latvijas Fizioterapeitu asociācija",
     },
     abroad: {
       title: "Kurss ārzemēs: cik TIP?",

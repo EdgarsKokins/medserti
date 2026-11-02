@@ -1081,6 +1081,7 @@ export const LABELS: Record<string, string> = {
   "courses.sourceLabels.medicinaskursi": "Avots: medicinaskursi.lv",
   "courses.sourceLabels.lumpii": "Avots: LUMPII",
   "courses.sourceLabels.evisit": "Avots: Evisit",
+  "courses.sourceLabels.lfa": "Avots: Latvijas Fizioterapeitu asociācija",
   "api.passwordBreachedWarn": "Parole datu noplūdē: brīdinājums ar iespēju turpināt",
   "profile.ruleDoctorTier": "Profils: prasība 250 TIP (ārsti, zobārsti, funkcionālie speciālisti)",
   "api.passwordBreachedContinue": "Parole datu noplūdē: poga, lai turpinātu",
