@@ -174,3 +174,19 @@
   .tabCard .colNo { font-size: 0.72rem; }
   .steps { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* public course sample (#kursi): a few upcoming events, TIP and price on the right */
+.sample { display: flex; flex-direction: column; gap: 18px; max-width: 860px; }
+.sampleList { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.sampleList li { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.sampleMain { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.sampleTitle { font-weight: 600; overflow-wrap: anywhere; }
+.sampleSide { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px; max-width: 9rem; }
+.sampleTip { color: var(--accent); font-family: var(--font-serif); font-size: 1.5rem; line-height: 1.15; white-space: nowrap; }
+.sampleTip small { font-family: var(--font-sans); font-size: 0.7rem; letter-spacing: 0.06em; }
+.samplePrice { font-weight: 600; }
+@media (max-width: 640px) {
+  .sampleList li { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; }
+  .sampleTip { font-size: 1.25rem; }
+  .sampleSide { max-width: 7rem; }
+}
