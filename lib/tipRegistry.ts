@@ -39,6 +39,7 @@ export function parseRegistryRows(html: string): RegistryEvent[] {
       days,
       // the organizer is the first line; contact person, phone and e-mail follow and are dropped
       organizer: textOf(/<strong>([\s\S]*?)<\/strong>/.exec(cells[11])?.[1] ?? cells[11].split(/<br\s*\/?>/)[0] ?? ""),
+      audience: textOf(cells[5]),
       tip: Number.isFinite(tip) && tip > 0 ? tip : null,
       detailRef: ref ? `${ref[1]}:${ref[2]}` : null,
     });
@@ -63,7 +64,7 @@ async function search(term: string): Promise<RegistryEvent[]> {
 }
 
 /**
- * Look the certificate up in the register. Never throws: a register that is down gives status "error",
+ * Look the certificate up in the register (also for its audience, when the certificate names no specialty). Never throws: a register that is down gives status "error",
  * and the certificate asks for the points by hand as before.
  */
 export async function lookupTip(cert: CertKeys, fetchRows: (term: string) => Promise<RegistryEvent[]> = search): Promise<TipLookup | null> {

@@ -225,7 +225,7 @@ test("parseRegistryRows: reads a register row, drops contact details", () => {
     "<strong>Demo Partneri SIA</strong><br/><small>Anna Demo</small><br/><small>+371 20000000</small>",
   ].map(td).join("")}</tr></tbody></table>`;
   const [row] = parseRegistryRows(html);
-  assert.deepEqual(row, { approvalId: "TIP2025/1001", title: '2.konference "Demo jaunumi"', start: "2025-10-10", end: null, days: ["2025-10-10"], organizer: "Demo Partneri SIA", tip: 4, detailRef: "application:1001" });
+  assert.deepEqual(row, { approvalId: "TIP2025/1001", title: '2.konference "Demo jaunumi"', start: "2025-10-10", end: null, days: ["2025-10-10"], organizer: "Demo Partneri SIA", audience: "Traumatologs, ortopēds", tip: 4, detailRef: "application:1001" });
 });
 
 // ---------- course abroad: how many TIP (lib/abroad.ts, conservative reading chosen 22 Oct 2026) ----------

@@ -83,6 +83,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     nurseTopic: fields.nurseTopic === undefined ? (cert.nurseTopic ?? null) : fields.nurseTopic,
     approvalId: fields.approvalId || null,
     country: fields.country || null,
+    // the user's own answer replaces Medserti's reason for it
+    inSpecialtyBy: fields.inSpecialty === cert.inSpecialty ? (cert.inSpecialtyBy ?? null) : null,
     endDate: fields.endDate && fields.endDate !== fields.date ? fields.endDate : null,
     // the user has looked at every field now; the parser's doubts no longer apply
     fieldConfidence: null,
