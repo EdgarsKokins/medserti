@@ -69,7 +69,8 @@ export function parseLumpii(html: string, today = todayLv()): Course[] {
     const online = /zoom|vebinār|webinār|tiešsaist|attālināt/iu.test(body);
     const inPerson = /klātien|prakse|praktizē/iu.test(body);
     const format: CourseFormat = online && inPerson ? "hybrid" : online ? "online_live" : "in_person";
-    const address = /[\p{Lu}][\p{L}.]*\s+iela\s+\d+[a-z]?,\s*[\p{Lu}][\p{L}]+/u.exec(body)?.[0] ?? null;
+    // "A.Čaka iela 50, Rīga" or, in a heading, "A.Čaka ielā 50, Rīgā"
+    const address = /[\p{Lu}][\p{L}.]*\s+iel[aā]\s+\d+[a-z]?,\s*[\p{Lu}][\p{L}]+/u.exec(body)?.[0] ?? null;
     const location = format === "online_live" ? "Zoom" : format === "hybrid" ? `Zoom; ${address ?? "klātienē"}` : address;
     const city = (address && cityOf(address).city) ?? (online ? "Online" : null);
     const tip = tipIn(body) ?? (Number(/\bTIP\s+(\d{1,3}(?:[.,]\d)?)\b/u.exec(body)?.[1]?.replace(",", ".")) || null);
@@ -82,6 +83,9 @@ export function parseLumpii(html: string, today = todayLv()): Course[] {
 
     for (const s of sessions) {
       if ((s.end ?? s.start) < today) continue;
+      // "13.11.2026 12:00-16:00": the time right after the session's first date
+      const [y, mo, d] = s.start.split("-");
+      const time = new RegExp(`\\b0?${Number(d)}\\.0?${Number(mo)}\\.${y}\\s+(\\d{1,2}[:.]\\d{2}(?:\\s*-\\s*\\d{1,2}[:.]\\d{2})?)`).exec(body)?.[1];
       out.push({
         id: `lumpii:${titleKey(title).slice(0, 40)}:${s.start}`,
         kind: "event",
@@ -93,6 +97,7 @@ export function parseLumpii(html: string, today = todayLv()): Course[] {
         availableUntil: null,
         format,
         location,
+        time: time ? time.replace(/\./g, ":").replace(/\s+/g, "") : null,
         city,
         tip,
         minutes: null,

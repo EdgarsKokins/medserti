@@ -21,6 +21,8 @@ export interface Course {
   format: CourseFormat;
   /** venue as published, shortened */
   location: string | null;
+  /** start time or time range as published, e.g. "12:00-16:00"; null or missing if the source gives none */
+  time?: string | null;
   /** city name, "Online" for online events, null if unknown */
   city: string | null;
   tip: number | null;
@@ -102,10 +104,11 @@ export const isNurseCourse = (c: Pick<Course, "source" | "audience">) =>
   c.source === "lma" || /(?<![\p{L}])(?:mās(?:a|as|ām|u)|nurses?)(?![\p{L}])/iu.test(c.audience);
 
 /**
- * What only an opened course needs: link, venue, approval, programme reference and registration contact.
+ * What only an opened course needs: link, venue, time, approval, programme reference and registration contact.
  * The /courses list leaves these out of its rows and loads them per course (/api/courses/item) when one is opened.
  */
 export type CourseExtra = Pick<Course, "url" | "location" | "approvalId" | "annexItem"> & {
+  time: string | null;
   detailRef: string | null;
   contact: CourseContact | null;
 };
@@ -113,6 +116,7 @@ export type CourseExtra = Pick<Course, "url" | "location" | "approvalId" | "anne
 export const courseExtra = (c: Course): CourseExtra => ({
   url: c.url,
   location: c.location,
+  time: c.time ?? null,
   approvalId: c.approvalId,
   annexItem: c.annexItem,
   detailRef: c.detailRef ?? null,
