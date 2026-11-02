@@ -9,16 +9,16 @@ import { readCourseIndex } from "@/lib/courses/store";
 import type { Course } from "@/lib/courses/types";
 import type { Check } from "@/lib/rules";
 import { todayLv } from "@/lib/format";
-import { fmtDate, fmtNum } from "@/components/dashboard/model";
+import { fmtNum } from "@/components/dashboard/model";
 import ProtoBar from "../ProtoBar";
 import NotifyButton from "../NotifyButton";
 import s from "../prototips.module.css";
 
 /**
- * PROTOTYPE (branch "prototypes", never merged): the dashboard as three equal rows, for Ralfs Gauja #10 and Ineta
- * Ūdra #13: my certificates, courses for me, Medserti's own lectures (not launched yet). Each row has the same shape:
- * a title, one line on what it does for the doctor, and cards. TIP is one small badge by the greeting, not the headline.
- * Real data of the signed-in user, or of the demo account when nobody is signed in; Latvian only.
+ * PROTOTYPE (branch "prototypes", never merged): the dashboard as three soft tiles, for Ralfs Gauja #10 and Ineta
+ * Ūdra #13: certificates, courses, Medserti's own lectures (not launched yet). One word and one short status per tile;
+ * TIP is one small ring by the greeting. Real data of the signed-in user, or of the demo account when nobody is
+ * signed in; Latvian only.
  */
 
 const MONTH_SHORT = ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"];
@@ -30,16 +30,6 @@ function vocative(fullName: string): string {
   if (/[sš]$/.test(first)) return first.slice(0, -1);
   return first;
 }
-
-/** "Jums noder: …": the requirement a course helps with */
-const GAP_TAG: Partial<Record<Check["id"], string>> = {
-  specialty: "Jūsu specialitāte",
-  emergency_points: "neatliekamā palīdzība",
-  emergency_practical: "neatliekamās palīdzības prakse",
-  infection_control: "infekciju kontrole",
-  patient_safety: "pacientu drošība",
-  nursing: "māsas kompetences",
-};
 
 // no course field says "emergency care", so the prototype matches the title and audience
 const EMERGENCY = /neatliek|reanim|pirm[āa] palīdz|\bNMP\b|\bBLS\b|\bALS\b|kardiopulmon/i;
@@ -73,150 +63,73 @@ export default async function ProtoDashboard() {
   const name = vocative(user.profile.fullName);
   const until = p.windowEnd ? `līdz ${MONTH_SHORT[Number(p.windowEnd.slice(5, 7)) - 1].toLowerCase()} ${p.windowEnd.slice(0, 4)}` : "";
 
-  // certificates: the ones waiting for a check first, then the newest
-  const myCerts = [...certs]
-    .filter((c) => c.status !== "failed")
-    .sort((a, b) => Number(b.status === "needs_review") - Number(a.status === "needs_review") || (b.date ?? "").localeCompare(a.date ?? ""))
-    .slice(0, 3);
-
-  // courses: the one that covers what the doctor is short on gets a tag saying so; then the specialty's own, by date
-  const helps = !done && open ? covering[0] ?? null : null;
-  const helpsTag = helps && open ? `Jums noder: ${GAP_TAG[open.id]}` : null;
-  const feed = [
-    ...(helps ? [helps] : []),
-    ...upcoming
-      .filter((c) => c.id !== helps?.id)
-      .sort((a, b) => Number(mine(b)) - Number(mine(a)) || a.startDate!.localeCompare(b.startDate!))
-      .slice(0, helps ? 3 : 4),
-  ].sort((a, b) => a.startDate!.localeCompare(b.startDate!));
+  // course tile: the one that covers what the doctor is short on, else the soonest for their specialty
+  const nextCourse = (!done && open ? covering[0] : null) ?? upcoming.find(mine) ?? upcoming[0] ?? null;
+  const pct = Math.min(100, (p.total / (p.required || 1)) * 100);
 
   return (
     <>
       <ProtoBar
         title="Pārskats"
-        active="Trīs rindas"
+        active="Vienkāršs"
         links={[
-          { href: "/prototips/parskats", label: "Trīs rindas" },
+          { href: "/prototips/parskats", label: "Vienkāršs" },
           // signed out, the current dashboard opens through the demo sign-in, as "Apskatīt demo" does
           { href: signedIn ? "/dashboard" : "/api/auth/demo", label: "Pašreizējais pārskats" },
         ]}
       />
-      <main className={`container ${s.page}`}>
+      <main className={`container ${s.calm}`}>
         <header className={s.top}>
-          <div>
-            <h1 className={s.topHello}>Labdien{name ? `, ${name}` : ""}!</h1>
-            {specialty && <p className="muted">{specialty}</p>}
-          </div>
-          <Link href="/certificates" className={`${s.tipPill} ${done ? s.tipPillDone : ""}`} title="Sertifikāti un detaļas">
-            <span className={s.ring} style={{ ["--pct" as string]: `${Math.min(100, (p.total / (p.required || 1)) * 100)}%` }} aria-hidden />
+          <h1 className={s.topHello}>Labdien{name ? `, ${name}` : ""}!</h1>
+          <Link href="/certificates" className={`${s.tipPill} ${done ? s.tipPillDone : ""}`}>
+            <span className={s.ring} style={{ ["--pct" as string]: `${pct}%` }} aria-hidden />
             <span>
               <b>{fmtNum(p.total)} / {p.required} TIP</b>
-              <span className={s.pillSub}>{done ? "Prasības izpildītas" : until}</span>
+              <span className={s.pillSub}>{done ? "Izpildīts" : until}</span>
             </span>
           </Link>
         </header>
 
-        {/* 1. my certificates */}
-        <Row
-          id="r1"
-          title="Mani sertifikāti"
-          value="Visas Jūsu apmācības vienuviet, saskaitītas un gatavas iesniegšanai."
-          link={{ href: "/certificates", label: "Visi sertifikāti" }}
-          badge={waiting ? `${waiting} gaida pārbaudi` : null}
-        >
-          <ul className={s.feed}>
-            <li>
-              <Link href="/certificates" className={`${s.feedCard} ${s.addCard}`}>
-                <span className={s.addPlus} aria-hidden>+</span>
-                <span className={s.feedTitle}>Pievienot sertifikātu</span>
-                <span className={s.meta}>PDF vai foto, punkti tiks nolasīti automātiski</span>
-              </Link>
-            </li>
-            {myCerts.map((c) => (
-              <li key={c.id}>
-                <Link href="/certificates" className={s.feedCard}>
-                  <span className={s.feedTop}>
-                    <span className={c.status === "needs_review" ? s.chipWarn : s.chipOk}>{c.status === "needs_review" ? "Jāpārbauda" : "Apstiprināts"}</span>
-                    {c.points != null && <span className={s.tipSmall}>{fmtNum(c.points)} TIP</span>}
-                  </span>
-                  <span className={s.feedTitle}>{c.title || "Bez nosaukuma"}</span>
-                  <span className={s.meta}>{[c.date ? fmtDate(c.date, "lv") : null, c.organizer].filter(Boolean).join(" · ")}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Row>
+        <div className={s.tiles}>
+          <Link href="/certificates" className={`${s.tile2} ${s.tBlue}`}>
+            <span className={s.icon}><IconDoc /></span>
+            <span className={s.tileName}>Sertifikāti</span>
+            <span className={s.tileStatus}>{waiting ? `${waiting} jāpārbauda` : certs.length ? "Viss kārtībā ✓" : "Pievienojiet pirmo"}</span>
+            <span className={s.tileGo}>{waiting ? "Pārbaudīt" : "Pievienot"} →</span>
+          </Link>
 
-        {/* 2. courses for me */}
-        <Row
-          id="r2"
-          title="Kursi Jums"
-          value={specialty ? `Atlasīti specialitātei: ${specialty}.` : "Atlasīti Jūsu specialitātei."}
-          link={{ href: "/courses", label: "Visi kursi" }}
-        >
-          {feed.length ? (
-            <ul className={s.feed}>
-              {feed.map((c) => (
-                <li key={c.id}>
-                  <Link href={`/courses?open=${encodeURIComponent(c.id)}`} className={`${s.feedCard} ${c.id === helps?.id ? s.helpsCard : ""}`}>
-                    <span className={s.feedTop}>
-                      <DateBlock iso={c.startDate} small />
-                      {c.tip != null && <span className={s.tipSmall}>{fmtNum(c.tip)} TIP</span>}
-                    </span>
-                    {c.id === helps?.id && helpsTag && <span className={s.helpsTag}>{helpsTag}</span>}
-                    <span className={s.feedTitle}>{c.title}</span>
-                    <span className={s.meta}>{c.city === "Online" ? "Tiešsaistē" : (c.city ?? "Vieta nav norādīta")}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="muted">Tuvākajā laikā Jūsu specialitātei kursu nav.</p>
-          )}
-        </Row>
+          <Link href={nextCourse ? `/courses?open=${encodeURIComponent(nextCourse.id)}` : "/courses"} className={`${s.tile2} ${s.tGreen}`}>
+            <span className={s.icon}><IconCal /></span>
+            <span className={s.tileName}>Kursi</span>
+            <span className={s.tileStatus}>
+              {nextCourse ? `${shortDate(nextCourse.startDate!)} · ${nextCourse.city === "Online" ? "Tiešsaistē" : (nextCourse.city ?? "")}` : "Drīz būs jauni"}
+            </span>
+            {nextCourse && <span className={s.tilePeek}>{nextCourse.title}</span>}
+            <span className={s.tileGo}>Skatīt →</span>
+          </Link>
 
-        {/* 3. Medserti's own lectures: not launched, so honest placeholders and a way to say "I want this" */}
-        <Row id="r3" title="Lekcijas Medserti" value="Skatieties tepat, kad Jums ir laiks. Sertifikāts un punkti pievienosies paši." badge="Drīzumā">
-          <div className={s.lectures}>
-            <div className={s.lectureIntro}>
-              <p>Pirmās lekcijas Jūsu specialitātei vēl top. Pastāstīsim, kad tās būs pieejamas.</p>
-              <NotifyButton />
-            </div>
-            {[0, 1, 2].map((i) => (
-              <div key={i} className={s.lectureTile} aria-hidden>
-                <span className={s.play}>▶</span>
-              </div>
-            ))}
+          <div className={`${s.tile2} ${s.tPeach}`}>
+            <span className={s.icon}><IconPlay /></span>
+            <span className={s.tileName}>Lekcijas</span>
+            <span className={s.tileStatus}>Drīzumā</span>
+            <span className={s.tileGo}><NotifyButton /></span>
           </div>
-        </Row>
+        </div>
       </main>
     </>
   );
 }
 
-/** One of the three rows: same shape for each, so none outranks the others */
-function Row({ id, title, value, link, badge, children }: { id: string; title: string; value: string; link?: { href: string; label: string }; badge?: string | null; children: React.ReactNode }) {
-  return (
-    <section aria-labelledby={id} className={s.row}>
-      <div className={s.rowHead}>
-        <div>
-          <h2 id={id}>{title}{badge && <span className={s.rowBadge}>{badge}</span>}</h2>
-          <p className={s.rowValue}>{value}</p>
-        </div>
-        {link && <Link href={link.href} className={s.quiet}>{link.label} →</Link>}
-      </div>
-      {children}
-    </section>
-  );
-}
+/** "6. nov" */
+const shortDate = (iso: string) => `${Number(iso.slice(8, 10))}. ${MONTH_SHORT[Number(iso.slice(5, 7)) - 1].toLowerCase()}`;
 
-function DateBlock({ iso, small }: { iso: string | null | undefined; small?: boolean }) {
-  if (!iso) return null;
-  const [, m, d] = iso.split("-").map(Number);
-  return (
-    <span className={`${s.date} ${small ? s.dateSmall : ""}`}>
-      <span className={s.dateDay}>{d}</span>
-      <span className={s.dateMonth}>{MONTH_SHORT[m - 1]}</span>
-    </span>
-  );
-}
+const svg = { width: 28, height: 28, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const IconDoc = () => (
+  <svg {...svg}><path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" /><path d="M14 3v4h4" /><path d="M9 13l2 2 4-4" /></svg>
+);
+const IconCal = () => (
+  <svg {...svg}><rect x="3.5" y="5" width="17" height="15" rx="2.5" /><path d="M3.5 10h17M8 3v4M16 3v4" /><circle cx="12" cy="15" r="1.4" fill="currentColor" /></svg>
+);
+const IconPlay = () => (
+  <svg {...svg}><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" /></svg>
+);
