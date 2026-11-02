@@ -25,6 +25,8 @@ export interface UserRecord {
   notifications?: NotificationPrefs;
   /** Language for emails: the UI language at sign-up, then when the email settings were last saved; missing = lv */
   locale?: "lv" | "en" | "ru";
+  /** ISO time the user asked, on the dashboard, to hear when Medserti's own lectures start; missing = not asked */
+  lecturesInterestAt?: string;
 }
 
 export interface NotificationPrefs {

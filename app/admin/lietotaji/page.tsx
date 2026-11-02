@@ -45,13 +45,14 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const professions = t("lv").professions;
   const complete = users.filter((u) => profileComplete(u.profile)).length;
   const withCerts = certs.filter((c) => c.length > 0).length;
+  const lectures = users.filter((u) => u.lecturesInterestAt).length;
 
   return (
     <main className="container stack">
       <AdminNav current="users" />
       <h1>Lietotāji ({users.length})</h1>
       <p className="small muted">
-        Profils aizpildīts: {complete}. Ar vismaz vienu sertifikātu: {withCerts}. Demo konts nav iekļauts. Personas dati: neeksportējiet
+        Profils aizpildīts: {complete}. Ar vismaz vienu sertifikātu: {withCerts}. Gaida Medserti lekcijas: {lectures}. Demo konts nav iekļauts. Personas dati: neeksportējiet
         un nesūtiet tālāk. E-pasts atver lietotāja sertifikātus (katrs skatījums tiek reģistrēts).
       </p>
       <section className="card">
