@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
-import { listCertificates } from "@/lib/db";
+import { currentUser } from "@/lib/auth";
+import { getUser, listCertificates } from "@/lib/db";
+import { DEMO_USER_ID, ensureDemo } from "@/lib/demo";
 import { certProgress } from "@/lib/certAssign";
 import { pickCert } from "@/lib/profileCerts";
 import { matchesSpecialty } from "@/lib/parse";
@@ -16,11 +17,14 @@ import s from "../prototips.module.css";
 
 /**
  * PROTOTYPE (branch "prototypes", never merged): the dashboard cut to four blocks for Ralfs Gauja #10 and Ineta Ūdra
- * #13. Real data of the signed-in user; Latvian only. ?v=1: part 3 says "Drīzumā"; ?v=2: part 3 shows the recordings
+ * #13. Real data of the signed-in user, or of the demo account when nobody is signed in; Latvian only. ?v=1: part 3 says "Drīzumā"; ?v=2: part 3 shows the recordings
  * we already list, with Medserti's own lectures "drīzumā".
  */
 export default async function ProtoDashboard({ searchParams }: { searchParams: Promise<{ v?: string }> }) {
-  const user = await requireUser();
+  // signed out (e.g. opened in another browser): show the demo account, so the prototype opens anywhere
+  const signedIn = await currentUser();
+  if (!signedIn) await ensureDemo();
+  const user = signedIn ?? (await getUser(DEMO_USER_ID))!;
   const { v } = await searchParams;
   const variant = v === "2" ? "2" : "1";
   const [certs, idx] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null)]);
@@ -64,7 +68,8 @@ export default async function ProtoDashboard({ searchParams }: { searchParams: P
         links={[
           { href: "/prototips/parskats?v=1", label: "3. daļa: Drīzumā" },
           { href: "/prototips/parskats?v=2", label: "3. daļa: ieraksti" },
-          { href: "/dashboard", label: "Pašreizējais pārskats" },
+          // signed out, the current dashboard opens through the demo sign-in, as "Apskatīt demo" does
+          { href: signedIn ? "/dashboard" : "/api/auth/demo", label: "Pašreizējais pārskats" },
         ]}
       />
       <main className={`container ${s.page}`}>
