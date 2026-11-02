@@ -1229,6 +1229,7 @@ export const en = {
       lumpii: "LUMPII",
       lma: "Latvian Nurses Association",
       evisit: "Evisit",
+      lfa: "Latvian Physiotherapists Association",
     } as Record<CourseSource, string>,
     abroad: {
       title: "Course abroad: how many TIP?",
