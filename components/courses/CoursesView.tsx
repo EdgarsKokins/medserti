@@ -183,6 +183,15 @@ export default function CoursesView({
         ))}
       </div>
       <p className="small muted" style={{ marginTop: -6 }}>{s.tabHint[kind]}</p>
+      {/* the calendar alone hid the lectures that can be watched any time (Ineta Ūdra's test, November 2026) */}
+      {kind !== "recorded" && counts.recorded > 0 && (
+        <div className={styles.onlineNudge}>
+          <span>{s.onlineNudge(counts.recorded)}</span>
+          <button type="button" className="btn" onClick={() => reset(() => (setKind("recorded"), setCity("")))}>
+            {s.onlineNudgeBtn}
+          </button>
+        </div>
+      )}
 
       <div className={styles.filters}>
         <label className={styles.searchField}>
@@ -338,10 +347,10 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
       ? `${r.kind === "ongoing" ? s.approvedUntil : s.availableUntil} ${formatDate(r.availableUntil, locale)}`
       : null;
   // an online course's format already says "Online", so it gets no separate place
-  const online = r.city === "Online";
+  const online = r.city === "Online" || r.format === "online_live" || r.format === "recorded";
   const place = online || !r.city ? null : cityLabel(r.city, s);
   const location = extra?.location ?? null;
-  const venue = location && !online && location !== r.city ? location : null;
+  const venue = location && location !== r.city ? location : null;
   const hours = hoursOf(r.minutes, locale);
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
@@ -368,31 +377,21 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
               .filter(Boolean)
               .join("  ·  ")}
           </span>
-          <span className={styles.badges}>
-            {audienceBadge(r, s, locale)}
-            {r.free && <span className="tag">{s.free}</span>}
-            {r.price && !r.free && <span className="tag">{r.price}</span>}
-          </span>
+          <span className={styles.badges}>{audienceBadge(r, s, locale)}</span>
         </span>
-        <span className={styles.tip} aria-label={r.tip != null ? `${formatNumber(r.tip, 1)} TIP` : s.tipUnknown}>
-          {r.tip != null ? `+${formatNumber(r.tip, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
+        {/* TIP and price are what doctors compare first (Ralfs Gauja's test, November 2026) */}
+        <span className={styles.side}>
+          <span className={styles.tip} aria-label={r.tip != null ? `${formatNumber(r.tip, 1)} TIP` : s.tipUnknown}>
+            {r.tip != null ? `+${formatNumber(r.tip, 1)}` : "?"} <span className={styles.tipUnit}>TIP</span>
+          </span>
+          <span className={r.free || r.price ? styles.price : styles.priceNone}>{r.free ? s.free : (r.price ?? s.priceNotListed)}</span>
         </span>
         <span className={styles.chevron} aria-hidden>{open ? "−" : "+"}</span>
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
+          <CourseFacts r={r} extra={extra} date={date} place={place} venue={venue} online={online} hours={hours} />
           <ApplyBox r={r} extra={extra} locale={locale} />
-          <dl className={styles.facts}>
-            {date && <Fact k={s.details.date} v={date} />}
-            <Fact k={s.details.format} v={s.formats[r.format]} />
-            {(venue || place) && <Fact k={s.details.place} v={[venue, place && venue?.includes(place) ? null : place].filter(Boolean).join(", ")} />}
-            {hours && <Fact k={s.details.duration} v={`${s.hours(hours)} (${r.minutes} min)`} />}
-            {r.kind === "ongoing" && r.tip != null && <Fact k={s.details.tip} v={s.details.tipWhole(formatNumber(r.tip, 1))} />}
-            {r.organizer && <Fact k={s.details.organizer} v={r.organizer} />}
-            {r.audience && <Fact k={s.details.audience} v={r.audience} />}
-            <Fact k={s.details.price} v={r.free ? s.free : (r.price ?? s.details.priceUnknown)} />
-            {extra?.approvalId && <Fact k={r.source === "lma" ? s.details.approvalLma : s.details.approval} v={`${extra.approvalId}${extra.annexItem ? `, ${s.annex(extra.annexItem)}` : ""}`} />}
-          </dl>
           {extra?.detailRef && <Programme detailRef={extra.detailRef} locale={locale} />}
         </div>
       )}
@@ -459,6 +458,12 @@ function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | nul
           </a>
         </p>
       )}
+      {/* testers asked whether lectures play on Medserti and who gets paid (Ineta Ūdra's test, November 2026) */}
+      {r.format === "recorded" || r.format === "online_live" ? (
+        <p className="small muted" style={{ margin: 0 }}>{a.onlineNote}</p>
+      ) : (
+        !r.free && <p className="small muted" style={{ margin: 0 }}>{a.paidNote}</p>
+      )}
       {/* after the course: its certificate goes in from here, and the course fills what the certificate leaves out */}
       <p className="small" style={{ margin: 0 }}>
         <Link href={`/certificates?course=${encodeURIComponent(r.id)}`}>{a.addCertificate} →</Link>
@@ -517,11 +522,64 @@ function EmailApply({ email, subject, body, phone }: { email: string; subject: s
   );
 }
 
-function Fact({ k, v }: { k: string; v: string }) {
+/**
+ * The same facts on every course, in the same order. A fact the source does not give says so ("Nav norādīts")
+ * instead of being left out: testers read a missing price or address as an error (Ineta Ūdra's test, November 2026).
+ */
+function CourseFacts({
+  r,
+  extra,
+  date,
+  place,
+  venue,
+  online,
+  hours,
+}: {
+  r: CourseRow;
+  extra: CourseExtra | null | undefined;
+  date: string | null;
+  place: string | null;
+  venue: string | null;
+  online: boolean;
+  hours: string | null;
+}) {
+  const s = useDict().courses;
+  const d = s.details;
+  const none = d.notListed;
+  // venue, time and approval come with the opened course's details; "…" until they arrive
+  const later = (v: string | null | undefined) => (extra === undefined ? "…" : (v ?? none));
+  const event = r.kind === "event";
+  const facts: [string, string][] = [
+    event ? [d.date, date ?? none] : [d.available, date ?? d.anytime],
+    ...(event ? ([[d.time, later(extra?.time)]] as [string, string][]) : []),
+    [d.format, s.formats[r.format]],
+    ...((online
+      ? [[d.where, later(venue)]]
+      : [
+          [d.city, place ?? none],
+          [d.address, later(venue && (!place || venue !== place) ? venue : null)],
+        ]) as [string, string][]),
+    [d.duration, hours ? `${s.hours(hours)} (${r.minutes} min)` : none],
+    [d.tip, r.tip == null ? none : r.kind === "ongoing" ? d.tipWhole(formatNumber(r.tip, 1)) : formatNumber(r.tip, 1)],
+    [d.price, r.free ? s.free : (r.price ?? d.priceUnknown)],
+    [d.organizer, r.organizer ?? none],
+    [d.audience, r.audience || s.noAudience],
+  ];
+  return (
+    <dl className={styles.facts}>
+      {facts.map(([k, v]) => (
+        <Fact key={k} k={k} v={v} muted={v === none || v === d.priceUnknown || v === s.noAudience} />
+      ))}
+      {extra?.approvalId && <Fact k={r.source === "lma" ? d.approvalLma : d.approval} v={`${extra.approvalId}${extra.annexItem ? `, ${s.annex(extra.annexItem)}` : ""}`} />}
+    </dl>
+  );
+}
+
+function Fact({ k, v, muted = false }: { k: string; v: string; muted?: boolean }) {
   return (
     <div className={styles.fact}>
       <dt>{k}</dt>
-      <dd>{v}</dd>
+      <dd className={muted ? "muted" : undefined}>{v}</dd>
     </div>
   );
 }

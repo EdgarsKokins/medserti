@@ -56,6 +56,10 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
       match.price = c.price;
       match.url = c.url;
       match.free = c.free;
+      // LĀB lists no time and often only the hospital; LUMPII publishes both
+      match.time ??= c.time;
+      if (!match.location && c.location) match.location = c.location;
+      match.city ??= c.city;
       continue;
     }
     if (match) {
