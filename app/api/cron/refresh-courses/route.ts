@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cronAuthorized } from "@/lib/cron";
 import { refreshCourseIndex } from "@/lib/courses/store";
 
-// ~20 polite sequential requests to the source sites, plus one per kursiarstiem.lv course for its price (~30)
+// ~20 polite requests to the source sites, one at a time per site and sites in parallel, plus one per kursiarstiem.lv course for its price (~30)
 export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 

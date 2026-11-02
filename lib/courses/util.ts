@@ -44,6 +44,9 @@ export function textOf(fragment: string, keepBreaks = false): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+/** "GERIATRISKU KLIENTU UZTURA ĪPATNĪBAS" -> "Geriatrisku klientu uztura īpatnības"; mixed case stays */
+export const sentenceCase = (s: string) => (s === s.toUpperCase() && /\p{Lu}/u.test(s) ? s.charAt(0) + s.slice(1).toLowerCase() : s);
+
 /** "27.11.2026" -> "2026-11-27" */
 export function dmy(s: string): string | null {
   const m = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(s);
@@ -76,7 +79,7 @@ export function tipIn(s: string): number | null {
 const CITY_RX = CITIES.map((c) => [c, new RegExp(`(?<![a-z])${fold(c).slice(0, Math.max(4, c.length - 1))}[a-z]*`)] as const);
 /** large Riga hospitals and venues that are often written without the city */
 const RIGA_VENUES =
-  /stradiņa|stradina|rakus|gaiļezer|gailezer|linezer|bērnu klīniskā universitātes|bkus|psihiskās veselības centrs|tvaika iela|pilsonu iela|hipokrāta|dzirciema|krasta iela|skolas iela 3|turība|gradu iel|anniņmuiž|ķīpsal|wellton|grebenščikov|infektoloģijas centrs|dzelzceļš|\bnmpd\b|amerikas acu centrs|\bmitc\b/iu;
+  /stradiņa|stradina|rakus|gaiļezer|gailezer|linezer|bērnu klīniskā universitātes|bkus|psihiskās veselības centrs|tvaika iela|pilsonu iela|hipokrāta|dzirciema|krasta iela|skolas iela 3|turība|gradu iel|anniņmuiž|ķīpsal|wellton|grebenščikov|infektoloģijas centrs|dzelzceļš|\bnmpd\b|amerikas acu centrs|\bmitc\b|radisson\s+(?:blu\s+|blue\s+|hotel\s+)?daugava/iu;
 /** venues outside Riga that are written without the town */
 const VENUE_CITY: [RegExp, string][] = [[/ziemeļkurzemes reģionālā slimnīca/iu, "Ventspils"]];
 const ONLINE_RX = /tiešsaist|attālināt|online|zoom|teams|meet|webex|webinār|vebinār|www\.|https?:\/\/|platform|tālmācīb|video\s*lekcij|moodle/iu;

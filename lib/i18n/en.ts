@@ -1257,6 +1257,9 @@ export const en = {
       lma: "Latvian Nurses Association",
       evisit: "Evisit",
       lfa: "Latvian Physiotherapists Association",
+      lupsk: "P. Stradiņš Medical College of the University of Latvia",
+      lza: "Latvian Dental Association",
+      kosmetologs: "kosmetologs.lv",
     } as Record<CourseSource, string>,
     abroad: {
       title: "Course abroad: how many TIP?",

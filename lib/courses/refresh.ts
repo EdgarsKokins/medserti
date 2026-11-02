@@ -1,4 +1,4 @@
-import type { Course, CourseIndex, CourseSource, SourceStatus } from "./types";
+import { SOURCE_URLS, type Course, type CourseIndex, type CourseSource, type SourceStatus } from "./types";
 import { samePrefix, titleKey } from "./util";
 import { fetchLabTip } from "./sources/labTip";
 import { fetchLabCourses } from "./sources/labCourses";
@@ -7,6 +7,9 @@ import { fetchLumpii } from "./sources/lumpii";
 import { fetchLma } from "./sources/lma";
 import { fetchEvisit } from "./sources/evisit";
 import { fetchLfa } from "./sources/lfa";
+import { fetchLupsk } from "./sources/lupsk";
+import { fetchLza } from "./sources/lza";
+import { fetchKosmetologs } from "./sources/kosmetologs";
 
 const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   lab_tip: fetchLabTip,
@@ -17,6 +20,9 @@ const FETCHERS: Record<CourseSource, () => Promise<Course[]>> = {
   lma: fetchLma,
   evisit: fetchEvisit,
   lfa: fetchLfa,
+  lupsk: fetchLupsk,
+  lza: fetchLza,
+  kosmetologs: fetchKosmetologs,
 };
 
 /**
@@ -82,7 +88,7 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
   tip = tip.filter((c) => !replaced.has(c));
 
   const seen = new Set([...tip, ...replaced].map((c) => titleKey(c.title)));
-  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? []), ...(bySource.evisit ?? []), ...(bySource.lfa ?? [])]) {
+  for (const c of [...(bySource.kursiarstiem ?? []), ...(bySource.medicinaskursi ?? []), ...(bySource.lma ?? []), ...(bySource.evisit ?? []), ...(bySource.lfa ?? []), ...(bySource.lupsk ?? []), ...(bySource.lza ?? []), ...(bySource.kosmetologs ?? [])]) {
     const key = titleKey(c.title);
     if (key && seen.has(key)) {
       // the same course on LĀB's TIP list: keep that row, but take the price the shop publishes
@@ -110,16 +116,27 @@ export function mergeCourses(bySource: Partial<Record<CourseSource, Course[]>>):
 
 export async function buildCourseIndex(): Promise<CourseIndex> {
   const bySource: Partial<Record<CourseSource, Course[]>> = {};
-  const sources: SourceStatus[] = [];
-  // sequential on purpose: at most one request at a time to each site
+  const status = new Map<CourseSource, SourceStatus>();
+  // one request at a time to each site, but different sites at once: one after another, eleven sources took 118 of
+  // the cron's 120 seconds (November 2026). Sources on the same host (LĀB's two lists) stay in one queue.
+  const queues = new Map<string, CourseSource[]>();
   for (const source of Object.keys(FETCHERS) as CourseSource[]) {
-    try {
-      const list = await FETCHERS[source]();
-      bySource[source] = list;
-      sources.push({ source, ok: true, count: list.length, error: null });
-    } catch (e) {
-      sources.push({ source, ok: false, count: 0, error: e instanceof Error ? e.message.slice(0, 200) : String(e) });
-    }
+    const host = new URL(SOURCE_URLS[source]).hostname.replace(/^www\./, "");
+    queues.set(host, [...(queues.get(host) ?? []), source]);
   }
+  await Promise.all(
+    [...queues.values()].map(async (queue) => {
+      for (const source of queue) {
+        try {
+          const list = await FETCHERS[source]();
+          bySource[source] = list;
+          status.set(source, { source, ok: true, count: list.length, error: null });
+        } catch (e) {
+          status.set(source, { source, ok: false, count: 0, error: e instanceof Error ? e.message.slice(0, 200) : String(e) });
+        }
+      }
+    }),
+  );
+  const sources = (Object.keys(FETCHERS) as CourseSource[]).map((s) => status.get(s)!);
   return { fetchedAt: new Date().toISOString(), courses: mergeCourses(bySource), sources };
 }

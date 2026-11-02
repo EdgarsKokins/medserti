@@ -1265,6 +1265,9 @@ export const lv: Dict = {
       lma: "Latvijas Māsu asociācija",
       evisit: "Evisit",
       lfa: "Latvijas Fizioterapeitu asociācija",
+      lupsk: "LU P. Stradiņa medicīnas koledža",
+      lza: "Latvijas Zobārstu asociācija",
+      kosmetologs: "kosmetologs.lv",
     },
     abroad: {
       title: "Kurss ārzemēs: cik TIP?",
