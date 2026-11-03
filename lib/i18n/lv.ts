@@ -54,10 +54,10 @@ export const lv: Dict = {
     specialtyHint: "Nav obligāti. Pēc tās atlasām Jums kursus.",
     forgotLink: "Aizmirsāt paroli?",
     valueTitle: "Kā darbojas Medserti",
-    valuePoints: [
-      "Augšupielādējiet sertifikātus, un punkti tiks nolasīti automātiski",
-      "Redziet, cik TIP vēl jāsavāc un līdz kuram datumam",
-      "Atrodiet LĀB apstiprinātus kursus savai specialitātei",
+    valueParts: [
+      { title: "Sertifikāti", line: "Augšupielādējiet tos, un punkti tiks nolasīti un saskaitīti automātiski" },
+      { title: "Kursi", line: "Tuvākie kursi ar TIP Jūsu specialitātei" },
+      { title: "Lekcijas", line: "Drīzumā: lekcijas ar TIP, ko skatāties tepat" },
     ],
   },
   reset: {

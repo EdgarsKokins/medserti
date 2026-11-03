@@ -58,10 +58,10 @@ export const en = {
     specialtyHint: "Optional. We use it to pick courses for you.",
     forgotLink: "Forgot your password?",
     valueTitle: "How Medserti works",
-    valuePoints: [
-      "Upload your certificates and the points are read automatically",
-      "See how many TIP you still need, and by when",
-      "Find courses approved by the Latvian Medical Association (LĀB) for your specialty",
+    valueParts: [
+      { title: "Certificates", line: "Upload them, and the points are read and added up for you" },
+      { title: "Courses", line: "Upcoming courses with TIP for your specialty" },
+      { title: "Lectures", line: "Coming soon: lectures with TIP to watch right here" },
     ],
   },
   reset: {

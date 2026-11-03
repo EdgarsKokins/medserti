@@ -12,6 +12,7 @@ import DemoButton from "./DemoButton";
 import ProfessionPicker from "./ProfessionPicker";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./auth.module.css";
+import { IconCal, IconDoc, IconPlay } from "./PartIcons";
 import { trackEvent } from "@/components/monitoring/track";
 
 type Field = "fullName" | "profession" | "email" | "password" | "consent";
@@ -110,14 +111,21 @@ export default function AuthForm({
       </div>
 
       <section className={s.value} aria-label={a.valueTitle}>
-        <ol className={s.points}>
-          {a.valuePoints.map((point, i) => (
-            <li key={i}>
-              <span className={s.num} aria-hidden>{String(i + 1).padStart(2, "0")}</span>
-              <span>{point}</span>
-            </li>
-          ))}
-        </ol>
+        {/* the same three parts as the dashboard tiles, in their colours */}
+        <ul className={s.parts}>
+          {a.valueParts.map((part, i) => {
+            const Icon = [IconDoc, IconCal, IconPlay][i] ?? IconDoc;
+            return (
+              <li key={i} className={[s.blue, s.green, s.peach][i]}>
+                <span className={s.partIcon}><Icon /></span>
+                <span className={s.partText}>
+                  <b>{part.title}</b>
+                  <span>{part.line}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       <div className={s.card}>
