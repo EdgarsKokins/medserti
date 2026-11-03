@@ -104,12 +104,7 @@ export default function AuthForm({
 
   return (
     <main className={s.page}>
-      <div className={s.brand}>
-        <span className={`brand-seal ${s.seal}`} aria-hidden>M</span>
-        <strong className={s.wordmark}>{d.brand.name}</strong>
-        <span className={s.tagline}>{d.brand.tagline}</span>
-      </div>
-
+      {/* no second logo here: the site header already shows Medserti */}
       <section className={s.value} aria-label={a.valueTitle}>
         {/* the same three parts as the dashboard tiles, in their colours */}
         <ul className={s.parts}>
