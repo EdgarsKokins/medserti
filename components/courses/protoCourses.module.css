@@ -1,0 +1,51 @@
+/* prototype-only styles (branch login-panel-prototypes, never merged) */
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: clamp(2.2rem, 4.4vw, 3.2rem); letter-spacing: -0.01em; }
+.need { font-weight: 600; color: var(--accent); background: var(--accent-soft); border-radius: 99px; padding: 6px 16px; }
+.note { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.stackA { display: flex; flex-direction: column; gap: 16px; }
+
+.search { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 22px; height: 60px; border-radius: 99px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); box-shadow: 0 8px 24px -18px rgba(11, 27, 43, 0.4); }
+.search:focus-within { border-color: var(--accent); }
+.search input { flex: 1; min-width: 0; border: none !important; outline: none; background: transparent !important; box-shadow: none !important; font: inherit; font-size: 1.1rem; color: var(--text); padding: 0; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { padding: 9px 16px; border-radius: 99px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+.pill:hover { border-color: var(--accent); }
+.pill:disabled { opacity: 0.5; cursor: default; }
+.pillOn, .pillOn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.moreBtn { padding: 9px 8px; border: none; background: none; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; }
+
+/* A: kinds as one soft segmented control */
+.segments { display: inline-flex; align-self: flex-start; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 99px; background: var(--surface-2); }
+.segment { padding: 10px 20px; border: none; border-radius: 99px; background: transparent; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+.segmentOn { background: var(--surface); color: var(--text); box-shadow: 0 4px 12px -8px rgba(11, 27, 43, 0.5); }
+.count { font-weight: 500; opacity: 0.7; }
+
+/* B: kinds as three soft cards */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 2px solid transparent; border-radius: 24px; font: inherit; color: var(--text); text-align: left; cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease; }
+.card:hover { transform: translateY(-2px); }
+.cardOn { border-color: var(--tone); }
+.green { background: var(--ok-soft); --tone: var(--ok); }
+.blue { background: var(--accent-soft); --tone: var(--accent); }
+.gray { background: var(--surface-2); --tone: var(--muted); }
+.cardIcon { flex: none; width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); color: var(--tone); }
+.cardIcon svg { width: 26px; height: 26px; }
+.cardName { flex: 1; font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; }
+.cardCount { font-weight: 700; color: var(--tone); font-size: 1.15rem; }
+.searchRow { display: flex; gap: 10px; align-items: center; }
+.filterBtn { height: 60px; padding: 0 24px; border-radius: 99px; border: 1px solid var(--border-strong); background: var(--surface); font: inherit; font-weight: 600; color: var(--text); cursor: pointer; }
+.filterPanel { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 20px; background: var(--surface); border: 1px solid var(--border); }
+
+/* C: the filters read as one sentence */
+.sentence { margin: 0; font-family: var(--font-serif); font-size: clamp(1.35rem, 2.6vw, 1.9rem); line-height: 1.65; }
+.sentence select { appearance: none; -webkit-appearance: none; width: auto; height: auto; min-height: 0; margin: 0 2px; padding: 0 22px 0 8px; border: none; border-bottom: 2px solid var(--accent); border-radius: 6px 6px 0 0; background: var(--accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231e48c9' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 6px center; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; max-width: 100%; }
+
+@media (max-width: 760px) {
+  .cards { grid-template-columns: 1fr; gap: 10px; }
+  .searchRow { flex-wrap: wrap; }
+  .filterBtn { height: 48px; }
+  .search { height: 52px; }
+}
+@media (prefers-reduced-motion: reduce) { .card, .pill { transition: none; } .card:hover { transform: none; } }

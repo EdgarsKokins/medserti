@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { requireUser } from "@/lib/auth";
+import { currentUser, requireUser } from "@/lib/auth";
+import { DEMO_USER_ID, ensureDemo } from "@/lib/demo";
+import Bar from "@/app/prototips/Bar";
 import { getLocale } from "@/lib/i18n/server";
 import { t } from "@/lib/i18n";
-import { listCertificates } from "@/lib/db";
+import { getUser, listCertificates } from "@/lib/db";
 import { computeProgress } from "@/lib/rules";
 import { matchesSpecialty } from "@/lib/parse";
 import { getCourseIndex } from "@/lib/courses/store";
@@ -15,9 +17,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).courses.title };
 }
 
-export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ open?: string | string[]; tab?: string | string[] }> }) {
-  const user = await requireUser();
-  const { open, tab } = await searchParams;
+export default async function CoursesPage({ searchParams }: { searchParams: Promise<{ open?: string | string[]; tab?: string | string[]; proto?: string }> }) {
+  const { open, tab, proto: protoParam } = await searchParams;
+  // PROTOTYPE (branch login-panel-prototypes): ?proto=A|B|C tries a simpler top; signed out shows the demo account
+  const proto = protoParam === "A" || protoParam === "B" || protoParam === "C" ? protoParam : null;
+  let user;
+  if (proto) {
+    const me = await currentUser();
+    if (!me) await ensureDemo();
+    user = me ?? (await getUser(DEMO_USER_ID))!;
+  } else user = await requireUser();
   const locale = await getLocale();
   const [idx, certs] = await Promise.all([getCourseIndex(), listCertificates(user.id)]);
   const progress = computeProgress(user.profile, certs);
@@ -51,7 +60,21 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const linked = openId ? idx.courses.find((c) => c.id === openId) : undefined;
 
   return (
+    <>
+    {proto && (
+      <Bar
+        title="Kursi"
+        active={proto}
+        links={[
+          { key: "A", href: "/courses?proto=A", label: "A · Meklēšana un birkas" },
+          { key: "B", href: "/courses?proto=B", label: "B · Trīs kartītes" },
+          { key: "C", href: "/courses?proto=C", label: "C · Viens teikums" },
+        ]}
+      />
+    )}
     <CoursesView
+      key={proto ?? "live"}
+      proto={proto}
       locale={locale}
       rows={rows}
       fetchedAt={idx.fetchedAt}
@@ -64,5 +87,6 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
       openExtra={linked ? courseExtra(linked) : null}
       initialKind={tab === "recorded" || tab === "ongoing" ? tab : null}
     />
+    </>
   );
 }

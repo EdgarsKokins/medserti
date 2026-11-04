@@ -41,6 +41,36 @@
 .goRow { padding-top: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .goRow :global(.btn) { background: var(--surface); border-color: transparent; border-radius: 99px; padding: 12px 22px; font-size: 1.05rem; }
 
+/* PROTOTYPE: the whole tile is a button; rows and the action sit above the stretched link */
+.click { position: relative; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer; }
+.click:hover { transform: translateY(-4px); box-shadow: 0 22px 44px -24px rgba(11, 27, 43, 0.35); }
+.stretch { color: inherit; text-decoration: none; }
+.stretch::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.click .rows { position: relative; z-index: 1; }
+.goBtn { position: relative; z-index: 1; margin-top: auto; align-self: stretch; display: block; text-align: center; padding: 14px 20px; border: none; border-radius: 99px; background: var(--tone); color: var(--surface); font: inherit; font-weight: 600; font-size: 1.05rem; text-decoration: none; cursor: pointer; transition: filter 0.15s ease; }
+.goBtn:hover { filter: brightness(1.12); }
+.rows + .goBtn { margin-top: auto; }
+.tile > .rows { margin-bottom: 24px; }
+
+.gray { background: var(--surface-2); --tone: var(--muted); }
+.gray .name { color: var(--muted); }
+.gray .icon { background: transparent; border: 2px dashed var(--border-strong); box-shadow: none; }
+.soonCentre { align-items: center; text-align: center; }
+.soonPill { margin: 6px 0 0; display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 99px; background: var(--muted); color: var(--surface); font-weight: 600; font-size: 1rem; }
+.soonLine { margin: 8px 0 0; color: var(--muted); font-size: 0.98rem; max-width: 26ch; }
+.screenGray { margin: auto 0; width: 86%; aspect-ratio: 16 / 9; border-radius: 18px; display: grid; place-items: center; border: 2px dashed var(--border-strong); }
+.playGray { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; padding-left: 4px; background: var(--border-strong); color: var(--surface); font-size: 1.2rem; }
+.goRowCentre { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.goRowCentre :global(.btn) { background: var(--surface); border-color: var(--border-strong); border-radius: 99px; padding: 12px 22px; font-size: 1.05rem; }
+.ribboned { position: relative; overflow: hidden; }
+.ribbon { position: absolute; top: 26px; right: -46px; width: 180px; padding: 6px 0; transform: rotate(45deg); background: var(--muted); color: var(--surface); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+.ghosts { list-style: none; margin: 22px 0 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.ghosts li { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 16px; border: 1.5px dashed var(--border-strong); }
+.ghostPlay { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; padding-left: 2px; background: var(--border-strong); color: var(--surface); font-size: 0.8rem; }
+.ghostLines { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.ghostLines i { display: block; height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--border-strong), var(--border), var(--border-strong)); background-size: 200% 100%; animation: shimmer 2.4s linear infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
 @media (max-width: 1000px) {
   .tile { padding: 28px; min-height: 460px; }
 }
@@ -53,6 +83,7 @@
   .screen { margin-top: 16px; aspect-ratio: 21 / 9; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .ghostLines i { animation: none; }
   .row { transition: none; }
   .row:hover { transform: none; }
 }

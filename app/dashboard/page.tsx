@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { isDemoUser, requireUser } from "@/lib/auth";
-import { listCertificates } from "@/lib/db";
+import { currentUser, isDemoUser, requireUser } from "@/lib/auth";
+import { getUser, listCertificates } from "@/lib/db";
+import { DEMO_USER_ID, ensureDemo } from "@/lib/demo";
+import Bar from "@/app/prototips/Bar";
 import { ruleBasis, RULES } from "@/lib/rules";
 import { certProgress } from "@/lib/certAssign";
 import { asProfile, pickCert, profileCerts } from "@/lib/profileCerts";
@@ -59,9 +61,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t(await getLocale()).nav.dashboard };
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ sert?: string | string[] }> }) {
-  const user = await requireUser();
-  const { sert } = await searchParams;
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ sert?: string | string[]; proto?: string }> }) {
+  const { sert, proto: protoParam } = await searchParams;
+  // PROTOTYPE (branch login-panel-prototypes): ?proto=1|2 tries the tiles; signed out shows the demo account
+  const proto = protoParam === "1" || protoParam === "2" ? protoParam : null;
+  let user;
+  if (proto) {
+    const me = await currentUser();
+    if (!me) await ensureDemo();
+    user = me ?? (await getUser(DEMO_USER_ID))!;
+  } else user = await requireUser();
   const [certs, courseIdx, locale] = await Promise.all([listCertificates(user.id), readCourseIndex().catch(() => null), getLocale()]);
   // nurses re-register on academic hours (Reg. 630), everyone else recertifies on TIP (Reg. 391)
   const hours = user.profile.profession === "nurse";
@@ -98,6 +107,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const h = headline(p, dict, locale);
 
   return (
+    <>
+    {proto && (
+      <Bar
+        title="Pārskats"
+        active={proto}
+        links={[
+          { key: "1", href: "/dashboard?proto=1", label: "1 · Lekcijas: pelēks rāmis centrā" },
+          { key: "2", href: "/dashboard?proto=2", label: "2 · Lekcijas: tukšas rindas" },
+        ]}
+      />
+    )}
     <main className="container stack" style={{ gap: 40 }}>
       {profileIncomplete && (
         <div className="alert">
@@ -139,6 +159,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         helpsId={helps?.id ?? null}
         lecturesAsked={!!user.lecturesInterestAt}
         readOnly={isDemoUser(user)}
+        proto={proto}
       />
 
       {/* everything the first screen leaves out, one click away: where each requirement stands, the documents, the history */}
@@ -192,5 +213,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         </div>
       </details>
     </main>
+    </>
   );
 }

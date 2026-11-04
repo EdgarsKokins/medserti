@@ -35,6 +35,11 @@
   }
   .value { display: block; }
 }
+/* PROTOTYPE: the panel centred against the card, the two columns centred on the page */
+@media (min-width: 1024px) {
+  .pageProto { max-width: 1120px; padding-top: 64px; align-items: center; justify-items: center; grid-template-columns: minmax(0, 1fr) 420px; column-gap: 72px; grid-template-areas: "value card"; }
+  .pageProto > :last-child { width: 100%; }
+}
 @media (max-width: 640px) {
   .page { padding: 32px 16px 64px; }
   .card { padding: 22px 18px; }

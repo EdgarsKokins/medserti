@@ -1,5 +1,7 @@
 "use client";
 
+import ps from "./protoCourses.module.css";
+import { IconCal, IconDoc, IconPlay } from "../PartIcons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { swapUnit, type Locale } from "@/lib/locale";
@@ -61,7 +63,10 @@ export default function CoursesView({
   openId = null,
   openExtra = null,
   initialKind = null,
+  proto = null,
 }: {
+  /** PROTOTYPE (branch login-panel-prototypes): a simpler top of the page */
+  proto?: "A" | "B" | "C" | null;
   locale: Locale;
   rows: CourseRow[];
   fetchedAt: string;
@@ -156,8 +161,135 @@ export default function CoursesView({
     setShown(PAGE);
   };
 
+  const [more, setMore] = useState(false);
+  const kindName: Record<CourseKind, string> = { event: "Gaidāmie", recorded: "Tiešsaistē", ongoing: "Programmas" };
+  const kindIcon = { event: <IconCal />, recorded: <IconPlay />, ongoing: <IconDoc /> };
+  const pill = (on: boolean, label: string, onClick: () => void, disabled = false) => (
+    <button key={label} type="button" className={`${ps.pill} ${on ? ps.pillOn : ""}`} aria-pressed={on} onClick={onClick} disabled={disabled}>
+      {on && <span aria-hidden>✓ </span>}{label}
+    </button>
+  );
+  const searchBox = (
+    <label className={ps.search}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <input type="search" aria-label={s.search} placeholder="Meklēt kursu" value={q} onChange={(e) => reset(() => setQ(e.target.value))} />
+    </label>
+  );
+  const pillMine = pill(mine, nurse ? s.forNurses : "Manai specialitātei", () => reset(() => setMine(!mine)), !specialty && !nurse);
+  const pillFree = pill(freeOnly, "Bez maksas", () => reset(() => setFreeOnly(!freeOnly)));
+  const pillFormats = [
+    pill(format === "in_person", "Klātienē", () => reset(() => setFormat(format === "in_person" ? "" : "in_person"))),
+    pill(format === "online", "Tiešsaistē", () => reset(() => setFormat(format === "online" ? "" : "online"))),
+  ];
+  const morePills = (
+    <div className={ps.pills}>
+      {kind === "event" && pill(period === "30", "30 dienās", () => reset(() => setPeriod(period === "30" ? "all" : "30")))}
+      {kind === "event" && pill(period === "90", "90 dienās", () => reset(() => setPeriod(period === "90" ? "all" : "90")))}
+      {[4, 8].map((n) => pill(minTip === n, `${n}+ TIP`, () => reset(() => setMinTip(minTip === n ? 0 : n))))}
+      {cities.slice(0, 5).map((c) => pill(city === c, cityLabel(c, s), () => reset(() => setCity(city === c ? "" : c))))}
+    </div>
+  );
+  const moreCount = (period !== "all" ? 1 : 0) + (minTip ? 1 : 0) + (city ? 1 : 0);
+  const CITY_IN: Record<string, string> = { Rīga: "Rīgā", Jūrmala: "Jūrmalā", Liepāja: "Liepājā", Daugavpils: "Daugavpilī", Valmiera: "Valmierā", Jelgava: "Jelgavā", Ventspils: "Ventspilī", Rēzekne: "Rēzeknē", Cēsis: "Cēsīs" };
+
+  const protoTop = proto && (
+    <>
+      <div className={ps.head}>
+        <h1>Kursi</h1>
+        {remaining > 0 && <span className={ps.need}>Vēl {formatNumber(remaining, 1)} {hoursUnit ?? "TIP"}</span>}
+      </div>
+
+      {proto === "A" && (
+        <div className={ps.stackA}>
+          {searchBox}
+          <div className={ps.segments} role="tablist">
+            {KINDS.map((k) => (
+              <button key={k} type="button" role="tab" aria-selected={kind === k} className={`${ps.segment} ${kind === k ? ps.segmentOn : ""}`} onClick={() => reset(() => (setKind(k), setCity("")))}>
+                {kindName[k]} <span className={ps.count}>{counts[k]}</span>
+              </button>
+            ))}
+          </div>
+          <div className={ps.pills}>
+            {pillMine}
+            {pillFormats}
+            {pillFree}
+            <button type="button" className={ps.moreBtn} aria-expanded={more} onClick={() => setMore(!more)}>{more ? "Mazāk" : moreCount ? `Vairāk (${moreCount})` : "Vairāk"}</button>
+          </div>
+          {more && morePills}
+        </div>
+      )}
+
+      {proto === "B" && (
+        <div className={ps.stackA}>
+          <div className={ps.cards} role="tablist">
+            {KINDS.map((k, i) => (
+              <button key={k} type="button" role="tab" aria-selected={kind === k} className={`${ps.card} ${[ps.green, ps.blue, ps.gray][i]} ${kind === k ? ps.cardOn : ""}`} onClick={() => reset(() => (setKind(k), setCity("")))}>
+                <span className={ps.cardIcon}>{kindIcon[k]}</span>
+                <span className={ps.cardName}>{kindName[k]}</span>
+                <span className={ps.cardCount}>{counts[k]}</span>
+              </button>
+            ))}
+          </div>
+          <div className={ps.searchRow}>
+            {searchBox}
+            <button type="button" className={`${ps.filterBtn} ${more ? ps.pillOn : ""}`} aria-expanded={more} onClick={() => setMore(!more)}>
+              Filtri{moreCount + (format ? 1 : 0) + (freeOnly ? 1 : 0) ? ` (${moreCount + (format ? 1 : 0) + (freeOnly ? 1 : 0)})` : ""}
+            </button>
+          </div>
+          <div className={ps.pills}>{pillMine}</div>
+          {more && (
+            <div className={ps.filterPanel}>
+              <div className={ps.pills}>{pillFormats}{pillFree}</div>
+              {morePills}
+            </div>
+          )}
+        </div>
+      )}
+
+      {proto === "C" && (
+        <div className={ps.stackA}>
+          <p className={ps.sentence}>
+            Rādīt{" "}
+            <select aria-label="Veids" value={kind} onChange={(e) => reset(() => (setKind(e.target.value as CourseKind), setCity("")))}>
+              <option value="event">gaidāmos kursus ({counts.event})</option>
+              <option value="recorded">tiešsaistes lekcijas ({counts.recorded})</option>
+              <option value="ongoing">pastāvīgās programmas ({counts.ongoing})</option>
+            </select>{" "}
+            <select aria-label="Kam" value={mine ? "mine" : "all"} disabled={!specialty && !nurse} onChange={(e) => reset(() => setMine(e.target.value === "mine"))}>
+              <option value="mine">manai specialitātei</option>
+              <option value="all">visām specialitātēm</option>
+            </select>{" "}
+            <select aria-label="Kur" value={format === "online" ? "@online" : city || ""} onChange={(e) => reset(() => { const v = e.target.value; setFormat(v === "@online" ? "online" : ""); setCity(v === "@online" ? "" : v); })}>
+              <option value="">jebkurā vietā</option>
+              <option value="@online">tiešsaistē</option>
+              {cities.map((c) => <option key={c} value={c}>{CITY_IN[c] ?? cityLabel(c, s)}</option>)}
+            </select>
+            {kind === "event" && (
+              <>
+                {" "}
+                <select aria-label="Kad" value={period} onChange={(e) => reset(() => setPeriod(e.target.value as typeof period))}>
+                  <option value="all">jebkurā laikā</option>
+                  <option value="30">tuvākajās 30 dienās</option>
+                  <option value="90">tuvākajās 90 dienās</option>
+                </select>
+              </>
+            )}{" "}
+            <select aria-label="Cena" value={freeOnly ? "free" : "any"} onChange={(e) => reset(() => setFreeOnly(e.target.value === "free"))}>
+              <option value="any">par jebkuru cenu</option>
+              <option value="free">bez maksas</option>
+            </select>
+          </p>
+          {searchBox}
+        </div>
+      )}
+      <p className={ps.note}>Tie nav Medserti kursi: sarakstu apkopojam no LĀB, speciālistu biedrībām un citiem rīkotājiem.</p>
+    </>
+  );
+
   return (
     <main className="container stack">
+      {protoTop}
+      {!proto && <>
       <div className="page-head">
         <div>
           <h1>{s.title}</h1>
@@ -250,6 +382,7 @@ export default function CoursesView({
           </label>
         </div>
       </div>
+      </>}
       {!specialty && !nurse && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
       {nurse && (
         <p className="small muted">
@@ -280,6 +413,7 @@ export default function CoursesView({
         </div>
       )}
 
+      {proto && !nurse && <AbroadEstimator locale={locale} />}
       <div className="card small muted stack" style={{ gap: 6 }}>
         <div>
           {s.updatedLine(formatDate(fetchedAt.slice(0, 10), locale))} {s.sources}:{" "}

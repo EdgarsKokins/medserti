@@ -43,6 +43,7 @@ export function Tiles({
   helpsId,
   lecturesAsked,
   readOnly,
+  proto = null,
 }: {
   locale: Locale;
   hours: boolean;
@@ -59,6 +60,8 @@ export function Tiles({
   helpsId: string | null;
   lecturesAsked: boolean;
   readOnly: boolean;
+  /** PROTOTYPE (branch login-panel-prototypes): whole tiles clickable, the lectures tile grey */
+  proto?: "1" | "2" | null;
 }) {
   const dict = dictFor(locale, hours);
   const d = dict.dashboard;
@@ -68,9 +71,9 @@ export function Tiles({
 
   return (
     <div className={styles.tiles}>
-      <section className={`${styles.tile} ${styles.blue}`} aria-labelledby="tile-certs">
+      <section className={`${styles.tile} ${styles.blue} ${proto ? styles.click : ""}`} aria-labelledby="tile-certs">
         <span className={styles.icon}><IconDoc /></span>
-        <h2 id="tile-certs" className={styles.name}>{d.tileCerts}</h2>
+        <h2 id="tile-certs" className={styles.name}>{proto ? <Link href="/certificates" className={styles.stretch}>{d.tileCerts}</Link> : d.tileCerts}</h2>
         <p className={styles.status}>{waiting ? d.certsWaiting(waiting) : ready ? d.certsReady : hasCerts ? d.certsOk : d.certsNone}</p>
         {latest.length > 0 && (
           <ul className={styles.rows}>
@@ -90,17 +93,17 @@ export function Tiles({
           </ul>
         )}
         {waiting ? (
-          <Link href="/certificates" className={styles.go}>{d.certsCheck} →</Link>
+          <Link href="/certificates" className={proto ? styles.goBtn : styles.go}>{d.certsCheck} →</Link>
         ) : ready ? (
-          <Link href={exportHref} className={styles.go}>{hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →</Link>
+          <Link href={exportHref} className={proto ? styles.goBtn : styles.go}>{hours ? dict.exportDocs.nurseCta : dict.exportDocs.cta} →</Link>
         ) : (
-          <DashboardUpload className={styles.go} readOnly={readOnly} />
+          <DashboardUpload className={proto ? styles.goBtn : styles.go} readOnly={readOnly} />
         )}
       </section>
 
-      <section className={`${styles.tile} ${styles.green}`} aria-labelledby="tile-courses">
+      <section className={`${styles.tile} ${styles.green} ${proto ? styles.click : ""}`} aria-labelledby="tile-courses">
         <span className={styles.icon}><IconCal /></span>
-        <h2 id="tile-courses" className={styles.name}>{d.tileCourses}</h2>
+        <h2 id="tile-courses" className={styles.name}>{proto ? <Link href="/courses" className={styles.stretch}>{d.tileCourses}</Link> : d.tileCourses}</h2>
         <p className={styles.status}>{courses.length ? d.coursesNext : d.coursesNone}</p>
         {courses.length > 0 && (
           <ul className={styles.rows}>
@@ -125,9 +128,32 @@ export function Tiles({
             ))}
           </ul>
         )}
-        <Link href="/courses" className={styles.go}>{d.allCourses} →</Link>
+        <Link href="/courses" className={proto ? styles.goBtn : styles.go}>{d.allCourses} →</Link>
       </section>
 
+      {proto === "1" ? (
+        <section className={`${styles.tile} ${styles.gray} ${styles.soonCentre}`} aria-labelledby="tile-lectures">
+          <span className={styles.icon}><IconPlay /></span>
+          <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>
+          <p className={styles.soonPill}><IconClock /> {d.lecturesSoon}</p>
+          <div className={styles.screenGray} aria-hidden><span className={styles.playGray}>▶</span></div>
+          <p className={styles.soonLine}>Lekcijas ar TIP, ko varēs skatīties tepat</p>
+          <div className={styles.goRowCentre}><LectureNotify asked={lecturesAsked} readOnly={readOnly} /></div>
+        </section>
+      ) : proto === "2" ? (
+        <section className={`${styles.tile} ${styles.gray} ${styles.soonCentre} ${styles.ribboned}`} aria-labelledby="tile-lectures">
+          <span className={styles.ribbon}>{d.lecturesSoon}</span>
+          <span className={styles.icon}><IconPlay /></span>
+          <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>
+          <p className={styles.soonLine}>Lekcijas ar TIP, ko varēs skatīties tepat</p>
+          <ul className={styles.ghosts} aria-hidden>
+            {[70, 88, 56].map((w, i) => (
+              <li key={i}><span className={styles.ghostPlay}>▶</span><span className={styles.ghostLines}><i style={{ width: `${w}%` }} /><i style={{ width: "38%" }} /></span></li>
+            ))}
+          </ul>
+          <div className={styles.goRowCentre}><LectureNotify asked={lecturesAsked} readOnly={readOnly} /></div>
+        </section>
+      ) : (
       <section className={`${styles.tile} ${styles.peach}`} aria-labelledby="tile-lectures">
         <span className={styles.icon}><IconPlay /></span>
         <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>
@@ -139,6 +165,11 @@ export function Tiles({
           <LectureNotify asked={lecturesAsked} readOnly={readOnly} />
         </div>
       </section>
+      )}
     </div>
   );
 }
+
+const IconClock = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+);

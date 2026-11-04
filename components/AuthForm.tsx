@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { localePath, type Locale } from "@/lib/locale";
@@ -24,9 +24,12 @@ export default function AuthForm({
   mode,
   locale,
   initial = null,
+  panel = null,
 }: {
   mode: "login" | "register";
   locale: Locale;
+  /** PROTOTYPE (branch login-panel-prototypes): replaces the left panel, centred against the card */
+  panel?: ReactNode;
   /** sign-up: profession and specialty chosen before (the landing page's course sample, ?specialitate=) */
   initial?: { profession: Profession; specialty: string | null } | null;
 }) {
@@ -103,9 +106,9 @@ export default function AuthForm({
   }
 
   return (
-    <main className={s.page}>
+    <main className={`${s.page} ${panel ? s.pageProto : ""}`}>
       {/* no second logo here: the site header already shows Medserti */}
-      <section className={s.value} aria-label={a.valueTitle}>
+      {panel ?? <section className={s.value} aria-label={a.valueTitle}>
         {/* the same three parts as the dashboard tiles, in their colours */}
         <ul className={s.parts}>
           {a.valueParts.map((part, i) => {
@@ -121,7 +124,7 @@ export default function AuthForm({
             );
           })}
         </ul>
-      </section>
+      </section>}
 
       <div className={s.card}>
         <h1 className={s.title}>{mode === "login" ? a.loginTitle : a.registerTitle}</h1>
