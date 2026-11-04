@@ -11,7 +11,8 @@ import styles from "./tiles.module.css";
 
 /**
  * The dashboard's first screen (Ralfs Gauja #10, Ineta Ūdra #13, November 2026): a greeting, TIP as one small ring,
- * and three equal tiles, each with real content: the latest certificates, the next courses, Medserti's own lectures.
+ * and three equal tiles: the latest certificates, the next courses (both clickable as a whole), and Medserti's own
+ * lectures, grey until they launch.
  */
 export function Greeting({ name, p, locale, hours, href }: { name: string; p: Progress; locale: Locale; hours: boolean; href: string }) {
   const d = dictFor(locale, hours).dashboard;
@@ -68,9 +69,9 @@ export function Tiles({
 
   return (
     <div className={styles.tiles}>
-      <section className={`${styles.tile} ${styles.blue}`} aria-labelledby="tile-certs">
+      <section className={`${styles.tile} ${styles.click} ${styles.blue}`} aria-labelledby="tile-certs">
         <span className={styles.icon}><IconDoc /></span>
-        <h2 id="tile-certs" className={styles.name}>{d.tileCerts}</h2>
+        <h2 id="tile-certs" className={styles.name}><Link href="/certificates" className={styles.stretch}>{d.tileCerts}</Link></h2>
         <p className={styles.status}>{waiting ? d.certsWaiting(waiting) : ready ? d.certsReady : hasCerts ? d.certsOk : d.certsNone}</p>
         {latest.length > 0 && (
           <ul className={styles.rows}>
@@ -98,9 +99,9 @@ export function Tiles({
         )}
       </section>
 
-      <section className={`${styles.tile} ${styles.green}`} aria-labelledby="tile-courses">
+      <section className={`${styles.tile} ${styles.click} ${styles.green}`} aria-labelledby="tile-courses">
         <span className={styles.icon}><IconCal /></span>
-        <h2 id="tile-courses" className={styles.name}>{d.tileCourses}</h2>
+        <h2 id="tile-courses" className={styles.name}><Link href="/courses" className={styles.stretch}>{d.tileCourses}</Link></h2>
         <p className={styles.status}>{courses.length ? d.coursesNext : d.coursesNone}</p>
         {courses.length > 0 && (
           <ul className={styles.rows}>
@@ -128,13 +129,20 @@ export function Tiles({
         <Link href="/courses" className={styles.go}>{d.allCourses} →</Link>
       </section>
 
-      <section className={`${styles.tile} ${styles.peach}`} aria-labelledby="tile-lectures">
+      {/* not launched: grey and centred, with empty rows where the lectures will be */}
+      <section className={`${styles.tile} ${styles.gray} ${styles.soonTile}`} aria-labelledby="tile-lectures">
+        <span className={styles.ribbon}>{d.lecturesSoon}</span>
         <span className={styles.icon}><IconPlay /></span>
         <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>
-        <p className={styles.status}>{d.lecturesSoon}</p>
-        <div className={styles.screen} role="img" aria-label={d.lecturesAbout} title={d.lecturesAbout}>
-          <span className={styles.play} aria-hidden>▶</span>
-        </div>
+        <p className={styles.soonLine}>{d.lecturesAbout}</p>
+        <ul className={styles.ghosts} aria-hidden>
+          {[70, 88, 56].map((w) => (
+            <li key={w}>
+              <span className={styles.ghostPlay}>▶</span>
+              <span className={styles.ghostLines}><i style={{ width: `${w}%` }} /><i style={{ width: "38%" }} /></span>
+            </li>
+          ))}
+        </ul>
         <div className={styles.goRow}>
           <LectureNotify asked={lecturesAsked} readOnly={readOnly} />
         </div>

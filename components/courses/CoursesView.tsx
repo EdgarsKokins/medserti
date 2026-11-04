@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { swapUnit, type Locale } from "@/lib/locale";
 import { freeForFilter, LMA_REGISTER_URL, SOURCE_URLS, type Course, type CourseDetails, type CourseExtra, type CourseKind, type Lecture, type SourceStatus } from "@/lib/courses/types";
@@ -8,6 +8,7 @@ import { useDict } from "@/components/i18n/DictProvider";
 import AbroadEstimator from "./AbroadEstimate";
 import type { Dict } from "@/lib/i18n/en";
 import styles from "./courses.module.css";
+import { IconCal, IconDoc, IconPlay } from "../PartIcons";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { specialtyLabel } from "@/lib/specialties";
 import { formatDate, formatNumber, round1 } from "@/lib/format";
@@ -47,6 +48,9 @@ function addDays(days: number) {
 
 /** "Latvija" in the source data means the whole country, not a city */
 const WHOLE_LATVIA = "Latvija";
+const KIND_ICONS: Record<CourseKind, ReactNode> = { event: <IconCal />, recorded: <IconPlay />, ongoing: <IconDoc /> };
+const KIND_TONES: Record<CourseKind, string> = { event: styles.toneGreen, recorded: styles.toneBlue, ongoing: styles.toneGray };
+
 const cityLabel = (city: string, s: CourseStrings) => (city === WHOLE_LATVIA ? s.wholeLatvia : city);
 
 export default function CoursesView({
@@ -91,6 +95,7 @@ export default function CoursesView({
   const [minTip, setMinTip] = useState(0);
   const [freeOnly, setFreeOnly] = useState(false);
   const [shown, setShown] = useState(PAGE);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<CourseKind, number> = { event: 0, recorded: 0, ongoing: 0 };
@@ -156,111 +161,92 @@ export default function CoursesView({
     setShown(PAGE);
   };
 
+  const pill = (key: string, on: boolean, label: string, onClick: () => void, title?: string, disabled = false) => (
+    <button key={key} type="button" className={`${styles.pill} ${on ? styles.pillOn : ""}`} aria-pressed={on} onClick={onClick} title={title} disabled={disabled}>
+      {on && <span aria-hidden>✓ </span>}{label}
+    </button>
+  );
+  // what sits behind "Filtri": the specialty pill stays outside, so it is not counted
+  const hiddenFilters = (format ? 1 : 0) + (freeOnly ? 1 : 0) + (period !== "all" ? 1 : 0) + (minTip ? 1 : 0) + (city ? 1 : 0);
+  const needText = s.needShort(formatNumber(remaining, 1));
+
   return (
     <main className="container stack">
-      <div className="page-head">
-        <div>
-          <h1>{s.title}</h1>
-          <p className="muted">{nurse ? s.nurseLead : s.lead}</p>
-        </div>
-        {remaining > 0 && <div className={styles.need}>{hoursUnit ? swapUnit(s.needLine(formatNumber(remaining, 1)), hoursUnit) : s.needLine(formatNumber(remaining, 1))}</div>}
+      <div className={styles.head}>
+        <h1>{s.title}</h1>
+        {remaining > 0 && <span className={styles.need}>{hoursUnit ? swapUnit(needText, hoursUnit) : needText}</span>}
       </div>
 
-      {/* collapsed until opened; nurses re-register on hours with the Health Inspectorate (Reg. 630), not on LĀB TIP */}
-      {!nurse && <AbroadEstimator locale={locale} />}
-
-      <div className={styles.tabs} role="tablist">
-        {KINDS.map((k) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={kind === k}
-            className={`${styles.tab} ${kind === k ? styles.tabActive : ""}`}
-            onClick={() => reset(() => (setKind(k), setCity("")))}
-          >
-            {s.tabs[k]} <span className={styles.count}>{counts[k]}</span>
-          </button>
-        ))}
-      </div>
-      <p className="small muted" style={{ marginTop: -6 }}>{s.tabHint[kind]}</p>
-      {/* the calendar alone hid the lectures that can be watched any time (Ineta Ūdra's test, November 2026) */}
-      {kind !== "recorded" && counts.recorded > 0 && (
-        <div className={styles.onlineNudge}>
-          <span>{s.onlineNudge(counts.recorded)}</span>
-          <button type="button" className="btn" onClick={() => reset(() => (setKind("recorded"), setCity("")))}>
-            {s.onlineNudgeBtn}
-          </button>
+      <section className={styles.controls} aria-label={s.filters}>
+        {/* three plain choices first; the online ones are one click away (Ineta Ūdra's test, November 2026) */}
+        <div className={styles.kinds} role="tablist">
+          {KINDS.map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={kind === k}
+              className={`${styles.kind} ${KIND_TONES[k]} ${kind === k ? styles.kindOn : ""}`}
+              onClick={() => reset(() => (setKind(k), setCity("")))}
+            >
+              <span className={styles.kindIcon}>{KIND_ICONS[k]}</span>
+              <span className={styles.kindName}>{s.tabsShort[k]}</span>
+              <span className={styles.kindCount}>{counts[k]}</span>
+            </button>
+          ))}
         </div>
-      )}
 
-      <div className={styles.filters}>
-        <label className={styles.searchField}>
-          <span className={styles.searchLabel}>{s.search}</span>
-          <input
-            className={styles.search}
-            type="search"
-            placeholder={s.searchShort}
-            value={q}
-            onChange={(e) => reset(() => setQ(e.target.value))}
-          />
-        </label>
-        <div className={styles.selects}>
-          <select aria-label={s.format} value={format} onChange={(e) => reset(() => setFormat(e.target.value as typeof format))}>
-            <option value="">{s.anyFormat}</option>
-            <option value="in_person">{s.formats.in_person}</option>
-            <option value="online">{s.online}</option>
-          </select>
-          {cities.length > 1 && (
-            <select aria-label={s.city} value={city} onChange={(e) => reset(() => setCity(e.target.value))}>
-              <option value="">{s.anyCity}</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>{cityLabel(c, s)}</option>
-              ))}
-            </select>
-          )}
-          {kind === "event" && (
-            <select aria-label={s.period} value={period} onChange={(e) => reset(() => setPeriod(e.target.value as typeof period))}>
-              <option value="all">{s.allDates}</option>
-              <option value="30">{s.next30}</option>
-              <option value="90">{s.next90}</option>
-            </select>
-          )}
-          <select aria-label={s.minTip} value={minTip} onChange={(e) => reset(() => setMinTip(Number(e.target.value)))}>
-            <option value={0}>{s.anyTip}</option>
-            {[2, 4, 8, 16].map((n) => (
-              <option key={n} value={n}>≥ {n} TIP</option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.checks}>
-          {nurse ? (
-            <label className={styles.check} title={s.forNursesHint}>
-              <input type="checkbox" checked={mine} onChange={(e) => reset(() => setMine(e.target.checked))} />
-              {s.forNurses}
-            </label>
-          ) : (
-            <label className={styles.check} title={specialty ? s.mySpecialtyHint(specialtyLabel(specialty, locale)) : s.noSpecialty}>
-              <input type="checkbox" checked={mine} disabled={!specialty} onChange={(e) => reset(() => setMine(e.target.checked))} />
-              {s.mySpecialty}
-            </label>
-          )}
-          <label className={styles.check} title={s.freeOnlyHint}>
-            <input type="checkbox" checked={freeOnly} onChange={(e) => reset(() => setFreeOnly(e.target.checked))} />
-            {s.freeOnly}
+        <div className={styles.searchRow}>
+          <label className={styles.search}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input type="search" aria-label={s.search} placeholder={s.searchShort} value={q} onChange={(e) => reset(() => setQ(e.target.value))} />
           </label>
+          <button type="button" className={`${styles.filterBtn} ${filtersOpen ? styles.pillOn : ""}`} aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
+            {s.filters}{hiddenFilters ? ` (${hiddenFilters})` : ""}
+          </button>
         </div>
-      </div>
-      {!specialty && !nurse && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
-      {nurse && (
-        <p className="small muted">
-          {s.nurseMore}{" "}
-          <a href={LMA_REGISTER_URL} target="_blank" rel="noreferrer">{s.lmaRegister} ↗</a>
-          {" · "}
-          <a href={SOURCE_URLS.lma} target="_blank" rel="noreferrer">{s.lmaCourses} ↗</a>
-        </p>
-      )}
 
-      <div className="row small muted">{s.results(filtered.length)}</div>
+        <div className={styles.pills}>
+          {nurse
+            ? pill("mine", mine, s.forNurses, () => reset(() => setMine(!mine)), s.forNursesHint)
+            : pill("mine", mine, s.mySpecialty, () => reset(() => setMine(!mine)), specialty ? s.mySpecialtyHint(specialtyLabel(specialty, locale)) : s.noSpecialty, !specialty)}
+        </div>
+
+        {filtersOpen && (
+          <div className={styles.filterPanel}>
+            <div className={styles.pills}>
+              {pill("in_person", format === "in_person", s.formats.in_person, () => reset(() => setFormat(format === "in_person" ? "" : "in_person")))}
+              {pill("online", format === "online", s.online, () => reset(() => setFormat(format === "online" ? "" : "online")))}
+              {pill("free", freeOnly, s.freeOnly, () => reset(() => setFreeOnly(!freeOnly)), s.freeOnlyHint)}
+            </div>
+            <div className={styles.pills}>
+              {kind === "event" && pill("30", period === "30", s.next30, () => reset(() => setPeriod(period === "30" ? "all" : "30")))}
+              {kind === "event" && pill("90", period === "90", s.next90, () => reset(() => setPeriod(period === "90" ? "all" : "90")))}
+              {[2, 4, 8, 16].map((n) => pill(`tip${n}`, minTip === n, `≥ ${n} TIP`, () => reset(() => setMinTip(minTip === n ? 0 : n))))}
+            </div>
+            {cities.length > 1 && (
+              <div className={styles.pills}>
+                {cities.map((c) => pill(`city${c}`, city === c, cityLabel(c, s), () => reset(() => setCity(city === c ? "" : c))))}
+              </div>
+            )}
+          </div>
+        )}
+        {!specialty && !nurse && <div className="alert">{s.noSpecialty} <a href="/profile">→</a></div>}
+      </section>
+
+      {/* the break between the choices above and the courses below */}
+      <div className={styles.listHead}>
+        <h2>{s.results(filtered.length)}</h2>
+        <p className="small muted">{nurse ? s.nurseLead : s.notOurs}</p>
+        {nurse && (
+          <p className="small muted">
+            {s.nurseMore}{" "}
+            <a href={LMA_REGISTER_URL} target="_blank" rel="noreferrer">{s.lmaRegister} ↗</a>
+            {" · "}
+            <a href={SOURCE_URLS.lma} target="_blank" rel="noreferrer">{s.lmaCourses} ↗</a>
+          </p>
+        )}
+      </div>
 
       {filtered.length === 0 ? (
         <div className={styles.empty}>
@@ -279,6 +265,9 @@ export default function CoursesView({
           <button className="btn" onClick={() => setShown((n) => n + PAGE)}>{s.showMore}</button>
         </div>
       )}
+
+      {/* collapsed until opened; nurses re-register on hours with the Health Inspectorate (Reg. 630), not on LĀB TIP */}
+      {!nurse && <AbroadEstimator locale={locale} />}
 
       <div className="card small muted stack" style={{ gap: 6 }}>
         <div>

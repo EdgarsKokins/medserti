@@ -12,7 +12,7 @@ import DemoButton from "./DemoButton";
 import ProfessionPicker from "./ProfessionPicker";
 import SpecialtyPicker from "./SpecialtyPicker";
 import s from "./auth.module.css";
-import { IconCal, IconDoc, IconPlay } from "./PartIcons";
+import AuthPanel from "./AuthPanel";
 import { trackEvent } from "@/components/monitoring/track";
 
 type Field = "fullName" | "profession" | "email" | "password" | "consent";
@@ -105,23 +105,7 @@ export default function AuthForm({
   return (
     <main className={s.page}>
       {/* no second logo here: the site header already shows Medserti */}
-      <section className={s.value} aria-label={a.valueTitle}>
-        {/* the same three parts as the dashboard tiles, in their colours */}
-        <ul className={s.parts}>
-          {a.valueParts.map((part, i) => {
-            const Icon = [IconDoc, IconCal, IconPlay][i] ?? IconDoc;
-            return (
-              <li key={i} className={[s.blue, s.green, s.peach][i]}>
-                <span className={s.partIcon}><Icon /></span>
-                <span className={s.partText}>
-                  <b>{part.title}</b>
-                  <span>{part.line}</span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <AuthPanel />
 
       <div className={s.card}>
         <h1 className={s.title}>{mode === "login" ? a.loginTitle : a.registerTitle}</h1>
