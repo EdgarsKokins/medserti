@@ -3,6 +3,7 @@ import type { Progress } from "@/lib/rules";
 import type { CmeCertificate } from "@/lib/types";
 import type { Course } from "@/lib/courses/types";
 import type { Locale } from "@/lib/i18n";
+import { TOUR_REOPEN_HREF } from "@/lib/tour";
 import { certTitle, dictFor, fmtDate, fmtNum } from "./model";
 import DashboardUpload from "./DashboardUpload";
 import LectureNotify from "./LectureNotify";
@@ -15,12 +16,20 @@ import styles from "./tiles.module.css";
  * lectures, grey until they launch.
  */
 export function Greeting({ name, p, locale, hours, href }: { name: string; p: Progress; locale: Locale; hours: boolean; href: string }) {
-  const d = dictFor(locale, hours).dashboard;
+  const dict = dictFor(locale, hours);
+  const d = dict.dashboard;
   const done = p.checks.every((c) => c.met);
   const pct = p.required > 0 ? Math.min(100, (p.total / p.required) * 100) : 0;
   return (
     <header className={styles.top}>
-      <h1 className={styles.hello}>{d.hello(name)}</h1>
+      <div className={styles.helloWrap}>
+        <h1 className={styles.hello}>{d.hello(name)}</h1>
+        {/* the tour again, on the page itself and not only in the footer (Edgars, 05 Nov 2026) */}
+        <Link href={TOUR_REOPEN_HREF} prefetch={false} className={styles.tourLink}>
+          <span className={styles.tourMark} aria-hidden>?</span>
+          {dict.tour.reopen}
+        </Link>
+      </div>
       <Link href={href} data-tour="ring" className={`${styles.pill} ${done ? styles.pillDone : ""}`}>
         <span className={styles.ring} style={{ ["--pct" as string]: `${done ? 100 : pct}%` }} aria-hidden />
         <span>
