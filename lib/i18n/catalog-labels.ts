@@ -1221,7 +1221,7 @@ export const LABELS: Record<string, string> = {
   "lang.suggestText": "Valodas piedāvājums krievu pārlūkam: teksts (rāda krieviski)",
   "lang.suggestYes": "Valodas piedāvājums: poga atvērt krieviski",
   "lang.suggestNo": "Valodas piedāvājums: poga palikt latviski",
-  "tour.reopen": "Kājene: saite atvērt ievada tūri",
+  "tour.reopen": "Sākuma lapa un kājene: poga, kas atver ievadu",
   "tour.stepOf": "Ievada tūre: solis no cik (ekrāna lasītājam)",
   "tour.next": "Ievada tūre: poga tālāk",
   "tour.back": "Ievada tūre: poga atpakaļ",

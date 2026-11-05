@@ -2,6 +2,11 @@
 .top { display: flex; justify-content: space-between; align-items: center; gap: 16px 24px; flex-wrap: wrap; }
 .hello { margin: 0; font-family: var(--font-serif); font-size: clamp(2.2rem, 4.4vw, 3.4rem); font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
 
+.helloWrap { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.tourLink { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 14px 4px 6px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.95rem; text-decoration: none; }
+.tourLink:hover { border-color: var(--border-strong); color: var(--text); }
+.tourMark { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--bg); font-weight: 600; font-size: 0.85rem; }
+
 .pill { display: flex; align-items: center; gap: 12px; padding: 10px 22px 10px 10px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
 .pill:hover { border-color: var(--border-strong); }
 .pill b { display: block; font-size: 1.1rem; }
