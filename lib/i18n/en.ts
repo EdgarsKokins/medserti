@@ -57,6 +57,7 @@ export const en = {
     specialty: "Specialty",
     specialtyHint: "Optional. We use it to pick courses for you.",
     forgotLink: "Forgot your password?",
+    rememberMe: "Remember me on this device",
     valueTitle: "How Medserti works",
     valueParts: [
       { title: "Certificates", things: ["Upload a PDF or photo", "Photograph with your phone", "See what is still missing", "Prepare documents to submit"] },

@@ -1,7 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isLocale, isPublicPath, LOCALE_COOKIE, LOCALE_HEADER, localeFromAcceptLanguage, localePath, SUGGEST_HEADER, splitLocalePath } from "@/lib/locale";
+import { REMEMBERED_MAX_AGE, renewedToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/session-token";
 
 const YEAR = 60 * 60 * 24 * 365;
+
+/** The matcher below holds the public language addresses and the signed-in pages, which have no language address */
+export function proxy(req: NextRequest) {
+  const { locale, path } = splitLocalePath(req.nextUrl.pathname);
+  return locale === "lv" && !isPublicPath(path) ? renewSession(req) : languageAddress(req);
+}
+
+/**
+ * "Remember me": a signed-in page gives a remembered login a fresh 30 days, at most once a day (lib/session-token.ts).
+ * It lives here because server components cannot set cookies. No storage is read or written, only the token's signature
+ * is checked: currentUser() still decides if the session is valid, and a re-issued token keeps its old `sv`.
+ * Client-side navigation and link prefetches pass here too, so someone working in an open tab renews as well.
+ */
+async function renewSession(req: NextRequest) {
+  const res = NextResponse.next();
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  const renewed = token ? await renewedToken(token) : null;
+  if (renewed) res.cookies.set(SESSION_COOKIE, renewed, sessionCookieOptions(REMEMBERED_MAX_AGE));
+  return res;
+}
 
 /**
  * Language addresses for the public pages (lib/locale.ts PUBLIC_PATHS):
@@ -11,9 +32,8 @@ const YEAR = 60 * 60 * 24 * 365;
  *   remembers Latvian, so the sign-up that follows is in the same language; a browser that prefers Russian sees an
  *   offer to switch, never a forced redirect (many Latvian doctors run Russian browsers)
  */
-export function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const { locale, path } = splitLocalePath(pathname);
+export function languageAddress(req: NextRequest) {
+  const { locale, path } = splitLocalePath(req.nextUrl.pathname);
   const headers = new Headers(req.headers);
 
   if (locale !== "lv") {
@@ -50,5 +70,5 @@ const remember = (req: NextRequest, res: NextResponse, locale: string) => {
 };
 
 export const config = {
-  matcher: ["/", "/par-mums", "/kontakti", "/privatums", "/noteikumi", "/en", "/ru", "/en/:path*", "/ru/:path*"],
+  matcher: ["/", "/par-mums", "/kontakti", "/privatums", "/noteikumi", "/en", "/ru", "/en/:path*", "/ru/:path*", "/dashboard", "/certificates", "/courses", "/profile", "/export"],
 };

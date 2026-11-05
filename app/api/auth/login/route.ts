@@ -6,7 +6,12 @@ import { clearLimit, clientIp, limitState, rateLimit } from "@/lib/password-rese
 import { t } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 
-const Body = z.object({ email: z.string().email(), password: z.string().min(1) });
+const Body = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+  // checkbox value; the form sends nothing when it is unticked
+  remember: z.literal("on").optional(),
+});
 const MINUTE = 60 * 1000;
 // only failed attempts count: 10 per email per 15 min, 30 per IP per hour
 const EMAIL_LIMIT = [10, 15 * MINUTE] as const;
@@ -35,6 +40,6 @@ export async function POST(req: Request) {
   }
   // most sign-ins have no failed attempts on record: nothing to clear, and clearing costs a command
   if (byEmail.recorded) await clearLimit(emailKey);
-  await startSession(user.id, user.sessionVersion ?? 0);
+  await startSession(user.id, user.sessionVersion ?? 0, parsed.data.remember === "on");
   return NextResponse.json({ ok: true });
 }

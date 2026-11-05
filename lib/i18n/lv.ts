@@ -53,6 +53,7 @@ export const lv: Dict = {
     specialty: "Specialitāte",
     specialtyHint: "Nav obligāti. Pēc tās atlasām Jums kursus.",
     forgotLink: "Aizmirsāt paroli?",
+    rememberMe: "Atcerēties mani šajā ierīcē",
     valueTitle: "Kā darbojas Medserti",
     valueParts: [
       { title: "Sertifikāti", things: ["Augšupielādēt PDF vai foto", "Nofotografēt ar telefonu", "Redzēt, kas vēl trūkst", "Sagatavot dokumentus iesniegšanai"] },
