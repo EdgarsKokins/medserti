@@ -6,7 +6,7 @@ import { docLanguage, needsTranslation } from "./language";
 import { estimateAbroad } from "../abroad";
 import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
-import { makeText } from "./text";
+import { latvianSpeller, makeText } from "./text";
 import { classifyCertificate, type CertificateKind } from "./isCertificate";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
 import { suggestNurseTopic } from "../nurse";
@@ -113,7 +113,8 @@ export async function parseCertificate(
     if (!hasOcr) return judge(parseCertificateText(layer, profile), layer, null);
     // a thin text layer often holds exactly the lines OCR misreads (names, credit tables): read both
     const text = hasLayer ? `${layer}\n\n${ocr}` : ocr;
-    return judge(withNote(parseCertificateText(text, profile, { ocr: true }), { code: "pdfOcr" }), text, hasLayer ? null : ocrConfidence);
+    const read = hasLayer ? parseLayerAndOcr(layer, ocr, profile) : parseCertificateText(ocr, profile, { ocr: true });
+    return judge(withNote(read, { code: "pdfOcr" }), text, hasLayer ? null : ocrConfidence);
   }
 
   // too little to parse: still judged when OCR read something (a meme caption is short); no OCR text at all means the
@@ -162,6 +163,11 @@ function manual(code: "pdfUnreadable" | "pdfScan" | "imageUnreadable"): ParseRes
 }
 
 const r2 = (n: number) => Math.round(Math.max(0, Math.min(1, n)) * 100) / 100;
+
+/** A scan with both a text layer and OCR: the layer spelled from the OCR, then the OCR itself */
+export function parseLayerAndOcr(layer: string, ocr: string, profile: Pick<Profile, "specialty">): ParseResult {
+  return parseCertificateText(`${latvianSpeller(ocr)(layer)}\n\n${ocr}`, profile, { ocr: true });
+}
 
 export function parseCertificateText(raw: string, profile: Pick<Profile, "specialty">, opts: { ocr?: boolean } = {}): ParseResult {
   const t = makeText(raw);

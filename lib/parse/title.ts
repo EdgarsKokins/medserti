@@ -264,6 +264,9 @@ function jointBodies(s: string): string {
   return collapse(s)
     // OCR glues the head noun on ("GASTROENTEROLOGUASOCIACIJAS")
     .replace(/(\p{L}{3})(as[oō]ci[aā]cij\p{L}*|biedr[iī]b\p{L}*)/giu, "$1 $2")
+    // the head nouns are known words, whatever letters the scan lost
+    .replace(/(?<![\p{L}])(asoci)(a)(cij\p{L}*)/giu, (_, a: string, l: string, b: string) => `${a}${l === "A" ? "Ā" : "ā"}${b}`)
+    .replace(/(?<![\p{L}])(biedr)(i)(b\p{L}*)/giu, (_, a: string, l: string, b: string) => `${a}${l === "I" ? "Ī" : "ī"}${b}`)
     .replace(/(?<![\p{L}])\p{L}+(?=\s*,|\s+un\s|\s*$)/gu, (w) => (GENITIVE_HEAD.test(fold(w)) ? w.slice(0, -1) : w))
     .split(/\s+un\s+/u)
     .map(displayCase)
