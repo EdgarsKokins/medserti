@@ -81,14 +81,22 @@ test("a letter the layer has is never lost or swapped", () => {
   assert.equal(spell("ķede"), "ķēde");
 });
 
+test("a letter Latvian does not have is never copied from the OCR", () => {
+  const spell = latvianSpeller("vésture kapéc šūna ķēde atzīmējot");
+  assert.equal(spell("vesture un kapec"), "vesture un kapec");
+  assert.equal(spell("VESTURE"), "VESTURE");
+  // the Latvian letters of the same read still come through
+  assert.equal(spell("suna"), "šūna");
+});
+
 test("an English certificate is left alone: stray macrons in its OCR are noise", () => {
   const ocr = "This certificate confirms that the doctor attended the annual surgery conference in Vienna and received Šurgery credits for the whole programme of the event";
   const layer = "Certificate of attendance, annual Surgery conference, Vienna";
   assert.equal(latvianSpeller(ocr)(layer), layer);
 });
 
-test("without OCR the layer is parsed as before, apart from the known head nouns", () => {
+test("without OCR the dictionary restores what it knows; a word it does not know stays", () => {
   const { fields } = parseCertificateText(LAYER, profile);
-  assert.equal(fields.title, "Apvienotā zinatniskā konference, atzimejot Pasaules Digestivas Veselibas un Pasaules Mikrobioma Dienas");
+  assert.equal(fields.title, "Apvienotā zinātniskā konference, atzīmējot Pasaules Digestivas Veselības un Pasaules Mikrobioma Dienas");
   assert.match(fields.organizer ?? "", /Biedrība, Latvijas Gastroenterologu Asociācija/u);
 });

@@ -37,6 +37,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
+  // Read from disk when a certificate is parsed (lib/parse/lvDictionary.ts), so the tracer cannot see them. The license goes along.
+  outputFileTracingIncludes: { "/api/certificates": ["./node_modules/dictionary-lv/index.aff", "./node_modules/dictionary-lv/index.dic", "./node_modules/dictionary-lv/license"] },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
