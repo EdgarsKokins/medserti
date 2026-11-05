@@ -18,7 +18,7 @@ export const en = {
   notFound: { title: "Page not found", body: "This page doesn't exist or has moved." },
   error: { title: "Something went wrong", body: "This page could not be loaded. Please try again in a moment." },
   nav: {
-    dashboard: "Dashboard",
+    dashboard: "Home",
     certificates: "Certificates",
     courses: "Courses",
     about: "About us",
