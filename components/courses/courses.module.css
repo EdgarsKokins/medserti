@@ -117,10 +117,11 @@
 .lectureTitle { overflow-wrap: anywhere; }
 
 @media (max-width: 640px) {
-  .summary { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; padding: 12px; }
+  /* TIP and price under the title, so the title gets the full width and no word breaks in the middle */
+  .summary { grid-template-columns: 44px minmax(0, 1fr); gap: 6px 12px; padding: 12px; }
   .chevron { display: none; }
   .tip { font-size: 1.3rem; }
-  .side { max-width: 7.5rem; }
+  .side { grid-column: 2; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; max-width: none; text-align: left; }
   .price { font-size: 0.9rem; }
   .titleOpen { font-size: 1.02rem; }
   .panel { padding: 2px 12px 16px; }
