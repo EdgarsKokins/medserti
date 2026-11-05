@@ -127,7 +127,7 @@ export const NB = "(?<![\\p{L}\\p{N}])"; // no letter/digit before
 export const NA = "(?![\\p{L}\\p{N}])"; // no letter/digit after
 export const rx = (src: string, flags = "giu") => new RegExp(src, flags);
 
-export const toNum = (s: string) => Number(s.replace(/\s/g, "").replace(",", "."));
+export const toNum = (s: string) => Number(s.replace(/\s/g, "").replace(/[,;]/, "."));
 export const collapse = (s: string) => s.replace(/\s+/g, " ").trim();
 
 export function lineAt(text: string, index: number): string {

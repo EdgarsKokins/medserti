@@ -1,4 +1,4 @@
-import type { CmeCertificate, FieldConfidence, ParseNote, Profile } from "../types";
+import type { CmeCertificate, FieldConfidence, Lecture, ParseNote, Profile } from "../types";
 import { LOW_CONFIDENCE } from "./confidence";
 import { eventDays, findDates } from "./dates";
 import { findCategory, findCountry, isEmergencyCare, isLecturer, isMasterClassTeacher } from "./place";
@@ -7,6 +7,8 @@ import { estimateAbroad } from "../abroad";
 import { derivePoints, findHours, findPoints, findPracticalHours, type PointsKind } from "./points";
 import { matchesSpecialty } from "./specialty";
 import { latvianSpeller, makeText } from "./text";
+import { findApprovalNumbers, type ApprovalRead } from "./approvals";
+import { readCourse, type LectureRead } from "./course";
 import { classifyCertificate, type CertificateKind } from "./isCertificate";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
 import { latvianChecker } from "./spelling";
@@ -41,6 +43,8 @@ export type ParsedFields = Pick<
   | "practicalHours"
   | "nurseTopic"
   | "approvalId"
+  | "approvalIds"
+  | "lectures"
   | "country"
   | "language"
   | "confidence"
@@ -58,6 +62,12 @@ export interface ParseResult {
   notes: string | null;
   /** "is this a certificate?" on the text read (./isCertificate.ts); left out when there was nothing to judge */
   content?: CertificateKind;
+  /** every approval number read, to look up in the LĀB register (./register.ts); never stored */
+  numbers?: ApprovalRead[];
+  /** the text read, to check a register row against; never stored */
+  text?: string;
+  /** which of the title's words the parser wrote from the sentence and may be respelled from the register */
+  titleRead?: { value: string; confidence: number };
 }
 
 const encodeNotes = (notes: ParseNote[]): string | null => (notes.length ? JSON.stringify(notes) : null);
@@ -75,6 +85,8 @@ export const EMPTY_FIELDS: ParsedFields = {
   practicalHours: null,
   nurseTopic: null,
   approvalId: null,
+  approvalIds: null,
+  lectures: null,
   country: null,
   language: null,
   confidence: null,
@@ -170,16 +182,19 @@ const r2 = (n: number) => Math.round(Math.max(0, Math.min(1, n)) * 100) / 100;
 
 /** A scan with both a text layer and OCR: the layer spelled from the OCR, then the OCR itself */
 export function parseLayerAndOcr(layer: string, ocr: string, profile: Pick<Profile, "specialty">): ParseResult {
-  return parseCertificateText(`${latvianSpeller(ocr)(layer)}\n\n${ocr}`, profile, { ocr: true });
+  const spelled = latvianSpeller(ocr)(layer);
+  return parseCertificateText(`${spelled}\n\n${ocr}`, profile, { ocr: true, reads: [spelled, ocr] });
 }
 
-export function parseCertificateText(raw: string, profile: Pick<Profile, "specialty">, opts: { ocr?: boolean } = {}): ParseResult {
+export function parseCertificateText(raw: string, profile: Pick<Profile, "specialty">, opts: { ocr?: boolean; reads?: string[] } = {}): ParseResult {
   const t = makeText(raw);
   const notes: ParseNote[] = [];
   // our own OCR misreads digits now and then; scanner-app text layers are already in `raw` and judged by content
   const ocrFactor = opts.ocr ? 0.9 : 1;
 
-  const titleHit = findTitle(t);
+  // the sentence and the lecture list, read from each read alone; anything else keeps the rules of findTitle
+  const course = readCourse((opts.reads ?? [raw]).map(makeText));
+  const titleHit = course.hit ?? findTitle(t);
   const titleRead = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizerHit = findOrganizer(t);
   // a line of the title read as an organizer ("... Eiropas Sirds Ritma asociācijas (EHRA)"): not the organizer
@@ -197,6 +212,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const { date, endDate } = dates;
   const pts = findPoints(t);
   notes.push(...pts.notes);
+  const numbers = findApprovalNumbers(t);
   const academicHours = findHours(t);
   const practicalHours = findPracticalHours(t);
   const emergencyCare = isEmergencyCare(t);
@@ -276,12 +292,34 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
       practicalHours,
       // kept for every profession; only nurses see and count it (Reg. 630 point 26.3)
       nurseTopic: suggestNurseTopic(t.flat, t.raw),
-      approvalId: findApprovalId(t),
+      // the first LĀB number, or whatever other approval number the certificate has
+      approvalId: numbers[0]?.id ?? findApprovalId(t),
+      approvalIds: numbers.length > 1 ? numbers.map((n) => n.id) : null,
+      lectures: lecturesWithPoints(course.lectures, numbers, points, (name) => spell(name, "title")),
       country,
       language,
       confidence: Math.round((found / 3) * 100) / 100,
       fieldConfidence,
     },
     notes: encodeNotes(notes),
+    numbers,
+    text: t.raw,
+    titleRead: { value: title.slice(0, 300), confidence: fieldConfidence.title ?? 0 },
   };
+}
+
+/**
+ * The lectures read, spelled. Their numbers: each one's own, or the numbers listed under the list in the order printed.
+ * Their points only when they add up to the certificate's: a total printed under the last lecture is not that lecture's.
+ */
+function lecturesWithPoints(read: LectureRead[], numbers: ApprovalRead[], points: number | null, spell: (name: string) => string): Lecture[] | null {
+  if (!read.length) return null;
+  const inOrder = numbers.length === read.length && read.every((l) => !l.approvalId);
+  const sum = read.reduce((a, l) => a + (l.tip ?? 0), 0);
+  const addsUp = read.every((l) => l.tip != null) && points != null && Math.abs(sum - points) <= 0.05;
+  return read.map((l, i) => ({
+    name: spell(l.name).slice(0, 300),
+    tip: addsUp ? l.tip : null,
+    approvalId: l.approvalId ?? (inOrder ? numbers[i].id : null),
+  }));
 }

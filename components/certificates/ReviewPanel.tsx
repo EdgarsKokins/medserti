@@ -16,6 +16,7 @@ import { trackEvent } from "@/components/monitoring/track";
 import { COUNTRY_CODES, countryCode, countryName, parseNoteLines, STATUS_CLASS } from "./format";
 import { formatDate, formatNumber } from "@/lib/format";
 import { CHECKED_FIELDS, dateNotice, fieldErrors, MISSING, type CheckedField } from "./validate";
+import Lectures from "./Lectures";
 import styles from "./certificates.module.css";
 
 type Editable = Pick<
@@ -309,6 +310,7 @@ export default function ReviewPanel({
           <div className={styles.quick}>
             <div>
               <p className={styles.quickTitle}>{f.title || cert.fileName}</p>
+              <Lectures cert={cert} title={f.title} />
               {f.organizer && <p className="small muted" style={{ margin: "2px 0 0" }}>{f.organizer}</p>}
             </div>
             <p className="small muted" style={{ margin: 0 }}>{d.quickLead}</p>
@@ -473,6 +475,7 @@ export default function ReviewPanel({
             <label htmlFor="c-title">{d.fTitle}{check("title")}</label>
             <input id="c-title" value={f.title} maxLength={300} onChange={(e) => set("title", e.target.value)} {...fieldProps("title")} />
             {fieldError("title")}
+            <Lectures cert={cert} title={f.title} />
           </div>
           <div className="field">
             <label htmlFor="c-org">{d.fOrganizer}{check("organizer")}</label>
@@ -518,6 +521,9 @@ export default function ReviewPanel({
           <div className="field">
             <label htmlFor="c-approval">{d.fApproval}</label>
             <input id="c-approval" value={f.approvalId ?? ""} onChange={(e) => set("approvalId", e.target.value || null)} />
+            {f.approvalId === cert.approvalId && (cert.approvalIds?.length ?? 0) > 1 && (
+              <p className="small muted" style={{ margin: 0 }}>{d.otherNumbers(cert.approvalIds!.filter((n) => n !== cert.approvalId).join(", "))}</p>
+            )}
           </div>
           <div className="field">
             <label htmlFor="c-country">{d.fCountry}{check("country")}</label>

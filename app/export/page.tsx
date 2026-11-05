@@ -36,7 +36,8 @@ export default async function ExportPage({ searchParams }: { searchParams: Promi
     const points = cappedPoints(c, scale);
     return {
       id: c.id,
-      approvalId: c.approvalId,
+      // one row for the course, with every number it was approved under
+      approvalId: c.approvalIds?.length ? c.approvalIds.join("; ") : c.approvalId,
       organizer: c.organizer,
       title: c.title || c.fileName,
       date: c.date!,

@@ -740,6 +740,9 @@ export const en = {
     },
     quickByYou: "Your choice.",
     quickFromRegistry: (id: string) => `From the LĀB register (${id}).`,
+    lectures: "Lectures",
+    lecturesMore: (n: number) => `and ${n} more`,
+    otherNumbers: (list: string) => `Other numbers on this certificate: ${list}.`,
     quickEmergency: "Marked as emergency medical care training.",
   },
   parseNotes: {
@@ -797,6 +800,10 @@ export const en = {
       `The certificate prints no points. The LĀB register has ${p.n} similar ${enPl(Number(p.n), "event", "events")}: pick yours below. If the certificate covers several lectures, add up their points.`,
     tipNoMatch: () =>
       "The certificate prints no points, and we did not find this event in the LĀB register. Enter the points from the LĀB list of approved TIP events or ask the organiser.",
+    registerChecked: (p: NoteP) =>
+      `Checked against the LĀB register (${p.id}): date and TIP agree.`,
+    tipRegisterDiffers: (p: NoteP) =>
+      `The LĀB register lists ${fmtN(p.points)} TIP for ${p.id}, but we read a different number on the certificate. Compare with the certificate.`,
   },
   dashboard: {
     title: "Dashboard",

@@ -134,6 +134,12 @@
 }
 .meta { font-size: 0.82rem; color: var(--muted); line-height: 1.4; overflow-wrap: anywhere; }
 
+/* the lectures of a course, under its title */
+.lectures { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; line-height: 1.4; overflow-wrap: anywhere; }
+.lecturesLabel { color: var(--muted); }
+.lectureList { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
+.lectureNote { color: var(--muted); white-space: nowrap; }
+
 .points { font-family: var(--font-serif); font-size: 1.2rem; color: var(--accent); text-align: right; white-space: nowrap; font-variant-numeric: proportional-nums; }
 .unit { font-size: 0.8rem; letter-spacing: 0.03em; }
 .status { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; }

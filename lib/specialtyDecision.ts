@@ -3,7 +3,7 @@ import { matchesSpecialty } from "./parse";
 import type { applyTipLookup } from "./parse/tipMatch";
 import { lookupTip } from "./tipRegistry";
 import type { Course } from "./courses/types";
-import type { CmeCertificate, TipLookup } from "./types";
+import type { CmeCertificate, RegistryEvent, TipLookup } from "./types";
 
 /**
  * "In the specialty" without asking the doctor, who often cannot tell (Ineta Ūdra's test, November 2026): the
@@ -12,7 +12,7 @@ import type { CmeCertificate, TipLookup } from "./types";
  * 60% in the own specialty, and an all-specialty audience does not say that. The user can still change it.
  */
 export async function decideSpecialty(
-  r: Pick<ReturnType<typeof applyTipLookup>, "fields" | "content" | "tipLookup">,
+  r: Pick<ReturnType<typeof applyTipLookup>, "fields" | "content" | "tipLookup"> & { registered?: RegistryEvent[] },
   specialty: string,
   course: Course | null,
   text: string,
@@ -23,6 +23,11 @@ export async function decideSpecialty(
   if (course && matchesSpecialty(`${course.audience} ${course.title}`, specialty)) return { inSpecialty: true, inSpecialtyBy: "course" };
   const latvian = (r.content == null || r.content === "certificate") && !!r.fields.title && (r.fields.country == null || r.fields.country === "LV");
   if (!latvian || r.fields.category === "lecture_or_publication") return { inSpecialty: false, inSpecialtyBy: null };
+  // the certificate's own approval numbers agreed with the register: those rows' audience, no more questions
+  if (r.registered?.length) {
+    const audience = r.registered.map((e) => e.audience ?? "").join("; ");
+    return matchesSpecialty(audience, specialty) ? { inSpecialty: true, inSpecialtyBy: "registry" } : { inSpecialty: false, inSpecialtyBy: null };
+  }
   // the points lookup already ran for a certificate without points; otherwise ask the register for the audience only
   const found: TipLookup | null =
     r.tipLookup ??

@@ -122,8 +122,12 @@ export interface CmeCertificate {
   practicalHours: number | null;
   /** nurses only: Reg. 630 point 26.3 topic, suggested by the parser; missing on older certificates (see lib/nurse.ts nurseTopicOf) */
   nurseTopic?: NurseTopic | null;
-  /** approval / registration number printed on the certificate, if any */
+  /** approval / registration number printed on the certificate, if any; the first when there are several */
   approvalId: string | null;
+  /** every LĀB approval number on a certificate with more than one; missing on older certificates */
+  approvalIds?: string[] | null;
+  /** the lectures heard, under the course in `title`; missing on older certificates and on those that list none */
+  lectures?: Lecture[] | null;
   /** ISO 3166-1 alpha-2 code ("LV", "LT"); certificates saved before Oct 2026 may hold an English name ("Latvia") */
   country: string | null;
   /** language the document is written in (ISO 639-1, lib/parse/language.ts); null when unknown or on older certificates */
@@ -149,6 +153,13 @@ export interface CmeCertificate {
   duplicateOf?: string | null;
   /** JSON array of ParseNote; older certificates hold plain English text */
   parseNotes: string | null;
+}
+
+/** One lecture of a certificate's course */
+export interface Lecture {
+  name: string;
+  tip: number | null;
+  approvalId: string | null;
 }
 
 export type ParseNoteCode =
@@ -187,6 +198,9 @@ export type ParseNoteCode =
   | "tipRegistry"
   | "tipCandidates"
   | "tipNoMatch"
+  // added Nov 2026: the approval numbers checked in the LĀB register (lib/parse/register.ts)
+  | "registerChecked"
+  | "tipRegisterDiffers"
   | "abroadRecalc"
   // added Oct 2026: the "is this a certificate?" check (lib/parse/isCertificate.ts); the file was uploaded anyway
   | "notCertificate"

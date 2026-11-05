@@ -82,6 +82,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     ...fields,
     nurseTopic: fields.nurseTopic === undefined ? (cert.nurseTopic ?? null) : fields.nurseTopic,
     approvalId: fields.approvalId || null,
+    // the list of numbers read goes with the first one: a number the user typed replaces them
+    approvalIds: (fields.approvalId || null) === cert.approvalId ? (cert.approvalIds ?? null) : null,
     country: fields.country || null,
     // the user's own answer replaces Medserti's reason for it
     inSpecialtyBy: fields.inSpecialty === cert.inSpecialty ? (cert.inSpecialtyBy ?? null) : null,
