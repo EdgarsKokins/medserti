@@ -6,7 +6,8 @@ import { putBytes, remove } from "@/lib/storage";
 import { EMPTY_FIELDS, parseCertificate, withContent } from "@/lib/parse";
 import { autoConfirmBlocks, findDuplicate } from "@/lib/parse/confidence";
 import { applyTipLookup } from "@/lib/parse/tipMatch";
-import { lookupTip } from "@/lib/tipRegistry";
+import { applyRegister } from "@/lib/parse/register";
+import { lookupNumbers, lookupTip } from "@/lib/tipRegistry";
 import { certificateWindow } from "@/lib/rules";
 import type { CmeCertificate, ParseNote } from "@/lib/types";
 import { stripMarks } from "@/lib/text";
@@ -57,6 +58,13 @@ export async function GET() {
 const needsLookup = (r: Awaited<ReturnType<typeof parseCertificate>>) =>
   (r.content == null || r.content === "certificate") &&
   r.fields.points == null && !!r.fields.title && (r.fields.country == null || r.fields.country === "LV") && r.fields.category !== "lecture_or_publication";
+
+/** The approval numbers read on a certificate from Latvia, checked in the LĀB register; only the numbers leave the server */
+async function checkedInRegister(r: Awaited<ReturnType<typeof parseCertificate>>) {
+  const latvian = (r.content == null || r.content === "certificate") && (r.fields.country == null || r.fields.country === "LV");
+  if (!latvian || !r.numbers?.length) return { ...r, registered: [] };
+  return applyRegister(r, await lookupNumbers(r.numbers.map((n) => n.id)));
+}
 
 const QUALITY_REASONS = new Set(["blurry", "dark", "bright", "small", "unreadable", "screen"]);
 const CONTENT_FLAGS = new Set(["noText", "notCertificate"]);
@@ -138,7 +146,7 @@ export async function POST(req: Request) {
   let first = false;
   try {
     const [read, all, courses] = await Promise.all([
-      parseCertificate(bytes, type, user.profile, ocrText, ocrConfidence),
+      parseCertificate(bytes, type, user.profile, ocrText, ocrConfidence).then(checkedInRegister),
       listCertificates(user.id),
       courseId ? readCourseIndex().catch(() => null) : null,
     ]);
@@ -161,7 +169,7 @@ export async function POST(req: Request) {
       text: ocrText ?? "",
     }) : null);
     const nurse = user.profile.profession === "nurse";
-    const spec = nurse ? null : await decideSpecialty(result, user.profile.specialty.trim(), course, ocrText ?? "");
+    const spec = nurse ? null : await decideSpecialty({ ...result, registered: read.registered }, user.profile.specialty.trim(), course, ocrText ?? "");
     // confirm without the user only when nothing is a guess (rules in lib/parse/confidence.ts)
     const blocks = autoConfirmBlocks({
       source: result.source,

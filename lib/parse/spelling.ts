@@ -63,6 +63,9 @@ function readingsOf(word: string): Map<string, { name: boolean; changes: number 
 
 const isWord = (word: string) => readingsOf(word).get(lower(word))?.changes === 0;
 
+/** Is this a Latvian word, misread or not? */
+export const readsAsWord = (word: string) => readingsOf(word).size > 0;
+
 /** `form` with the case of `word`; Adobe's "T" for "ī" is no capital, and a first "l" that became "i" was a capital I ("lnese") */
 function withCase(word: string, form: string): string {
   if (isCaps(word)) return form.toLocaleUpperCase("lv");

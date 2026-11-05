@@ -183,3 +183,15 @@ export function formsLike(word: string): Map<string, boolean> {
  * dictionary spells with a capital only from 3 uses, so lecturers stay out. Not a certificate word in it.
  */
 export const usage = (form: string): number => (LEXICON as Record<string, number>)[form] ?? 0;
+
+/**
+ * Words of our course titles ending in these letters, most used first: a logo swallowed the first letter or two of a
+ * heading ("IRDS" under an emblem is "sirds").
+ */
+export function commonWordsEndingIn(ending: string, extra: number): string[] {
+  const key = skeleton(ending);
+  return Object.entries(LEXICON as Record<string, number>)
+    .filter(([w]) => w.length > ending.length && w.length <= ending.length + extra && skeleton(w).endsWith(key))
+    .sort((a, b) => b[1] - a[1])
+    .map(([w]) => w);
+}

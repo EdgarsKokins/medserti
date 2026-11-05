@@ -15,6 +15,8 @@ const URL = "https://is.arstubiedriba.lv/tip_list_approved?type=all";
 const USER_AGENT = "MedsertiBot/0.1 (+https://medserti.lv; looks up TIP of past events for certificates that print none)";
 const TIMEOUT_MS = 8_000;
 const TTL_MS = 24 * 60 * 60_000;
+/** An upload waits for a number this long at most, then goes on with what the parser read */
+const NUMBER_TIMEOUT_MS = 2_500;
 
 type Cache = Map<string, { at: number; rows: RegistryEvent[] }>;
 const cache: Cache = ((globalThis as { __medsertiTipRegistry?: Cache }).__medsertiTipRegistry ??= new Map());
@@ -47,20 +49,62 @@ export function parseRegistryRows(html: string): RegistryEvent[] {
   return out;
 }
 
-async function search(term: string): Promise<RegistryEvent[]> {
-  const hit = cache.get(term);
+async function ask(form: Record<string, string>, key: string, timeout = TIMEOUT_MS): Promise<RegistryEvent[]> {
+  const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.rows;
   const res = await fetch(URL, {
     method: "POST",
     headers: { "User-Agent": USER_AGENT, "Content-Type": "application/x-www-form-urlencoded", "Accept-Language": "lv" },
-    body: new URLSearchParams({ filter_type: "all", filter_nosaukums: term }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    body: new URLSearchParams({ filter_type: "all", ...form }),
+    signal: AbortSignal.timeout(timeout),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`LĀB register ${res.status}`);
   const rows = parseRegistryRows(await res.text());
-  cache.set(term, { at: Date.now(), rows });
+  cache.set(key, { at: Date.now(), rows });
   return rows;
+}
+
+const search = (term: string) => ask({ filter_nosaukums: term }, term);
+
+/** One approval number; only the public number leaves the server, and only in its exact shape */
+const byNumber = (id: string) => ask({ filter_number: id }, `number:${id}`, NUMBER_TIMEOUT_MS);
+
+/** Most numbers asked per upload: a certificate has one to three, seven is a page of something else */
+const MAX_NUMBERS = 7;
+/** An upload waits for this at most: a slow register costs a read, not the upload */
+const TOTAL_WAIT_MS = 6_000;
+/** A pause between numbers, and after a failure the register is left alone this long so a batch of uploads does not wait on each file */
+const PAUSE_MS = 300;
+const RETRY_AFTER_MS = 5 * 60_000;
+let downUntil = 0;
+
+/**
+ * Each approval number's rows, one question at a time. Never throws: a register that is down or slow gives null when nothing
+ * was answered, and then the certificate keeps what the parser read.
+ */
+export async function lookupNumbers(ids: string[], fetchRows: (id: string) => Promise<RegistryEvent[]> = byNumber): Promise<Map<string, RegistryEvent[]> | null> {
+  const wanted = [...new Set(ids)].filter((id) => /^TIP\d{4}\/\d{2,5}$/.test(id)).slice(0, MAX_NUMBERS);
+  if (!wanted.length || Date.now() < downUntil) return null;
+  const out = new Map<string, RegistryEvent[]>();
+  const started = Date.now();
+  for (const [i, id] of wanted.entries()) {
+    if (Date.now() - started > TOTAL_WAIT_MS) break;
+    if (i > 0 && !cache.has(`number:${id}`)) await sleep(PAUSE_MS);
+    try {
+      out.set(id, await fetchRows(id));
+    } catch (err) {
+      console.error("tip registry number", err);
+      downUntil = Date.now() + RETRY_AFTER_MS;
+      break;
+    }
+  }
+  return out.size ? out : null;
+}
+
+/** After a failure the register is tried again later; tests start clean */
+export function resetRegisterState() {
+  downUntil = 0;
 }
 
 /**

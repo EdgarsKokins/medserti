@@ -2,16 +2,17 @@ import type { CmeCategory, ParseNote } from "../types";
 import { eventDays } from "./dates";
 import { estimateAbroad } from "../abroad";
 import { lineAt, NA, NB, rx, toNum, withoutSeals, type Text } from "./text";
+import { canonicalApproval } from "./approvals";
 
 /*
  * Points and hours. All patterns run on folded text, so "tālākizglītības" and an OCR'd "talakizglTtibas"
  * match the same way.
  */
 
-// "1.3", "1,3", "21,5", "7.00", and OCR splitting a decimal over a line ("2.\n7") before a label
-const NUM = "(\\d{1,3}(?:[.,]\\s?\\d{1,2})?)";
+// "1.3", "1,3", "21,5", "7.00", OCR's "2;6", and OCR splitting a decimal over a line ("2.\n7") before a label
+const NUM = "(\\d{1,3}(?:[.,]\\s?\\d{1,2}|;\\d)?)";
 /** a number not glued to a digit before it ("2.7" must not yield "7") */
-const NUM_START = "(?<![\\p{N}]|\\p{N}[.,]|\\p{N}[.,]\\s)(?<!category\\s|level\\s|kategorij\\p{L}{1,2}\\s)";
+const NUM_START = "(?<![\\p{N}]|\\p{N}[.,;]|\\p{N}[.,]\\s)(?<!category\\s|level\\s|kategorij\\p{L}{1,2}\\s)";
 
 const POINT_LABEL =
   "(?:tip(?![\\p{L}])|talakizglitibas\\s+(?:kredit)?punkt\\p{L}*|(?:mediciniskas\\s+)?talakizglitibas\\s+kred\\p{L}tpunkt\\p{L}*|kred\\p{L}tpunkt\\p{L}*|further\\s+education\\s+points?|(?:continuing\\s+)?education\\s+points?|ects(?:\\s+(?:credits?|points?))?|ecmec\\p{L}*|(?:european\\s+)?cme(?:\\s+(?:points?|credits?|hours?))?|cpd\\s+(?:points?|credits?|hours?)|credits?|points?|балл\\p{L}*|кредит\\p{L}*|зачетн\\p{L}*\\s+единиц\\p{L}*)";
@@ -33,7 +34,7 @@ const COURSE_TOTAL = /accredit|akredit|designat|maximum|max\.|up to|lidz \d|each
 /** a stated total for this certificate */
 const TOTAL = /kopa|total|kopsumm|par dalibu .{0,40}(?:pieskirt|tiek)|pieskirti|apliecina/;
 /** approval number of one lecture or event: TIP2023/5987, 2023/5988, Nr. 2020/437 */
-const APPROVAL = /(?:tip\s?)?(?:19|20)\d{2}\/\d{2,5}/g;
+const APPROVAL = /(?:tip\s?)?(?:19|2[0o])\d{2}\s?\/\s?\d(?:\d|[osilbz](?![\p{L}\p{N}])|[osilbz](?=\d)){1,5}/gu;
 
 interface Hit {
   value: number;
@@ -65,10 +66,11 @@ export interface PointsResult {
 function approvalFor(t: Text, hit: { index: number; length: number }, next: number, prev: number): string | null {
   const after = t.flat.slice(hit.index + hit.length, Math.min(next, hit.index + hit.length + 90));
   const a = [...after.matchAll(APPROVAL)][0];
-  if (a) return a[0].replace(/^tip\s?/, "");
+  // canonical: a layer's "TIP2022/5355" and OCR's "TIP2022/535S" are one lecture, not two
+  if (a) return canonicalApproval(a[0]) ?? a[0];
   const before = t.flat.slice(Math.max(prev, hit.index - 90), hit.index);
   const b = [...before.matchAll(APPROVAL)].pop();
-  return b ? b[0].replace(/^tip\s?/, "") : null;
+  return b ? (canonicalApproval(b[0]) ?? b[0]) : null;
 }
 
 const fmt = (n: number) => String(Math.round(n * 100) / 100);

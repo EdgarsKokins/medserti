@@ -13,6 +13,7 @@ import { formatDate, formatNumber, formatPeriod } from "@/lib/format";
 import UploadZone from "./UploadZone";
 import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
+import Lectures from "./Lectures";
 import { mergeStored } from "./merge";
 import { forgetStored, getUploadSnapshot, subscribeUploads } from "./uploadStore";
 import { reportFailure } from "@/components/monitoring/report";
@@ -227,6 +228,7 @@ export default function CertificatesView({
         </span>
         <span className={styles.main}>
           <span className={styles.title}>{c.title || <span className="muted">{c.fileName}</span>}</span>
+          <Lectures cert={c} title={c.title} compact />
           <span className={styles.meta}>
             {[org, nurse ? dict.review.topics[nurseTopicOf(c)] : dict.categories[c.category], own.length > 1 ? ownOf(c)?.label : null].filter(Boolean).join(" · ")}
           </span>

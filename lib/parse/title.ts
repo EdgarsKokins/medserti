@@ -160,8 +160,10 @@ export function findTitle(t: Text): { value: string; confidence: number; own?: s
     const f = fold(value);
     // above the sentence sit the logos: a body's name in quote marks there is the letterhead, not the event
     const letterhead = index < firstAnchor && ORG_WORDS.test(f) && !EVENT_WORDS.test(f);
+    // "Seminārs organizēts ar "F SERVIER atbalstu": OCR read the logo as a quote mark, on a sponsor's line
+    const sponsor = SPONSOR.test(f) || /organizets\s+ar\s*$/u.test(fold(before));
     // wordy: OCR of photos and logos leaves quote marks around debris ("4 ļ A ģ wo")
-    if (value.length >= 6 && wordy(value) && !letterhead && !ORG_PREFIX.test(before) && !NOT_TITLE.test(f) && !quoted.some((q) => q.index === index))
+    if (value.length >= 6 && wordy(value) && !letterhead && !sponsor && !ORG_PREFIX.test(before) && !NOT_TITLE.test(f) && !quoted.some((q) => q.index === index))
       quoted.push({ value, index });
   };
   for (const re of QUOTES) for (const m of raw.matchAll(re)) add(m[1], m.index);
@@ -435,7 +437,8 @@ const APPROVAL_PATTERNS = [
   rx(`(?:reģ(?:istrācijas)?\\.?\\s*(?:Nr|numurs)\\.?|reģistrēt\\p{L}*[^\\n]{0,60}?Nr\\.?|apstiprināt\\p{L}*[^\\n]{0,60}?Nr\\.?|saskaņot\\p{L}*[^\\n]{0,80}?Nr\\.?|akreditēt\\p{L}*[^\\n]{0,60}?Nr\\.?|dokumentu\\s+Nr\\.?|lēmum\\p{L}*\\s+Nr\\.?)\\s*[:#]?\\s*${ID}`, "iu"),
   rx(`(?:approval|accreditation|registration|event)\\s*(?:no\\.?|number|code|id)\\s*[:#]?\\s*${ID}`, "iu"),
   rx(`(?<![\\p{L}])TIP\\s?((?:19|20)\\d{2}/\\d{2,5})`, "u"),
-  rx(`(?<![\\p{L}])(?:Nr\\.?|No\\.)\\s*[:#]?\\s*${ID}`, "u"),
+  // "MK noteikumiem Nr. 943" is the regulation, on every certificate
+  rx(`(?<![\\p{L}])(?<!noteikum\\p{L}*\\s)(?:Nr\\.?|No\\.)\\s*[:#]?\\s*${ID}`, "u"),
 ];
 
 export function findApprovalId(t: Text): string | null {

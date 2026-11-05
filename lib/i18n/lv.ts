@@ -744,6 +744,9 @@ export const lv: Dict = {
     },
     quickByYou: "Jūsu izvēle.",
     quickFromRegistry: (id: string) => `No LĀB reģistra (${id}).`,
+    lectures: "Lekcijas",
+    lecturesMore: (n: number) => `un vēl ${n}`,
+    otherNumbers: (list: string) => `Citi numuri šajā sertifikātā: ${list}.`,
     quickEmergency: "Atzīmēts kā neatliekamās medicīniskās palīdzības apmācība.",
   },
   parseNotes: {
@@ -801,6 +804,10 @@ export const lv: Dict = {
       `Sertifikātā punkti nav norādīti. LĀB reģistrā ir ${p.n} ${lvPl(Number(p.n), "līdzīgs pasākums", "līdzīgi pasākumi")}: izvēlieties savējo zemāk. Ja sertifikāts apliecina vairākas lekcijas, saskaitiet to punktus.`,
     tipNoMatch: () =>
       "Sertifikātā punkti nav norādīti, un LĀB reģistrā šo pasākumu neatradām. Ievadiet punktus no LĀB apstiprināto TIP saraksta vai jautājiet organizatoram.",
+    registerChecked: (p: NoteP) =>
+      `Salīdzinājām ar LĀB reģistru (${p.id}): datums un TIP sakrīt.`,
+    tipRegisterDiffers: (p: NoteP) =>
+      `LĀB reģistrā numuram ${p.id} ir ${fmtN(p.points)} TIP, bet sertifikātā nolasījām citu skaitu. Salīdziniet ar sertifikātu.`,
   },
   dashboard: {
     title: "Pārskats",
