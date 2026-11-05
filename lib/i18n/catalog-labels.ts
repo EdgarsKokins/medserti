@@ -227,7 +227,7 @@ export const LABELS: Record<string, string> = {
   "notFound.body": "Teksts",
   "error.title": "Virsraksts",
   "error.body": "Teksts",
-  "nav.dashboard": "Izvēlne: pārskats",
+  "nav.dashboard": "Izvēlne: sākums",
   "nav.certificates": "Izvēlne: sertifikāti",
   "nav.courses": "Izvēlne: kursi",
   "nav.about": "Saite: par mums (kājenē)",

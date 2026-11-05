@@ -14,7 +14,7 @@ export const lv: Dict = {
   notFound: { title: "Lapa nav atrasta", body: "Šādas lapas nav vai tā ir pārvietota." },
   error: { title: "Radās kļūda", body: "Lapu neizdevās ielādēt. Mēģiniet vēlreiz pēc brīža." },
   nav: {
-    dashboard: "Pārskats",
+    dashboard: "Sākums",
     certificates: "Sertifikāti",
     courses: "Kursi",
     about: "Par mums",
