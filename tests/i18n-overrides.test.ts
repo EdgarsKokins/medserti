@@ -23,12 +23,12 @@ test("catalog", () => {
   eq("if/else function is code", byKey.get("dashboard.statusRemaining")?.lv.kind, "code");
   eq("object-argument template fields", byKey.get("parseNotes.multiplePoints")?.en.params, ["list"]);
   eq("locale codes are hidden", byKey.has("landing.ogLocale"), false);
-  eq("array items are separate texts", byKey.has("landingA.steps.0.title") && byKey.has("about.story.1"), true);
+  eq("array items are separate texts", byKey.has("landingB.props.0.name") && byKey.has("about.story.1"), true);
 });
 
 test("catalog: the pane lists what is on screen, in a named block", () => {
   const { byKey, entries } = catalog();
-  for (const k of ["landing.freeNote", "landing.footerRulesNurse", "landingB.sampleCerts.0", "exportDocs.fileSizeUnit"])
+  for (const k of ["landing.freeNote", "landing.footerRulesNurse", "landingB.props.0.name", "exportDocs.fileSizeUnit"])
     eq(`${k} is listed`, byKey.has(k), true);
   eq("the old landing texts stay hidden", byKey.has("landing.eyebrow"), false);
   eq("no text falls through to the catch-all block", entries.filter((e) => e.block === "other").map((e) => e.key), []);
@@ -38,11 +38,11 @@ test("catalog: the pane lists what is on screen, in a named block", () => {
   eq("new landing page", byKey.get("landingB.heroTitle")?.block, "landing");
 });
 
-test("sample certificates and units come from the dictionaries, one per language", () => {
-  eq("LV", [baseDict("lv").landingB.sampleCerts[0], baseDict("lv").exportDocs.fileSizeUnit], ["Akūts koronārais sindroms", "MB"]);
-  eq("EN", [baseDict("en").landingB.sampleCerts[0], baseDict("en").exportDocs.fileSizeUnit], ["Acute coronary syndrome", "MB"]);
-  eq("RU", [baseDict("ru").landingB.sampleCerts[0], baseDict("ru").exportDocs.fileSizeUnit], ["Острый коронарный синдром", "МБ"]);
-  for (const l of ["lv", "en", "ru"] as const) eq(`${l}: one title per sample row`, baseDict(l).landingB.sampleCerts.length, 4);
+test("sample pictures and units come from the dictionaries, one per language", () => {
+  eq("LV", [baseDict("lv").landingB.pic.congress, baseDict("lv").exportDocs.fileSizeUnit], ["Parauga kongress", "MB"]);
+  eq("EN", [baseDict("en").landingB.pic.congress, baseDict("en").exportDocs.fileSizeUnit], ["Sample congress", "MB"]);
+  eq("RU", [baseDict("ru").landingB.pic.congress, baseDict("ru").exportDocs.fileSizeUnit], ["Пример конгресса", "МБ"]);
+  for (const l of ["lv", "en", "ru"] as const) eq(`${l}: four parts on the landing page`, baseDict(l).landingB.props.length, 4);
 });
 
 test("calendar months from Intl: the same three capitals the hand-written table had", () => {
@@ -72,7 +72,7 @@ test("merge", () => {
   const stored = {
     lv: {
       "dashboard.chartTitle": "TIP pa mēnešiem",
-      "landingA.steps.1.title": "Punkti krājas paši",
+      "landingB.props.1.name": "Resertifikācijas termiņš",
       "about.people.0.role": "Līdzdibinātājs",
       "courses.needLine": "Jāsavāc vēl {n} TIP.",
       "courses.details.more": "un vēl {n}",
@@ -90,11 +90,11 @@ test("merge", () => {
   setI18nOverrides(runtime);
   const lv = t("lv");
   eq("plain string", lv.dashboard.chartTitle, "TIP pa mēnešiem");
-  eq("nested array item", lv.landingA.steps[1].title, "Punkti krājas paši");
-  eq("sibling array item untouched", lv.landingA.steps[0].title, baseDict("lv").landingA.steps[0].title);
-  eq("array field next to an edited one untouched", lv.landingA.steps[1].body, baseDict("lv").landingA.steps[1].body);
+  eq("nested array item", lv.landingB.props[1].name, "Resertifikācijas termiņš");
+  eq("sibling array item untouched", lv.landingB.props[0].name, baseDict("lv").landingB.props[0].name);
+  eq("array field next to an edited one untouched", lv.landingB.props[1].line, baseDict("lv").landingB.props[1].line);
   eq("array of objects", lv.about.people[0].role, "Līdzdibinātājs");
-  eq("still an array", Array.isArray(lv.landingA.steps) && lv.landingA.steps.length, baseDict("lv").landingA.steps.length);
+  eq("still an array", Array.isArray(lv.landingB.props) && lv.landingB.props.length, baseDict("lv").landingB.props.length);
   eq("template, reordered placeholders", lv.certs.summary(3, "40"), "TIP: 40, faili: 3.");
   eq("zero-argument function", lv.parseNotes.noTitle(), "Nav nosaukuma.");
   eq("code-only function keeps code", lv.dashboard.daysLeftShort(1), baseDict("lv").dashboard.daysLeftShort(1));
