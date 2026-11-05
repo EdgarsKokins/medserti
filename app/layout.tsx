@@ -131,6 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 contactCta: d.contact.cta,
                 lang: d.lang.label,
                 base: nurse ? d.rules.planningAidNurse : d.rules.planningAid,
+                tour: d.tour.reopen,
               }}
             />
           </DictProvider>

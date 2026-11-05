@@ -53,7 +53,7 @@ export const BLOCKS: { id: BlockId; name: string; href?: string }[] = [
 const BLOCK_OF: Record<string, BlockId> = {
   brand: "nav", lang: "nav", theme: "nav", nav: "nav", common: "nav",
   landingA: "landing", landingB: "landing", landing: "landing",
-  dashboard: "dashboard", chart: "dashboard", checks: "dashboard", checkHints: "dashboard",
+  dashboard: "dashboard", tour: "dashboard", chart: "dashboard", checks: "dashboard", checkHints: "dashboard",
   certs: "certs", review: "certs", status: "certs", categories: "certs", parseNotes: "certs",
   upload: "upload",
   courses: "courses",

@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 export default function NavLinks({ links, publicNav = false }: { links: { href: string; label: string }[]; publicNav?: boolean }) {
   const path = usePathname();
   return (
-    <div className={publicNav ? "nav-links nav-links-public" : "nav-links"}>
+    <div data-tour="tabs" className={publicNav ? "nav-links nav-links-public" : "nav-links"}>
       {links.map((l) => (
         <Link key={l.href} href={l.href} aria-current={path === l.href || path.startsWith(`${l.href}/`) ? "page" : undefined}>
           {l.label}
