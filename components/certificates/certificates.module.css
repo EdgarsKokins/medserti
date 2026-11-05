@@ -155,6 +155,83 @@
 .binBtn:hover, .binBtn:focus-visible { color: var(--bad); background: var(--bad-soft); }
 @media (pointer: coarse) { .binBtn { width: 44px; height: 44px; } }
 .deleteAsk { display: inline-flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; justify-content: flex-end; }
+.slot { position: relative; display: inline-flex; }
+/* the list heading takes focus for a moment while a deleted row leaves (CertificatesView pendingFocus) */
+.listHead h2:focus { outline: none; }
+
+/* ---------- row delete (leave.ts): the row folds into a small card that drops into a bin where "Dzēst" was ----------
+   0-200 the content fades, the row shrinks to a strip around the bin (a tall row on a phone does not leave a gap)
+         and a card shrinks from the row to a small page above the bin
+   200-340 the card drops into the bin; 320-460 the bin gives a tiny bounce; 420-560 the gap closes.
+   The content is anchored to the row's bottom while it shrinks, so the bin stays put in the strip. */
+.leaving {
+  overflow: hidden; pointer-events: none;
+  align-content: end; align-content: unsafe end;
+  animation:
+    rowShrink 200ms cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    rowClose 140ms cubic-bezier(0.4, 0, 0.2, 1) 420ms forwards;
+}
+.leaving > :not(.actions):not(.dropCard), .leaving .deleteAsk > :not(.slot), .leaving::before { animation: rowOut 140ms ease-out forwards; }
+.leaving .slot > button { visibility: hidden; }
+.dropCard {
+  position: absolute; z-index: 1; left: 0; bottom: 0; width: 100%; height: 100%;
+  border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface);
+  box-shadow: 0 2px 6px rgb(11 27 43 / 0.08);
+  opacity: 0;
+  animation: cardDrop 340ms linear forwards;
+}
+/* two "text lines", so it reads as a small page */
+.dropCard::before, .dropCard::after { content: ""; position: absolute; left: 20%; height: 2px; border-radius: 1px; background: var(--border-strong); }
+.dropCard::before { top: 32%; width: 55%; }
+.dropCard::after { top: 58%; width: 36%; }
+.binDrop {
+  position: absolute; z-index: 2; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px;
+  display: grid; place-items: center; border-radius: var(--radius-sm);
+  color: var(--bad); background: var(--bad-soft);
+  transform-origin: 50% 100%;
+  animation:
+    binIn 140ms ease-out both,
+    binBounce 140ms ease-out 320ms,
+    rowOut 100ms ease-in 420ms forwards;
+}
+@keyframes rowOut { to { opacity: 0; } }
+@keyframes rowShrink { from { height: var(--row-h); } to { height: var(--row-s); } }
+@keyframes rowClose {
+  from { height: var(--row-s); }
+  to { height: 0; padding-top: 0; padding-bottom: 0; border-bottom-width: 0; }
+}
+@keyframes binIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes binBounce {
+  0% { transform: none; }
+  35% { transform: translateY(2px) scale(1.08, 0.9); }
+  70% { transform: translateY(-1px) scale(0.98, 1.03); }
+  100% { transform: none; }
+}
+/* the card's bottom edge 14px above the bin's centre (it fits in a 76px row), then 23px down into it */
+@keyframes cardDrop {
+  0% { left: 0; bottom: 0; width: 100%; height: 100%; opacity: 0; animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1); }
+  59% {
+    left: calc(var(--bin-x) - 13px); bottom: calc(var(--bin-b) + 14px); width: 26px; height: 18px;
+    opacity: 1; transform: none;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  100% {
+    left: calc(var(--bin-x) - 13px); bottom: calc(var(--bin-b) + 14px); width: 26px; height: 18px;
+    opacity: 0; transform: translateY(23px) scale(0.55);
+  }
+}
+/* deleted from the review panel, where the row's bin is not visible: fade, then the gap closes (300ms) */
+.fading {
+  overflow: hidden; pointer-events: none;
+  animation: rowOut 160ms ease-out forwards, rowClose 160ms cubic-bezier(0.4, 0, 0.2, 1) 140ms forwards;
+}
+/* the delete failed: the row comes back */
+.back { animation: rowBack 180ms ease-out; }
+@keyframes rowBack { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .leaving, .fading { display: none; }
+  .back { animation: none; }
+}
 /* "i" next to "Neieskaitīts": opens the reason under the row */
 .infoBtn {
   display: inline-grid; place-items: center; flex: none;
@@ -210,6 +287,14 @@
       "actions actions";
   }
   .itemWarn::before, .itemBad::before { top: 14px; bottom: 14px; }
+  /* the delete question needs the whole line: next to the status it ran over "Jāpārbauda" */
+  .item:has(.deleteAsk) {
+    grid-template-areas:
+      "date points"
+      "main main"
+      "status status"
+      "actions actions";
+  }
 }
 
 /* ---------- review panel: native <dialog>, body scrolls, actions pinned at the bottom ---------- */
