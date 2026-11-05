@@ -35,7 +35,7 @@ Cabinet Regulation No. 391 (as amended by No. 703, 2025, and No. 487, Aug 2026),
 | `app/` | Pages (LV routes: `/privatums`, `/noteikumi`, `/kontakti`, `/par-mums`) and API routes |
 | `app/api/cron/` | `refresh-courses` (daily 04:00 UTC), `backup` (Sunday 01:00 UTC), `migrate-records` (one-off); all need `Authorization: Bearer $CRON_SECRET` |
 | `lib/rules.ts` | Requirements and `computeProgress` |
-| `lib/parse/` | Certificate reading: text, OCR, dates, points, title, organizer, place, specialty, image quality, confidence, LĀB TIP lookup |
+| `lib/parse/` | Certificate reading: text, OCR, dates, points, title, organizer, Latvian spelling (dictionary-lv, LGPL-2.1), place, specialty, image quality, confidence, LĀB TIP lookup |
 | `lib/records.ts`, `lib/db.ts` | JSON records in Upstash Redis (local file fallback). Users, certificates, settings, course index, errors, feedback |
 | `lib/storage.ts` | Uploaded files in Vercel Blob (local `./.data` fallback) |
 | `lib/backup.ts` | Weekly backup of files and records to Cloudflare R2 (EU), 8 weeks; restore with `scripts/restore-backup.mjs` |

@@ -178,8 +178,8 @@ export default function ProfileForm({
   return (
     <form className={s.form} onSubmit={save} noValidate>
       <fieldset className="ro-fieldset" disabled={readOnly}>
-      <section className={s.section} aria-labelledby="sec-you">
-        <div className={s.aside}>
+      <section className={`card ${s.section}`} aria-labelledby="sec-you">
+        <div className={s.intro}>
           <h2 id="sec-you">{d.sectionYou}</h2>
           <p className="small muted">{d.sectionYouNote}</p>
         </div>
@@ -260,27 +260,10 @@ export default function ProfileForm({
         </div>
       </section>
 
-      <section className={s.section} aria-labelledby="sec-cert">
-        <div className={s.aside}>
+      <section className={`card ${s.section}`} aria-labelledby="sec-cert">
+        <div className={s.intro}>
           <h2 id="sec-cert">{nurse ? d.sectionRegistration : d.sectionCert}</h2>
           <p className="small muted">{nurse ? d.sectionRegistrationNote : d.sectionCertNote}</p>
-          <p className={s.summary} aria-live="polite">
-            {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
-          </p>
-          {!p.certificateExpires && <p className="small muted">{nurse ? d.summaryNoDateNurse : d.summaryNoDate}</p>}
-          <p className="small muted">
-            {basis === "nurse"
-              ? d.nurseRule
-              : basis === "functionalTransition"
-                ? d.functionalTransition
-                : target === RULES.points.doctorTier
-                  ? d.ruleDoctorTier
-                  : d.ruleOther}
-          </p>
-          <p className="small muted">
-            {d.registerCheck}{" "}
-            <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.registerLink} ↗</a>
-          </p>
         </div>
         <div className={s.fields}>
           <div className="field">
@@ -317,8 +300,30 @@ export default function ProfileForm({
               }}
             />
             {errorText("expires")}
-            <span id="expires-hint" className={s.hint}>{nurse ? d.registrationUntilHint : d.validUntilHint}</span>
           </div>
+          <p id="expires-hint" className={`${s.hint} ${s.fullRow}`}>
+            {nurse ? d.registrationUntilHint : d.validUntilHint} {d.registerCheck}{" "}
+            <a href={REGISTER_URL} target="_blank" rel="noreferrer">{d.registerLink} ↗</a>
+          </p>
+        </div>
+        {/* what the fields add up to; the rule behind the number is one click away */}
+        <div className={s.goal}>
+          <p className={s.goalText} aria-live="polite">
+            {d.summary(target, p.certificateExpires ? formatDate(p.certificateExpires, locale) : null)}
+          </p>
+          {!p.certificateExpires && <p className="small muted">{nurse ? d.summaryNoDateNurse : d.summaryNoDate}</p>}
+          <details className={s.more}>
+            <summary>{d.ruleMore}</summary>
+            <p className="small muted">
+              {basis === "nurse"
+                ? d.nurseRule
+                : basis === "functionalTransition"
+                  ? d.functionalTransition
+                  : target === RULES.points.doctorTier
+                    ? d.ruleDoctorTier
+                    : d.ruleOther}
+            </p>
+          </details>
         </div>
       </section>
 

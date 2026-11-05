@@ -37,11 +37,15 @@ export default function ExtraCertificates({
     onChange([...value, { id: crypto.randomUUID(), specialty: "", specialtyCode: null, certificateNumber: "", certificateIssued: null, certificateExpires: null }]);
 
   return (
-    <section className={s.section} aria-labelledby="sec-extra">
-      <div className={s.aside}>
+    <section className={`card ${s.section}`} aria-labelledby="sec-extra">
+      <div className={s.intro}>
         <h2 id="sec-extra">{d.extraTitle}</h2>
         <p className="small muted">{d.extraNote}</p>
-        {value.length > 0 && <p className="small muted">{d.extraCounting}</p>}
+        <details className={s.more}>
+          <summary>{d.extraMore}</summary>
+          <p className="small muted">{d.extraRule}</p>
+          {value.length > 0 && <p className="small muted">{d.extraCounting}</p>}
+        </details>
       </div>
       <div className={s.fields}>
         {value.map((c, i) => {

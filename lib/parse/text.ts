@@ -59,6 +59,8 @@ const LATVIAN_WORDS = 0.1;
 /** Case endings change a word's last letters ("konference", "konferencē"); the stem keeps its letters in every form */
 const ENDING = 2;
 const latvianLetters = (w: string) => w.match(LATVIAN_LETTER)?.length ?? 0;
+/** What a clean layer word may take from the OCR: an OCR "é" is a misread "ē", never a letter to copy */
+const LATVIAN_ALPHABET = /[a-zāčēģīķļņšūž]/u;
 
 /**
  * `word` with the letters of `stem` and, in its ending, of `ending` when there is one; case stays the word's.
@@ -70,7 +72,7 @@ function respell(word: string, stem: string, ending: string | null): string {
   for (let i = 0; i < word.length; i++) {
     const c = word[i];
     const o = (i < word.length - ENDING ? stem : ending)?.[i]?.toLowerCase();
-    if (!o) {
+    if (!o || !LATVIAN_ALPHABET.test(o)) {
       out += c;
       continue;
     }

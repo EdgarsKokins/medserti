@@ -38,8 +38,8 @@ export default function NotificationSettings({ initial, email, nurse }: { initia
   }
 
   return (
-    <section className={s.section} aria-labelledby="sec-notify">
-      <div className={s.aside}>
+    <section className={`card ${s.section}`} aria-labelledby="sec-notify">
+      <div className={s.intro}>
         <h2 id="sec-notify">{m.title}</h2>
         <p className="small muted">{m.sentTo(email)}</p>
       </div>
