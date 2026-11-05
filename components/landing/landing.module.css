@@ -1,0 +1,167 @@
+/* Landing page (version G): one big soft circle, one clean screen of the app on it, few words. Tokens from app/globals.css, shapes from the dashboard tiles. */
+.page { width: 100%; }
+.root { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 20px; overflow-x: clip; }
+/* the same widths as the nav, so the headline starts under the logo */
+@media (min-width: 1440px) { .root { max-width: 1240px; } }
+@media (min-width: 1920px) { .root { max-width: 1360px; } }
+.toneBlue { --tone: var(--accent); --soft: var(--accent-soft); }
+.toneOk { --tone: var(--ok); --soft: var(--ok-soft); }
+.toneWarn { --tone: var(--warn); --soft: var(--warn-soft); }
+
+/* ---------- first screen ---------- */
+.deleted { margin: 24px 0 0; }
+.hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; align-items: center; min-height: min(730px, calc(100svh - 70px)); padding: 12px 0; }
+.heroCopy { display: flex; flex-direction: column; align-items: flex-start; }
+.h1 { margin: 0; font-family: var(--font-serif); font-size: clamp(2.5rem, 4.9vw, 4rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.04; text-wrap: balance; }
+.sub { margin: 16px 0 0; font-size: 1.2rem; line-height: 1.4; color: var(--muted); }
+
+.props { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.prop { display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 6px 12px 6px 0; border-radius: 18px; color: var(--text); text-decoration: none; }
+.prop:hover .propText b { color: var(--tone); }
+.propIcon { flex: none; width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--soft); color: var(--tone); }
+.propIcon svg { width: 25px; height: 25px; }
+.propText { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.propText b { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 600; letter-spacing: -0.01em; }
+.propText span { color: var(--muted); font-size: 1rem; }
+
+.ctas { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 22px; margin-top: 24px; }
+.cta { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 12px 34px; border-radius: 99px; background: var(--accent); color: var(--accent-contrast); font-weight: 600; font-size: 1.15rem; text-decoration: none; }
+.cta:hover { background: var(--accent-hover); color: var(--accent-contrast); }
+.ghost { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent); font-weight: 500; font-size: 1.05rem; text-underline-offset: 4px; }
+.ghost:hover { color: var(--accent-hover); }
+
+/* ---------- the picture: a white sheet of the app on a big soft circle ---------- */
+.stage { position: relative; display: flex; justify-content: center; align-items: center; min-width: 0; aspect-ratio: 1; isolation: isolate; }
+.stage::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--soft); transform: translate(-50%, -50%); }
+.sheet { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; padding: 26px; border-radius: 28px; background: var(--surface); box-shadow: 0 2px 4px rgba(11, 27, 43, 0.04), 0 28px 56px -28px rgba(11, 27, 43, 0.32); }
+.sheetHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.hello { font-family: var(--font-serif); font-size: 1.75rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.sheetTitle { margin: 0; font-family: var(--font-serif); font-size: 1.3rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+.sample { flex: none; font-size: 0.82rem; color: var(--muted); }
+
+.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; border-radius: 16px; background: var(--bg); }
+.rowText { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.rowTitle { font-weight: 500; line-height: 1.3; }
+.rowSub { font-size: 0.85rem; line-height: 1.3; color: var(--muted); }
+.rowTip { flex: none; font-weight: 700; font-size: 0.9rem; color: var(--tone); white-space: nowrap; }
+.dotOk, .dotWarn { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.dotOk { background: var(--ok); }
+.dotWarn { background: var(--warn); }
+.date { flex: none; width: 44px; height: 44px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; background: var(--soft); color: var(--tone); }
+.date b { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; }
+.date span { font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+.date svg { width: 24px; height: 24px; }
+.fileIcon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--soft); color: var(--tone); }
+.fileIcon svg { width: 22px; height: 22px; }
+.check { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); position: relative; }
+.check::after { content: ""; position: absolute; left: 8px; top: 4px; width: 5px; height: 10px; border: solid var(--ok); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.clamp { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tag, .tagOn { align-self: flex-start; margin-top: 4px; padding: 1px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+.tagOn { background: var(--soft); color: var(--tone); }
+.none { margin: 0; color: var(--muted); }
+
+.ring { --pct: 0%; flex: none; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--accent) var(--pct), var(--surface-2) 0); }
+.ringInner { display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; background: var(--surface); line-height: 1.1; text-align: center; }
+.ringInner b { font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.02em; }
+.ringInner span { color: var(--muted); }
+.ringSmall { width: 116px; height: 116px; }
+.ringSmall .ringInner { width: 92px; height: 92px; }
+.ringSmall b { font-size: 1.9rem; }
+.ringSmall span { font-size: 0.72rem; }
+.ringBig { width: 214px; height: 214px; }
+.ringBig .ringInner { width: 174px; height: 174px; }
+.ringBig b { font-size: 3.6rem; }
+.ringBig span { font-size: 0.98rem; margin-top: 2px; }
+.ringRow { display: flex; align-items: center; gap: 20px; }
+.ringNote { display: flex; flex-direction: column; line-height: 1.3; }
+.ringNote b { font-family: var(--font-serif); font-size: 1.35rem; font-weight: 600; }
+.ringNote span { color: var(--muted); }
+.ringCentre { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ringCaption { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.3; }
+.ringCaption b { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 600; }
+.ringCaption span { color: var(--muted); }
+.reminders { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.reminders li { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 4px; border-radius: 16px; background: var(--bg); line-height: 1.25; text-align: center; }
+.reminders b { font-weight: 600; }
+.reminders li > span:last-child { font-size: 0.8rem; color: var(--muted); }
+.mailIcon { color: var(--tone); margin-bottom: 2px; }
+.mailIcon svg { display: block; width: 22px; height: 22px; }
+.total { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 14px 0; }
+.total span { color: var(--muted); }
+.total b { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 600; }
+.fakeButton { align-self: stretch; text-align: center; padding: 13px 20px; border-radius: 99px; background: var(--accent); color: var(--accent-contrast); font-weight: 600; }
+
+/* ---------- one section per solution ---------- */
+.parts { display: flex; flex-direction: column; gap: 32px; padding: 32px 0 56px; }
+.solution { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; align-items: center; scroll-margin-top: 24px; }
+.flip { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); }
+.flip .copy { order: 2; }
+.copy { display: flex; flex-direction: column; align-items: flex-start; }
+.bigIcon { width: 72px; height: 72px; border-radius: 22px; display: grid; place-items: center; background: var(--soft); color: var(--tone); margin-bottom: 22px; }
+.h2 { margin: 0; font-family: var(--font-serif); font-size: clamp(2.6rem, 5vw, 4rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; }
+.line { margin: 14px 0 0; max-width: 28em; font-size: 1.3rem; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+.picker { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; max-width: 400px; margin-top: 26px; }
+.picker label { width: 100%; max-width: none !important; }
+.picker label > span { font-size: 1rem; font-weight: 500; color: var(--text); }
+.picker select { width: 100%; min-height: 48px; font-size: 1.05rem; }
+.ctaSoft { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 6px; padding: 10px 26px; border-radius: 99px; background: var(--accent); color: var(--accent-contrast); font-weight: 600; font-size: 1.05rem; text-decoration: none; }
+.ctaSoft:hover { background: var(--accent-hover); color: var(--accent-contrast); }
+
+/* ---------- who we are ---------- */
+.who { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: center; padding: 56px 0; }
+.whoTitle { margin: 0; font-family: var(--font-serif); font-size: clamp(2rem, 3.8vw, 3rem); font-weight: 600; letter-spacing: -0.015em; line-height: 1.12; text-wrap: balance; }
+.people { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; gap: 28px; }
+.people li { display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 500; text-align: center; }
+.people img { display: block; width: 168px; height: 168px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: var(--surface-2); }
+
+/* ---------- questions and sign-up ---------- */
+.faq { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px 48px; padding: 56px 0; }
+.faqTitle { margin: 0; font-family: var(--font-serif); font-size: clamp(2rem, 3.8vw, 3rem); font-weight: 600; letter-spacing: -0.015em; line-height: 1.12; }
+.question { border-bottom: 1px solid var(--border); }
+.question:first-child { border-top: 1px solid var(--border); }
+.question summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 12px 4px; font-size: 1.2rem; font-weight: 500; line-height: 1.3; cursor: pointer; list-style: none; border-radius: 8px; }
+.question summary::-webkit-details-marker { display: none; }
+.question summary::after { content: ""; flex: none; width: 16px; height: 11px; background: var(--icon-chevron) center / contain no-repeat; }
+.question[open] summary::after { transform: rotate(180deg); }
+.question summary:hover { color: var(--accent); }
+.question summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.question p { margin: 0; padding: 0 36px 20px 4px; max-width: 62ch; font-size: 1.08rem; color: var(--muted); }
+
+.closing { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 40px 0 80px; text-align: center; }
+.closing p { margin: 0; font-size: 1.1rem; color: var(--muted); }
+
+/* ---------- narrower screens ---------- */
+@media (max-width: 900px) {
+  .hero, .solution, .flip, .who, .faq { grid-template-columns: minmax(0, 1fr); }
+  .hero { min-height: 0; padding: 28px 0 8px; gap: 12px; }
+  .flip .copy { order: 0; }
+  .stage { aspect-ratio: auto; padding: 48px 0; }
+  /* as tall as the picture, so the circle shows above and below it and never covers the text */
+  .stage::before { top: 0; width: auto; height: 100%; transform: translateX(-50%); }
+  .parts { gap: 40px; padding: 24px 0 48px; }
+  .who, .faq { padding: 48px 0; }
+}
+@media (max-width: 640px) {
+  .root { padding: 0 16px; }
+}
+@media (max-width: 480px) {
+  .sub { font-size: 1.1rem; margin-top: 12px; }
+  .props { margin-top: 16px; }
+  .prop { min-height: 56px; }
+  .ctas { margin-top: 16px; }
+  .sheet { padding: 18px; border-radius: 24px; }
+  .row { padding: 8px 10px; gap: 10px; }
+  .bigIcon { width: 56px; height: 56px; border-radius: 18px; margin-bottom: 14px; }
+  .bigIcon svg { width: 28px; height: 28px; }
+  .line { font-size: 1.15rem; }
+  .ringBig { width: 184px; height: 184px; }
+  .ringBig .ringInner { width: 148px; height: 148px; }
+  .ringBig b { font-size: 3rem; }
+  .people { gap: 16px; }
+  .people img { width: 136px; height: 136px; }
+  .question summary { font-size: 1.1rem; }
+  .cta { width: 100%; }
+  .ctas { width: 100%; justify-content: center; }
+  .closing { padding: 32px 0 64px; }
+}

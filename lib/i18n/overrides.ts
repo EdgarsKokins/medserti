@@ -5,7 +5,7 @@ import type { Locale } from "../locale";
  *
  * Runtime form (already compiled on the server by lib/i18n/overrides-server.ts):
  *   { lv: { "dashboard.chartTitle": "…", "courses.needLine": "Jums vēl jāsavāc {0} TIP." }, en: {…} }
- * Dot paths, array items by index ("landingA.steps.0.title").
+ * Dot paths, array items by index ("landingB.props.0.name").
  * For a function entry the value is a template: "{0}" is the first argument, "{0.points}" a field of it.
  */
 export type RuntimeOverrides = Partial<Record<Locale, Record<string, string>>>;

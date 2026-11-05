@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { TEAM_PHOTOS } from "@/lib/team";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import ProductFrame from "@/components/landing/ProductFrame";
-import HowItWorks from "@/components/landing/HowItWorks";
-import PartsTabs, { type PartTab } from "@/components/landing/PartsTabs";
 import DemoButton from "@/components/DemoButton";
-import { currentUserId } from "@/lib/auth";
-import { isDemoUserId } from "@/lib/demo/id";
 import EndDemo from "@/components/EndDemo";
+import { IconCal, IconDoc } from "@/components/PartIcons";
+import { IconClock, IconFolder } from "@/components/landing/icons";
+import { CertificatesPicture, DeadlinePicture, DocumentsPicture, HeroPicture } from "@/components/landing/Pictures";
+import SampleSpecialty from "@/components/landing/SampleSpecialty";
+import s from "@/components/landing/landing.module.css";
+import { currentUserId } from "@/lib/auth";
 import { readCourseIndex } from "@/lib/courses/store";
 import type { Course } from "@/lib/courses/types";
+import { isDemoUserId } from "@/lib/demo/id";
+import { formatNumber, MONTHS_SHORT, todayLv } from "@/lib/format";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { languageAlternates, localePath } from "@/lib/locale";
 import { matchesSpecialty } from "@/lib/parse";
 import { specialtiesFor, specialtyByCode } from "@/lib/specialties";
-import SampleSpecialty from "@/components/landing/SampleSpecialty";
-import s from "./landing.module.css";
-import { formatDate, formatNumber, MONTHS_SHORT, todayLv } from "@/lib/format";
+import { TEAM_PHOTOS } from "@/lib/team";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -40,29 +40,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
-
-/** Live numbers for the three parts, from the stored index (never built here); zeros hide the counts */
-async function courseFacts() {
-  try {
-    const idx = await readCourseIndex();
-    const all = idx?.courses ?? [];
-    const today = todayLv();
-    const upcoming = all
-      .filter((c) => c.kind === "event" && c.startDate && c.startDate >= today && c.tip != null)
-      .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
-    const recorded = all.filter((c) => c.kind === "recorded");
-    return {
-      next: upcoming.slice(0, 3),
-      upcoming: upcoming.length,
-      recorded: recorded.length,
-      recording: recorded.find((c) => c.free && c.tip != null) ?? recorded[0] ?? null,
-      sources: new Set(all.map((c) => c.source)).size,
-    };
-  } catch {
-    return { next: [] as Course[], upcoming: 0, recorded: 0, recording: null as Course | null, sources: 0 };
-  }
-}
-type Facts = Awaited<ReturnType<typeof courseFacts>>;
 
 const SAMPLE = 5;
 /** Specialties offered on the public sample: doctors, dentists and functional specialists (nurses have their own list) */
@@ -89,31 +66,23 @@ async function courseSample(code: string | null) {
   }
 }
 
-/** Example rows for the "your report" visual (not real data); titles are landingB.sampleCerts, in this order */
-const LEDGER = [
-  { date: "2024-03-12", tip: 12 },
-  { date: "2024-09-05", tip: 8 },
-  { date: "2025-02-14", tip: 16 },
-  { date: "2025-09-25", tip: 16 },
-];
-/** Example certificate period end for the same sample doctor (issued Jan 2024) */
-const DEADLINE = "2029-01-15";
-/** The sample doctor in the hero, part way through the period (not real data) */
-const SAMPLE_TIP = 174;
-const TONES = ["tone1", "tone2", "tone3"] as const;
-/** which part solves each pain point, in the order of landingB.pains */
-const PAIN_PART = [1, 1, 2, 3];
-const shortDate = (iso: string, locale: Locale) =>
-  locale === "en"
-    ? formatDate(iso, locale).replace(/ 20(\d\d)$/, " $1")
-    : `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(2, 4)}${locale === "lv" ? "." : ""}`;
+
 const tip = (n: number | null | undefined) => formatNumber(n ?? 0, 1);
 
+/** The four parts in the order of landingB.props: anchor, colour and icon */
+const PARTS = [
+  { id: "sertifikati", tone: s.toneBlue, icon: <IconDoc /> },
+  { id: "termins", tone: s.toneWarn, icon: <IconClock /> },
+  { id: "kursi", tone: s.toneOk, icon: <IconCal /> },
+  { id: "dokumenti", tone: s.toneBlue, icon: <IconFolder /> },
+];
+
 /**
- * Public landing page: Medserti as three parts (certificates and TIP, next courses, online lectures) that together
- * cover recertification. The hero shows them as one route; the pain points link to the part that solves each; below,
- * the parts are tabs over one explanation panel, so the page stays short. Signed-in users go straight to their
- * dashboard; the demo visitor who comes back here leaves the demo.
+ * Public landing page (version G, Edgars, November 2026): the headline, one line, all four parts at a glance and the
+ * sign-up on the first screen, beside one picture of the app. Below, one short section per part, each with its own
+ * picture; the courses section shows real upcoming events for a chosen specialty. Then the founders, three questions
+ * and the sign-up again. Pictures use a made-up sample doctor. Nothing moves.
+ * Signed-in users go straight to their dashboard; the demo visitor who comes back here leaves the demo.
  */
 export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; specialitate?: string | string[] }> }) {
   const userId = await currentUserId();
@@ -124,397 +93,148 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   const { deleted, specialitate } = await searchParams;
   const a = d.landingA;
   const b = d.landingB;
-  const [facts, sample] = await Promise.all([courseFacts(), courseSample(typeof specialitate === "string" ? specialitate : null)]);
-  const eventsLine = facts.upcoming > 0 ? b.events(facts.upcoming, facts.sources) : b.eventsNoCount;
-  const recordingsLine = facts.recorded > 0 ? b.recordings(facts.recorded) : b.recordingsNoCount;
-
-  const tabs: PartTab[] = b.parts.map((p, i) => ({
-    id: `dala-${i + 1}`,
-    label: `${i + 1} · ${p.verb}`,
-    title: p.title,
-    tone: TONES[i],
-    lines: i === 1 ? [eventsLine, ...p.lines] : i === 2 ? [recordingsLine, ...p.lines] : p.lines,
-  }));
+  const sample = await courseSample(typeof specialitate === "string" ? specialitate : null);
+  const props = b.props.map((p, i) => ({ ...p, ...PARTS[i] }));
+  const questions = [a.faq[1], a.faq[2], { q: b.labTitle, a: b.labBody }];
 
   return (
-    <div className={s.root}>
+    <div className={s.page}>
       {demo && <EndDemo />}
-      <main>
-        {deleted && (
-          <div className="container" style={{ paddingBottom: 0 }}>
-            <div className="alert alert-ok" role="status">{d.legal.deleteAccount.done}</div>
-          </div>
-        )}
-        <Hero d={d} locale={locale} facts={facts} />
+      <main className={s.root}>
+        {deleted && <div className={`alert alert-ok ${s.deleted}`} role="status">{d.legal.deleteAccount.done}</div>}
 
-        <div className={s.wrap}>
-          <section className={s.section} aria-labelledby="pain-title">
-            <h2 id="pain-title" className={s.h2}>{b.painTitle}</h2>
-            <ul className={s.pains}>
-              {b.pains.map((p, i) => (
-                <li key={p.title} className={s[TONES[PAIN_PART[i] - 1]]}>
-                  <h3 className={s.painTitle}>{p.title}</h3>
-                  <p className={s.painBody}>{p.body}</p>
-                  <a href={`#dala-${PAIN_PART[i]}`} className={s.painPart}>{b.painPart(PAIN_PART[i])}</a>
+        <section className={`${s.hero} ${s.toneBlue}`} aria-labelledby="landing-title">
+          <div className={s.heroCopy}>
+            <h1 id="landing-title" className={s.h1}>{b.heroTitle}</h1>
+            <p className={s.sub}>{b.lead}</p>
+            <ul className={s.props}>
+              {props.map((p) => (
+                <li key={p.id} className={p.tone}>
+                  <a href={`#${p.id}`} className={s.prop}>
+                    <span className={s.propIcon}>{p.icon}</span>
+                    <span className={s.propText}>
+                      <b>{p.name}</b>
+                      <span>{p.short}</span>
+                    </span>
+                  </a>
                 </li>
               ))}
             </ul>
-          </section>
-
-          <section className={s.section} aria-labelledby="parts-title">
-            <h2 id="parts-title" className={s.h2}>{b.partsTitle}</h2>
-            <PartsTabs
-              tabs={tabs}
-              label={b.pathLabel}
-              more={b.more}
-              showing={b.showing}
-              panels={[
-                <PanelCertificates key="1" d={d} locale={locale} />,
-                <PanelCourses key="2" d={d} locale={locale} facts={facts} eventsLine={eventsLine} />,
-                <PanelOnline key="3" d={d} facts={facts} recordingsLine={recordingsLine} />,
-              ]}
-            />
-          </section>
-
-          <CourseSample d={d} locale={locale} sample={sample} />
-
-          <section className={s.section} aria-labelledby="founders-title">
-            <div className={s.founders}>
-              <div>
-                <h2 id="founders-title" className={s.h2}>{a.foundersTitle}</h2>
-                <p className={s.foundersBody}>{a.foundersBody}</p>
-              </div>
-              <ul className={s.people}>
-                {d.about.people.map((p) => (
-                  <li key={p.name}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={TEAM_PHOTOS[p.name]} alt={p.name} className={s.photo} width={132} height={132} loading="lazy" />
-                    <span className={s.personName}>{p.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          <section className={s.section} aria-labelledby="faq-title">
-            <h2 id="faq-title" className={s.h2}>{d.landing.faqTitle}</h2>
-            <dl className={s.faq}>
-              {a.faq.map((f) => (
-                <div key={f.q}>
-                  <dt>{f.q}</dt>
-                  <dd>{f.a}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          <div className={s.closing}>
-            <p className={s.closingText}>{a.closing}</p>
-            <div className={s.closingCtas}>
-              <Link href="/register" className={`btn ${s.closingCta}`}>{a.start}</Link>
-              <Link href={localePath("/kontakti", locale)} className={`btn ${s.closingGhost}`}>{d.contact.cta}</Link>
+            <div className={s.ctas}>
+              <Link href="/register" className={s.cta}>{a.start}</Link>
+              <DemoButton label={d.demo.try} className={s.ghost} />
             </div>
           </div>
+          <HeroPicture d={d} locale={locale} />
+        </section>
+
+        <div className={s.parts}>
+          <Part p={props[0]} flip><CertificatesPicture d={d} locale={locale} /></Part>
+          <Part p={props[1]}><DeadlinePicture d={d} locale={locale} /></Part>
+          <Part p={props[2]} flip extra={<CoursePicker d={d} locale={locale} sample={sample} />}>
+            <CourseSample d={d} locale={locale} sample={sample} />
+          </Part>
+          <Part p={props[3]}><DocumentsPicture d={d} /></Part>
         </div>
+
+        <section className={s.who} aria-labelledby="founders-title">
+          <h2 id="founders-title" className={s.whoTitle}>{a.foundersTitle}</h2>
+          <ul className={s.people}>
+            {d.about.people.map((p) => (
+              <li key={p.name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={TEAM_PHOTOS[p.name]} alt="" width={168} height={168} loading="lazy" />
+                <span>{p.name}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className={s.faq} aria-labelledby="faq-title">
+          <h2 id="faq-title" className={s.faqTitle}>{d.landing.faqTitle}</h2>
+          <div>
+            {questions.map((f) => (
+              <details key={f.q} className={s.question}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section className={s.closing} aria-label={a.start}>
+          <Link href="/register" className={s.cta}>{a.start}</Link>
+          <p>{d.landing.freeNote}</p>
+        </section>
       </main>
     </div>
   );
 }
 
-/** The three parts as one route: TIP progress, next course dates, an online lecture, ending at the documents */
-function Hero({ d, locale, facts }: { d: Dict; locale: Locale; facts: Facts }) {
-  const b = d.landingB;
-  const next = facts.next.slice(0, 2);
+type Prop = { id: string; tone: string; icon: ReactNode; name: string; line: string };
+
+/** One part: big icon, one word, one line, and its picture on a soft circle; `flip` puts the picture on the left */
+function Part({ p, flip = false, extra, children }: { p: Prop; flip?: boolean; extra?: ReactNode; children: ReactNode }) {
   return (
-    <section className={s.hero} aria-labelledby="landing-title">
-      <div className={s.heroInner}>
-        <div className={s.heroCopy}>
-          <h1 id="landing-title" className={s.heroTitle}>{b.heroTitle}</h1>
-          <p className={s.heroSub}>{b.heroSub}</p>
-          <div className={s.ctas}>
-            <Link href="/register" className={`btn btn-primary ${s.ctaMain}`}>{d.landingA.start}</Link>
-            <DemoButton label={d.demo.try} className={`btn ${s.ctaGhost}`} />
-          </div>
-          <p className={s.freeNote}>{d.landing.freeNote}</p>
-        </div>
-        <ol className={s.path} aria-label={b.pathLabel}>
-          <Step n={1} verb={b.parts[0].verb} label={`${b.parts[0].verb} · ${b.parts[0].title}`} link={b.stepLink(1, b.parts[0].verb)}>
-            <div className={s.cardRow}>
-              <span className={s.cardBig}>{SAMPLE_TIP} / 250 TIP</span>
-              <span className="small muted">{b.until(formatDate(DEADLINE, locale))}</span>
-            </div>
-            <div className={s.track}><div className={s.fill} style={{ width: `${(SAMPLE_TIP / 250) * 100}%` }} /></div>
-            <span className="small muted">{b.sampleProgress}</span>
-          </Step>
-          <Step n={2} verb={b.parts[1].verb} label={`${b.parts[1].verb} · ${b.parts[1].title}`} link={b.stepLink(2, b.parts[1].verb)}>
-            <ul className={s.mini}>
-              {(next.length ? next : [null, null]).map((c, i) => (
-                <li key={c?.id ?? i}>
-                  <span className={s.miniDate}>
-                    <b>{c?.startDate?.slice(8, 10) ?? (i ? "21" : "15")}</b>
-                    {MONTHS_SHORT[locale][Number(c?.startDate?.slice(5, 7) ?? "11") - 1]}
-                  </span>
-                  <span className={s.cardTitle}>{c?.title ?? b.sampleCourses[i]}</span>
-                  <span className={s.cardTip}>+{tip(c?.tip ?? (i ? 2 : 8))}</span>
-                </li>
-              ))}
-            </ul>
-          </Step>
-          <Step n={3} verb={b.parts[2].verb} label={`${b.parts[2].verb} · ${b.parts[2].title}`} link={b.stepLink(3, b.parts[2].verb)} video>
-            <span className={s.thumb} aria-hidden><LectureIcon size={26} /></span>
-            <div>
-              <p className={s.stepLabel}>{`${b.parts[2].verb} · ${b.parts[2].title}`}</p>
-              <span className={s.cardTitle}>{facts.recording?.title ?? b.sampleLecture}</span>
-              <span className="small muted"> · +{tip(facts.recording?.tip ?? 1)} TIP, {b.anyTime}</span>
-            </div>
-          </Step>
-          <li className={`${s.step} ${s.goal}`}>
-            <span className={s.node} aria-hidden>✓</span>
-            <p className={s.goalText}>{b.goal}</p>
-          </li>
-        </ol>
+    <section id={p.id} className={`${s.solution} ${p.tone} ${flip ? s.flip : ""}`} aria-labelledby={`${p.id}-title`}>
+      <div className={s.copy}>
+        <span className={s.bigIcon}>{p.icon}</span>
+        <h2 id={`${p.id}-title`} className={s.h2}>{p.name}</h2>
+        <p className={s.line}>{p.line}</p>
+        {extra}
       </div>
-    </section>
-  );
-}
-
-/**
- * Part 3, online lectures: a presentation board, not a play button. Testers pressed the ▶ and took the page for broken
- * (Ineta Ūdra, November 2026); nothing here plays.
- */
-function LectureIcon({ size }: { size: number }) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3" y="3.5" width="18" height="12.5" rx="1.5" />
-      <path d="M7 8h10M7 11.5h6M12 16v4M8.5 20.5 12 18l3.5 2.5" />
-    </svg>
-  );
-}
-
-/** One step of the hero route; the whole step links to its tab below */
-function Step({ n, label, link, video = false, children }: { n: 1 | 2 | 3; verb: string; label: string; link: string; video?: boolean; children: ReactNode }) {
-  return (
-    <li className={`${s.step} ${s[TONES[n - 1]]}`}>
-      <a href={`#dala-${n}`} className={s.stepLink} aria-label={link} />
-      <span className={s.node} aria-hidden>{n}</span>
-      <div className={`${s.panel} ${video ? s.videoPanel : ""}`}>
-        {!video && <p className={s.stepLabel}>{label}</p>}
-        {children}
-      </div>
-    </li>
-  );
-}
-
-function Checks({ items }: { items: string[] }) {
-  return (
-    <ul className={s.answers}>
-      {items.map((x) => (
-        <li key={x}><span className={`${s.answerMark} ${s.toneMark}`} aria-hidden>✓</span>{x}</li>
-      ))}
-    </ul>
-  );
-}
-
-function Steps({ title, items }: { title: string; items: { title: string; body: string }[] }) {
-  return (
-    <section className={s.stepsSection} aria-label={title}>
-      <h3 className={s.panelH}>{title}</h3>
-      <ol className={s.steps}>
-        {items.map((x, i) => (
-          <li key={x.title}>
-            <span className={s.stepNo} aria-hidden>{i + 1}</span>
-            <span>
-              <b className={s.stepTitle}>{x.title}</b>
-              <span className={s.stepBody}>{x.body}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function Frame({ url, children }: { url: string; children: ReactNode }) {
-  return (
-    <div className={s.frame} aria-hidden>
-      <div className={s.frameBar}><i /><i /><i /><span className={s.frameUrl}>{url}</span></div>
       {children}
-    </div>
+    </section>
   );
 }
 
-/** Part 1: the sample doctor's overview and how certificates become a total and documents */
-function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
-  const a = d.landingA;
-  const total = LEDGER.reduce((n, r) => n + r.tip, 0);
-  const ledger = LEDGER.map((r, i) => ({ date: shortDate(r.date, locale), title: d.landingB.sampleCerts[i], tip: r.tip }));
-  // only plain strings may cross into the client component (the functions stay here)
-  const { remaining, docsCopies, ...howText } = a;
-  return (
-    <div>
-      <div className={s.answer}>
-        <div className={s.answerCopy}>
-          <h3 className={s.h2}>{a.answerTitle}</h3>
-          <p className={s.answerBody}>{a.answerBody}</p>
-          <Checks items={a.answers} />
-        </div>
-        <ProductFrame
-          label={a.frameLabel}
-          name={a.frameName}
-          role={a.frameRole}
-          collected={a.frameCollected}
-          of={a.frameOf}
-          total={total}
-          rulesTitle={a.frameRules}
-          rules={[...a.checksDone.map((label) => ({ label, done: true })), { label: a.checkSpecialty, done: false }, { label: remaining(250 - total), done: false }]}
-          deadline={a.deadline}
-          deadlineValue={formatDate(DEADLINE, locale)}
-          recentTitle={a.frameRecent}
-          recent={ledger.slice().reverse().slice(0, 3)}
-        />
-      </div>
-      {/* doctors already see LĀB-approved events in LĀB's system: what Medserti adds (Kārlis' test, October 2026) */}
-      <section className={s.lab} aria-labelledby="lab-title">
-        <div>
-          <h3 id="lab-title" className={s.labTitle}>{d.landingB.labTitle}</h3>
-          <p className={s.labBody}>{d.landingB.labBody}</p>
-        </div>
-        <Checks items={d.landingB.labChecks} />
-      </section>
-      <section id="how" className={s.stepsSection} aria-labelledby="how-title">
-        <h3 id="how-title" className={s.panelH}>{a.how}</h3>
-        <HowItWorks
-          l={{
-            ...howText,
-            readDateValue: formatDate("2025-09-25", locale),
-            remainingValue: remaining(250 - total),
-            deadlineValue: formatDate(DEADLINE, locale),
-            ledgerRows: ledger,
-            docsCopies: docsCopies(LEDGER.length),
-          }}
-        />
-      </section>
-    </div>
-  );
-}
+type Sample = Awaited<ReturnType<typeof courseSample>>;
 
-/** The public course sample: next events, optionally for one specialty, and the way to the full list */
-function CourseSample({ d, locale, sample }: { d: Dict; locale: Locale; sample: Awaited<ReturnType<typeof courseSample>> }) {
+/** The specialty select (reloads the sample with ?specialitate=) and the way to sign-up with that specialty */
+function CoursePicker({ d, locale, sample }: { d: Dict; locale: Locale; sample: Sample }) {
   const b = d.landingB;
   const options = SAMPLE_SPECIALTIES.map((x) => ({ code: x.code, label: x[locale] })).sort((x, y) => x.label.localeCompare(y.label, locale));
+  const code = sample.specialty?.code ?? "";
   return (
-    <section id="kursi" className={s.section} aria-labelledby="sample-title">
-      <h2 id="sample-title" className={s.h2}>{b.sampleTitle}</h2>
-      <div className={s.sample}>
-        <p className={s.answerBody}>{b.sampleLead}</p>
-        <SampleSpecialty value={sample.specialty?.code ?? ""} options={options} label={b.sampleSpecialty} any={b.sampleAny} />
+    <div className={s.picker}>
+      <SampleSpecialty value={code} options={options} label={b.sampleSpecialty} any={b.sampleAny} />
+      <Link href={specialtyByCode(code) ? `/register?specialitate=${code}` : "/register"} className={s.ctaSoft}>{b.sampleCta}</Link>
+    </div>
+  );
+}
+
+/** Real upcoming events, the specialty's own first: the courses section's picture */
+function CourseSample({ d, locale, sample }: { d: Dict; locale: Locale; sample: Sample }) {
+  const b = d.landingB;
+  return (
+    <div className={s.stage}>
+      <div className={s.sheet}>
+        <div className={s.sheetHead}>
+          <h3 className={s.sheetTitle}>{b.sampleTitle}</h3>
+        </div>
         {sample.rows.length ? (
-          <ul className={s.sampleList}>
+          <ul className={s.rows}>
             {sample.rows.map(({ c, match }) => (
-              <li key={c.id}>
-                <span className={s.miniDate}>
-                  <b>{c.startDate?.slice(8, 10)}</b>
-                  {MONTHS_SHORT[locale][Number(c.startDate?.slice(5, 7) ?? "1") - 1]}
+              <li key={c.id} className={s.row}>
+                <span className={s.date}>
+                  <b>{Number(c.startDate?.slice(8, 10))}</b>
+                  <span>{MONTHS_SHORT[locale][Number(c.startDate?.slice(5, 7) ?? "1") - 1]}</span>
                 </span>
-                <span className={s.sampleMain}>
-                  <span className={s.sampleTitle}>{c.title}</span>
-                  <span className="small muted">
-                    {[c.city === "Online" ? b.online : c.city, c.organizer].filter(Boolean).join(" · ")}
+                <span className={s.rowText}>
+                  <span className={`${s.rowTitle} ${s.clamp}`}>{c.title}</span>
+                  <span className={s.rowSub}>
+                    {[c.city === "Online" ? b.online : c.city, c.free ? b.free : (c.price ?? b.samplePriceNone)].filter(Boolean).join(" · ")}
                   </span>
-                  {sample.specialty && <span className={`tag ${match ? "tag-accent" : ""}`}>{match ? b.sampleMatch : b.sampleForAll}</span>}
+                  {sample.specialty && <span className={match ? s.tagOn : s.tag}>{match ? b.sampleMatch : b.sampleForAll}</span>}
                 </span>
-                <span className={s.sampleSide}>
-                  <span className={s.sampleTip}>+{tip(c.tip)} <small>TIP</small></span>
-                  <span className={c.free || c.price ? s.samplePrice : "small muted"}>{c.free ? b.free : (c.price ?? b.samplePriceNone)}</span>
-                </span>
+                <span className={s.rowTip}>+{tip(c.tip)} TIP</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="muted">{b.sampleNone}</p>
+          <p className={s.none}>{b.sampleNone}</p>
         )}
-        {sample.total > 0 && <p className="small muted" style={{ margin: 0 }}>{b.sampleTotal(sample.total)}</p>}
-        <div>
-          <Link href={specialtyByCode(sample.specialty?.code) ? `/register?specialitate=${sample.specialty!.code}` : "/register"} className="btn btn-primary">
-            {b.sampleCta}
-          </Link>
-        </div>
       </div>
-    </section>
-  );
-}
-
-/** Part 2: the course list, with live upcoming events in the mock */
-function PanelCourses({ d, locale, facts, eventsLine }: { d: Dict; locale: Locale; facts: Facts; eventsLine: string }) {
-  const b = d.landingB;
-  return (
-    <div>
-      <div className={s.answer}>
-        <div className={s.answerCopy}>
-          <h3 className={s.h2}>{b.coursesTitle}</h3>
-          <p className={s.answerBody}>{b.coursesBody}</p>
-          <Checks items={[eventsLine, ...b.coursesChecks]} />
-        </div>
-        <Frame url="medserti.lv/courses">
-          <div className={s.frameBody}>
-            <div className={s.chips}>
-              {b.coursesChips.map((c, i) => <span key={c} className={i === 0 ? s.chipOn : s.chip}>{c}</span>)}
-            </div>
-            {facts.next.length > 0 && (
-              <ul className={s.mini}>
-                {facts.next.map((c) => (
-                  <li key={c.id}>
-                    <span className={s.miniDate}>
-                      <b>{c.startDate?.slice(8, 10)}</b>
-                      {MONTHS_SHORT[locale][Number(c.startDate?.slice(5, 7) ?? "1") - 1]}
-                    </span>
-                    <span>
-                      <span className={s.cardTitle}>{c.title}</span>
-                      <span className="small muted">{[c.city === "Online" ? b.online : c.city, c.free ? b.free : c.price].filter(Boolean).join(" · ")}</span>
-                    </span>
-                    <span className={s.cardTip}>+{tip(c.tip)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className={s.applyRow}>
-              <span className="small muted">{b.apply}</span>
-              {b.applyChips.map((c) => <span key={c} className={s.chip}>{c}</span>)}
-            </div>
-          </div>
-        </Frame>
-      </div>
-      <Steps title={b.howTitle} items={b.coursesSteps} />
-    </div>
-  );
-}
-
-/** Part 3: online lectures, with a live recording in the mock */
-function PanelOnline({ d, facts, recordingsLine }: { d: Dict; facts: Facts; recordingsLine: string }) {
-  const b = d.landingB;
-  const r = facts.recording;
-  const lectureTip = tip(r?.tip ?? 1);
-  return (
-    <div>
-      <div className={s.answer}>
-        <div className={s.answerCopy}>
-          <h3 className={s.h2}>{b.onlineTitle}</h3>
-          <p className={s.answerBody}>{b.onlineBody}</p>
-          <Checks items={[recordingsLine, ...b.onlineChecks]} />
-        </div>
-        <Frame url="medserti.lv/courses?tab=recorded">
-          <div className={s.video}><span className={s.play} aria-hidden><LectureIcon size={30} /></span></div>
-          <div className={s.frameBody}>
-            <span className={s.cardTitle}>{r?.title ?? b.sampleLecture}</span>
-            <span className="small muted">{b.recordingMeta(lectureTip, r && !r.free ? r.price ?? "" : b.free)}</span>
-            <div className={s.applyRow}>
-              <span className={s.chipOn}>{b.watch}</span>
-              <span className="small muted">{b.afterWatch(lectureTip)}</span>
-            </div>
-          </div>
-        </Frame>
-      </div>
-      <Steps title={b.howTitle} items={b.onlineSteps} />
     </div>
   );
 }
