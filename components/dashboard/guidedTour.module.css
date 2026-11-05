@@ -1,0 +1,35 @@
+/* The guided tour: a soft light on the real element, a small bubble beside it. On a phone the bubble sits at the bottom. */
+.shell { position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; overflow: visible; }
+.shell::backdrop { background: transparent; }
+
+.spot { position: fixed; pointer-events: none; box-shadow: 0 0 0 200vmax rgba(11, 27, 43, 0.58); transition: top 0.5s cubic-bezier(0.22, 1, 0.36, 1), left 0.5s cubic-bezier(0.22, 1, 0.36, 1), width 0.5s cubic-bezier(0.22, 1, 0.36, 1), height 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.5s ease; animation: fade 0.5s ease both; }
+
+.bubble { position: fixed; width: min(340px, calc(100vw - 24px)); padding: 18px 20px 16px; border-radius: 22px; background: var(--surface); color: var(--text); box-shadow: 0 24px 50px -20px rgba(11, 27, 43, 0.6); transition: top 0.5s cubic-bezier(0.22, 1, 0.36, 1), left 0.5s cubic-bezier(0.22, 1, 0.36, 1); animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.waiting { visibility: hidden; }
+.bubble::before { content: ""; position: absolute; width: 16px; height: 16px; background: var(--surface); transform: rotate(45deg); border-radius: 3px; display: none; }
+.right::before { display: block; left: -6px; top: calc(var(--arrow-at) - 8px); }
+.left::before { display: block; right: -6px; top: calc(var(--arrow-at) - 8px); }
+.below::before { display: block; top: -6px; left: calc(var(--arrow-at) - 8px); }
+.above::before { display: block; bottom: -6px; left: calc(var(--arrow-at) - 8px); }
+.sheet { left: 12px; right: 12px; bottom: 12px; width: auto; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.dots { display: inline-flex; gap: 6px; align-items: center; }
+.dots i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); transition: background-color 0.3s ease, transform 0.3s ease; }
+.dots .dotOn { background: var(--accent); transform: scale(1.25); }
+.dots .dotPast { background: color-mix(in srgb, var(--accent) 45%, var(--border-strong)); }
+.skip { font: inherit; font-size: 0.9rem; color: var(--muted); background: none; border: 0; padding: 6px 2px; min-height: 36px; cursor: pointer; text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.skip:hover { color: var(--text); }
+.title { margin: 0 0 2px; font-size: 1.45rem; animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.text { margin: 0; font-size: 1.05rem; line-height: 1.4; animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both; }
+.dateLink { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-weight: 600; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.actions .btn { min-height: 44px; padding-left: 20px; padding-right: 20px; border-radius: 99px; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (pointer: coarse) { .skip { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) {
+  .spot, .bubble, .title, .text { animation: none; }
+  .spot, .bubble, .dots i { transition: none; }
+}

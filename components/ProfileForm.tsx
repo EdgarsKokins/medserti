@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Profession, Profile } from "@/lib/types";
 import { addYears, certificateWindow, REGISTER_URL, ruleBasis, ruleRequiredPoints, RULES } from "@/lib/rules";
@@ -59,6 +59,11 @@ export default function ProfileForm({
     setP((prev) => ({ ...prev, [k]: v }));
   };
   const clearError = (k: keyof FieldErrors) => errors[k] && setErrors((e) => ({ ...e, [k]: undefined }));
+
+  // arriving from the dashboard's date alert or the guided tour: the keyboard lands on the field
+  useEffect(() => {
+    if (window.location.hash === "#expires") document.getElementById("expires")?.focus();
+  }, []);
 
   const specList = useMemo(() => specialtiesFor(p.profession), [p.profession]);
   // the rule can depend on the specialty picked but not yet saved (physiotherapists, Reg. 391 point 86)

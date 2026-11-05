@@ -27,6 +27,8 @@ export interface UserRecord {
   locale?: "lv" | "en" | "ru";
   /** ISO time the user asked, on the dashboard, to hear when Medserti's own lectures start; missing = not asked */
   lecturesInterestAt?: string;
+  /** ISO time the guided tour was first shown (or skipped); missing = not yet (lib/tour.ts) */
+  tourSeenAt?: string;
 }
 
 export interface NotificationPrefs {

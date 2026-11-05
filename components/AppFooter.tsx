@@ -5,6 +5,7 @@ import ReportProblem from "@/components/monitoring/ReportProblem";
 import type { Locale } from "@/lib/i18n";
 import { localePath } from "@/lib/locale";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { TOUR_REOPEN_HREF } from "@/lib/tour";
 import s from "./app-footer.module.css";
 
 /** The one site footer, on every page (landing included). Signed-out visitors also get sign-up, log-in and demo links. */
@@ -37,6 +38,8 @@ export default function AppFooter({
     contactCta: string;
     lang: string;
     base: string;
+    /** signed in: reopens the guided tour */
+    tour: string;
   };
 }) {
   return (
@@ -62,6 +65,7 @@ export default function AppFooter({
             <li><a href={labels.rulesUrl} target="_blank" rel="noreferrer">{labels.rules}</a></li>
             <li><Link href={localePath("/privatums", locale)}>{labels.privacy}</Link></li>
             <li><Link href={localePath("/noteikumi", locale)}>{labels.terms}</Link></li>
+            {signedIn && <li><Link href={TOUR_REOPEN_HREF} prefetch={false}>{labels.tour}</Link></li>}
             {signedIn && <li><ReportProblem demo={demo} className={s.reportLink} /></li>}
           </ul>
         </nav>

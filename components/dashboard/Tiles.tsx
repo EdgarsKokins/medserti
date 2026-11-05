@@ -21,7 +21,7 @@ export function Greeting({ name, p, locale, hours, href }: { name: string; p: Pr
   return (
     <header className={styles.top}>
       <h1 className={styles.hello}>{d.hello(name)}</h1>
-      <Link href={href} className={`${styles.pill} ${done ? styles.pillDone : ""}`}>
+      <Link href={href} data-tour="ring" className={`${styles.pill} ${done ? styles.pillDone : ""}`}>
         <span className={styles.ring} style={{ ["--pct" as string]: `${done ? 100 : pct}%` }} aria-hidden />
         <span>
           <b>{d.pill(fmtNum(p.total), p.required)}</b>
@@ -69,7 +69,7 @@ export function Tiles({
 
   return (
     <div className={styles.tiles}>
-      <section className={`${styles.tile} ${styles.click} ${styles.blue}`} aria-labelledby="tile-certs">
+      <section data-tour="certs" className={`${styles.tile} ${styles.click} ${styles.blue}`} aria-labelledby="tile-certs">
         <span className={styles.icon}><IconDoc /></span>
         <h2 id="tile-certs" className={styles.name}><Link href="/certificates" className={styles.stretch}>{d.tileCerts}</Link></h2>
         <p className={styles.status}>{waiting ? d.certsWaiting(waiting) : ready ? d.certsReady : hasCerts ? d.certsOk : d.certsNone}</p>
@@ -99,7 +99,7 @@ export function Tiles({
         )}
       </section>
 
-      <section className={`${styles.tile} ${styles.click} ${styles.green}`} aria-labelledby="tile-courses">
+      <section data-tour="courses" className={`${styles.tile} ${styles.click} ${styles.green}`} aria-labelledby="tile-courses">
         <span className={styles.icon}><IconCal /></span>
         <h2 id="tile-courses" className={styles.name}><Link href="/courses" className={styles.stretch}>{d.tileCourses}</Link></h2>
         <p className={styles.status}>{courses.length ? d.coursesNext : d.coursesNone}</p>
@@ -130,7 +130,7 @@ export function Tiles({
       </section>
 
       {/* not launched: grey and centred, with empty rows where the lectures will be */}
-      <section className={`${styles.tile} ${styles.gray} ${styles.soonTile}`} aria-labelledby="tile-lectures">
+      <section data-tour="lectures" className={`${styles.tile} ${styles.gray} ${styles.soonTile}`} aria-labelledby="tile-lectures">
         <span className={styles.ribbon}>{d.lecturesSoon}</span>
         <span className={styles.icon}><IconPlay /></span>
         <h2 id="tile-lectures" className={styles.name}>{d.tileLectures}</h2>

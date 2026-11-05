@@ -16,11 +16,11 @@ export default function DashboardUpload({ className, readOnly = false }: { class
   const upload = useDict().upload;
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
-  if (readOnly) return <Link href="/certificates" className={className}>{d.uploadCta} →</Link>;
+  if (readOnly) return <Link href="/certificates" data-tour="upload" className={className}>{d.uploadCta} →</Link>;
 
   return (
     <>
-      <button type="button" className={className} onClick={() => input.current?.click()}>
+      <button type="button" data-tour="upload" className={className} onClick={() => input.current?.click()}>
         {d.uploadCta} →
       </button>
       <input

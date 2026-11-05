@@ -16,6 +16,8 @@ import ProgressChart from "@/components/dashboard/ProgressChart";
 import { CategoryBars, RecentActivity } from "@/components/dashboard/Sections";
 import { Requirements } from "@/components/dashboard/Overview";
 import { Greeting, Tiles } from "@/components/dashboard/Tiles";
+import GuidedTour from "@/components/dashboard/GuidedTour";
+import { shouldAutoStart } from "@/lib/tour";
 import { categoryBreakdown, cumulativeSeries, dictFor, exclusions, fmtDate, greetName, headline } from "@/components/dashboard/model";
 import { formatPeriod, todayLv } from "@/lib/format";
 import { addMonths } from "@/lib/notifications";
@@ -100,9 +102,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <main className="container stack" style={{ gap: 40 }}>
       {profileIncomplete && (
-        <div className="alert">
+        <div className="alert" data-tour="date">
           <strong>{hours ? d.profileMissingNurse : d.profileMissing}</strong> {d.profileMissingBody(RULES.validityYears)}{" "}
-          <Link href="/profile">{d.completeProfile}</Link>.
+          <Link href="/profile#expires">{d.completeProfile}</Link>.
         </div>
       )}
 
@@ -191,6 +193,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           )}
         </div>
       </details>
+      <GuidedTour autoStart={shouldAutoStart({ seenAt: user.tourSeenAt, certificates: certs.length, demo: isDemoUser(user) })} nurse={hours} />
     </main>
   );
 }
