@@ -12,7 +12,7 @@ const QUOTES = [
 ];
 const ORG_PREFIX = /(?<![\p{L}])(?:SIA|AS|VSIA|NRC|biedrība|nodibinājums|Ltd|LLC|GmbH|Inc|institution|iestāde|ООО|ОАО|ЗАО|АО|клиник\p{L}*|больниц\p{L}*|центр\p{L}*|университет\p{L}*|институт\p{L}*)\.?\s*$/iu;
 /** quoted text that is not a title: regulation names, people, approval lines (OCR mispairs quotes across lines) */
-const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|ministr|(?<![\p{L}])(?:dr|prof|asoc)\.|(?<![\p{L}])lab(?![\p{L}])|(?<![\p{L}])tip|\d{4}\//u;
+const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|izsniegt|apliecin|ministr|(?<![\p{L}])(?:dr|prof|asoc)\.|(?<![\p{L}])lab(?![\p{L}])|(?<![\p{L}])tip|\d{4}\//u;
 
 const EVENT_NOUN = "(?:kursa|konference|seminara|apmaciba|programma|kongresa|darbnica|meistarklase|lekcij\\p{L}*|vebinara|sede|paneldiskusija|forum\\p{L}*|akademij\\p{L}*)";
 const TITLE_ANCHORS = [
@@ -46,8 +46,19 @@ function cleanTitle(s: string): string {
 const looksLikeDateOrPoints = (s: string) =>
   /^\d+[.,/:-]|^\d+\s*(?:tip|punkt|stund|h(?![\p{L}])|ects|cme|credit|val)|tip(?![\p{L}])|punkt|stund|hours?|points?|credits?|minutes|datums|date/iu.test(fold(s));
 
-/** reads as words, not OCR debris: two or more 3+ letter words, mostly letters */
+/** short words real titles are full of ("Ko darīt, ja ir ...") */
+const SHORT_WORDS = new Set(["uz", "no", "ko", "ja", "ir", "ka", "ne", "pa", "jo", "iz", "in", "on", "to", "at", "by", "an", "or", "is", "vs", "и", "в", "на", "по"]);
+
+/** logos read by OCR: mostly one- and two-letter scraps, with a word or two caught among them ("a a pi oF ASOCIĀCIJA Ni Hr pamenes Cg YN") */
+function scraps(s: string): boolean {
+  const tokens = fold(s).split(/\s+/).map((w) => w.replace(/[^\p{L}\p{N}]/gu, "")).filter(Boolean);
+  const short = tokens.filter((w) => w.length <= 2 && !SHORT_OK.has(w) && !SHORT_WORDS.has(w));
+  return tokens.length >= 4 && short.length * 2 > tokens.length;
+}
+
+/** reads as words, not OCR debris: two or more 3+ letter words, mostly letters, not mostly scraps */
 function wordy(s: string): boolean {
+  if (scraps(s)) return false;
   const words = s.split(/\s+/).filter((w) => /^[\p{L}][\p{L}'’.,:;?!()-]{2,}$/u.test(w));
   const letters = (s.match(/\p{L}/gu) ?? []).length;
   return words.length >= 2 && letters / Math.max(1, s.replace(/\s/g, "").length) >= 0.6;
@@ -58,6 +69,37 @@ const MASTER_CLASS = [
   /провел\p{L}*\s+(\d{1,2})\s*(?:\(\p{L}+\)\s*)?(мастер-класс[\p{L}-]*)/u,
   /(?:performed|conducted|gave|held)\s+(\d{1,2})\s+(master[- ]class\p{L}*(?:\s+(?:operations?|surger\p{L}+))?)/u,
 ];
+
+/** event nouns in the locative (folded) and their dictionary form, with the ending of an adjective agreeing with them */
+const UNNAMED_EVENTS: Record<string, { noun: string; adjective: string }> = {
+  konference: { noun: "konference", adjective: "ā" },
+  seminara: { noun: "seminārs", adjective: "ais" },
+  kongresa: { noun: "kongress", adjective: "ais" },
+  simpozija: { noun: "simpozijs", adjective: "ais" },
+  foruma: { noun: "forums", adjective: "ais" },
+};
+const UNNAMED_EVENT = rx(`(?:piedal[i1l]j|apmeklej)\\p{L}*\\s[^.:;]{0,220}?(?<![\\p{L}])((?:\\p{L}{3,}aja\\s+){1,3})(${Object.keys(UNNAMED_EVENTS).join("|")})(?=\\s*,?\\s*(?:atzimejot|un\\s+noklausij)\\p{L}*\\s)`, "u");
+const EVENT_OCCASION = /^\s*,?\s*(atzimejot\s+[^.:;]{3,120}?)(?=\s+un\s+noklausij|\s*[.:;])/u;
+
+/**
+ * "piedalījās <bodies> apvienotajā zinātniskajā konferencē, atzīmējot <occasion> un noklausījās ...": the sentence gives the event
+ * no name of its own, so it is the title: "Apvienotā zinātniskā konference, atzīmējot <occasion>".
+ */
+function unnamedEvent(t: Text): string | null {
+  const m = UNNAMED_EVENT.exec(t.flat);
+  if (!m) return null;
+  const event = UNNAMED_EVENTS[m[2]];
+  const end = m.index + m[0].length;
+  const adjectives = t.raw.slice(end - m[2].length - m[1].length, end - m[2].length).toLowerCase().trim().split(/\s+/)
+    // who organized it belongs to the organizer
+    .filter((w) => !/^(?:organizet|rikot)/u.test(fold(w)))
+    .map((w) => w.replace(/aj[āa]$/u, event.adjective));
+  const name = [...adjectives, event.noun].join(" ");
+  const occasion = EVENT_OCCASION.exec(t.flat.slice(end));
+  const from = occasion ? end + occasion[0].length - occasion[1].length : 0;
+  const value = occasion ? `${name}, ${collapse(t.raw.slice(from, from + occasion[1].length))}` : name;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 /** Title and how sure we are (0-1) */
 export function findTitle(t: Text): { value: string; confidence: number } {
@@ -78,25 +120,30 @@ export function findTitle(t: Text): { value: string; confidence: number } {
   }
 
   // 1. quoted text, skipping quoted organisation names (SIA „...") and regulation names
+  const anchorAt = TITLE_ANCHORS.map((re) => rx(re.source, "u").exec(t.fold)?.index ?? -1).filter((i) => i >= 0);
+  const firstAnchor = anchorAt.length ? Math.min(...anchorAt) : -1;
   const quoted: { value: string; index: number }[] = [];
   const add = (inner: string, index: number) => {
     const before = raw.slice(Math.max(0, index - 30), index);
     const value = cleanTitle(untilSpeaker(inner));
+    const f = fold(value);
+    // above the sentence sit the logos: a body's name in quote marks there is the letterhead, not the event
+    const letterhead = index < firstAnchor && ORG_WORDS.test(f) && !EVENT_WORDS.test(f);
     // wordy: OCR of photos and logos leaves quote marks around debris ("4 ļ A ģ wo")
-    if (value.length >= 6 && wordy(value) && !ORG_PREFIX.test(before) && !NOT_TITLE.test(fold(value)) && !quoted.some((q) => q.index === index))
+    if (value.length >= 6 && wordy(value) && !letterhead && !ORG_PREFIX.test(before) && !NOT_TITLE.test(f) && !quoted.some((q) => q.index === index))
       quoted.push({ value, index });
   };
   for (const re of QUOTES) for (const m of raw.matchAll(re)) add(m[1], m.index);
   // a quote that opens a word and is never closed, or whose pair OCR lost: up to the next quote mark
   // ("“D vitamīnu ... lietošanā." then the speaker line, then “Pacienta ...”), Kārlis' test, October 2026
-  for (const m of raw.matchAll(/[„“«"](?=\p{L})/gu)) add(raw.slice(m.index + 1).split(/[„“”«»"]/u)[0], m.index);
+  // Above the sentence such a stray mark is OCR reading the logos, and it would run on into the heading and "izsniegts"
+  for (const m of raw.matchAll(/[„“«"](?=\p{L})/gu)) if (m.index > firstAnchor) add(raw.slice(m.index + 1).split(/[„“”«»"]/u)[0], m.index);
   quoted.sort((a, b) => a.index - b.index);
-  if (quoted.length) {
-    const anchorAt = TITLE_ANCHORS.map((re) => rx(re.source, "u").exec(t.fold)?.index ?? -1).filter((i) => i >= 0);
-    const firstAnchor = anchorAt.length ? Math.min(...anchorAt) : -1;
-    const pick = quoted.find((q) => firstAnchor >= 0 && q.index > firstAnchor) ?? quoted[0];
-    return { value: pick.value, confidence: firstAnchor >= 0 ? 0.9 : 0.7 };
-  }
+  const afterAnchor = quoted.find((q) => firstAnchor >= 0 && q.index > firstAnchor);
+  if (afterAnchor) return { value: afterAnchor.value, confidence: 0.9 };
+  const unnamed = unnamedEvent(t);
+  if (unnamed) return { value: unnamed, confidence: 0.8 };
+  if (quoted.length) return { value: quoted[0].value, confidence: firstAnchor >= 0 ? 0.9 : 0.7 };
 
   // 2. rest of the anchor line, or the next line(s)
   for (const re of TITLE_ANCHORS) {
@@ -156,6 +203,13 @@ const ORGANIZED_BY_LINE = /(.{3,120}?)\s+(?:organizet|rikot|apvienot)\p{L}*/u;
 /** "Semināru organizē Viatris SIA", "organized by Department of ...", "piedalījās <X> sēdē" */
 const ORGANIZER_AFTER = /(?:organize|organi[sz]ed by|organi[sz]ators?:?|organi[sz]ers?:?|организатор\p{L}*:?)\s+(.{3,100})$/u;
 const MEETING_OF = /piedal\p{L}*\s+(.{5,100}?)\s+(?:sede|sedi|sapulce)(?![\p{L}])/u;
+/** "piedalījās <body>, <body> un <body> apvienotajā ...": scans break it over lines, so it is read from the joined text */
+const JOINT_EVENT_OF = /piedal[i1l]j\p{L}*\s+([^.:;]{5,200}?)\s+apvienot\p{L}*(?![\p{L}])/u;
+/** the head noun of a body's name in the genitive; the dictionary form drops the "s" */
+const GENITIVE_HEADS = "biedribas|asociacijas|akademijas|klinikas|slimnicas|universitates|koledzas";
+const GENITIVE_HEAD = rx(`^(?:${GENITIVE_HEADS})$`, "u");
+/** a piece of a sentence broken over lines, not a name: "BIEDRĪBAS, LATVIJAS ...", "ASOCIĀCIJAS un ...", "un LATVIJAS ..." */
+const CUT_OFF_NAME = rx(`^(?:(?:un|and)\\s|(?:${GENITIVE_HEADS})(?:,|\\s+un\\s))`, "u");
 /** text before the organizer's name on its line: dates, "piedalījās", "ir apmeklējis/usi", "participated in" */
 const LEAD_IN = /^(?:.*?(?:\d{4}\.?|piedal[iī1]j\p{L}*|apmeklēj\p{L}*(?:\/-?\p{L}+)?|apmeklej\p{L}*(?:\/-?\p{L}+)?|noklausīj\p{L}*|par dalību|par dalibu|participated in|attended)\s*)+/iu;
 /** OCR keeps two-letter scraps of logos ("4 University", "rr University Ee"); these may stay */
@@ -205,6 +259,17 @@ function cleanName(s: string): boolean {
 }
 const caseFlip = (s: string) => /\p{Ll}\p{Lu}\p{Ll}|\p{Lu}\p{Ll}\p{Lu}(?!\p{Ll})/u.test(s.replace(/(?<![\p{L}])(?:SIA|AS|AB|McG\p{L}*)(?![\p{L}])/gu, ""));
 
+/** "GREMOŠANAS SLIMĪBU BIEDRĪBAS, X ASOCIĀCIJAS un Y ASOCIĀCIJAS" -> "Gremošanas Slimību Biedrība, X Asociācija un Y Asociācija" */
+function jointBodies(s: string): string {
+  return collapse(s)
+    // OCR glues the head noun on ("GASTROENTEROLOGUASOCIACIJAS")
+    .replace(/(\p{L}{3})(as[oō]ci[aā]cij\p{L}*|biedr[iī]b\p{L}*)/giu, "$1 $2")
+    .replace(/(?<![\p{L}])\p{L}+(?=\s*,|\s+un\s|\s*$)/gu, (w) => (GENITIVE_HEAD.test(fold(w)) ? w.slice(0, -1) : w))
+    .split(/\s+un\s+/u)
+    .map(displayCase)
+    .join(" un ");
+}
+
 /**
  * Organizer and how sure we are (0-1). Empty with confidence 0 rather than a sponsor line or OCR junk.
  * `stated` is true when the certificate's sentence names the organizer ("issued by", "organizētajā", "sēdē").
@@ -217,6 +282,7 @@ export function findOrganizer(t: Text): { value: string; confidence: number; sta
     const tokens = stripOcrNoise(stripOcrNoise(value).replace(ORG_LABEL, "")).replace(/(?<![\p{L}\p{N}])0(?=\p{Ll})/gu, "O").split(" ");
     const kept = tokens.filter((w) => !/^\d+$/.test(w) && !(w.replace(/[^\p{L}]/gu, "").length <= 2 && !SHORT_OK.has(fold(w).replace(/[^a-z]/g, "")) && !/[&]/.test(w)));
     if (kept.length <= 1 && GENERIC_ORG.test(fold(kept[0] ?? ""))) return null; // "University" alone says nothing
+    if (scraps(value) || CUT_OFF_NAME.test(fold(kept.join(" ")))) return null;
     if (kept.length > 12) return null; // a sentence, not a name
     if (kept.length > 8 && kept.filter((w) => /^\p{Ll}{3,}$/u.test(w)).length >= 4) return null;
     const v = kept.join(" ").replace(/\s+(?:rector|dean|director|rektors|dekāns|direktors)\b.*$/iu, "").trim();
@@ -256,6 +322,12 @@ export function findOrganizer(t: Text): { value: string; confidence: number; sta
   // 2. the sentence names the organizer: "<X> organizētajā ...", "Semināru organizē <X>", "piedalījās <X> sēdē"
   //    (scanner text layers break "piedalījās <X> sēdē" over lines, so look in the joined text too)
   {
+    const joint = JOINT_EVENT_OF.exec(t.flat);
+    if (joint) {
+      const from = joint.index + joint[0].indexOf(joint[1]);
+      const r = stated(out(jointBodies(t.raw.slice(from, from + joint[1].length)), 0.8));
+      if (r) return r;
+    }
     const m = MEETING_OF.exec(t.flat);
     if (m && !SPONSOR.test(m[0])) {
       const from = m.index + m[0].indexOf(m[1]);
