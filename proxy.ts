@@ -34,14 +34,18 @@ export function proxy(req: NextRequest) {
 }
 
 /**
- * Next.js fetches the links in view ahead of a click. That is not a visit, so it must not change the language: the
- * footer's /en/par-mums, fetched as the switch to Latvian re-rendered the page, set the cookie back to English (05 Nov 2026).
+ * Only a page load chooses a language. Next.js fetches the links in view ahead of a click, and the footer's /en/par-mums,
+ * fetched as the switch to Latvian re-rendered the page, set the cookie back to English (05 Nov 2026). Next.js hides its
+ * own prefetch headers from the proxy, so this asks the browser what the request is for. Browsers without Sec-Fetch-Dest
+ * are told apart by Accept.
  */
-const isPrefetch = (req: NextRequest) =>
-  req.headers.has("next-router-prefetch") || req.headers.get("purpose") === "prefetch" || req.headers.get("sec-purpose")?.includes("prefetch");
+const isPageLoad = (req: NextRequest) => {
+  const dest = req.headers.get("sec-fetch-dest");
+  return dest ? dest === "document" : (req.headers.get("accept") ?? "").includes("text/html");
+};
 
 const remember = (req: NextRequest, res: NextResponse, locale: string) => {
-  if (!isPrefetch(req)) res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
+  if (isPageLoad(req)) res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
   return res;
 };
 
