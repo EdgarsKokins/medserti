@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cronAuthorized } from "@/lib/cron";
 import { runNotifications } from "@/lib/notify-run";
 import { siteUrl } from "@/lib/site";
+import { loadRuntimeOverrides } from "@/lib/i18n/overrides-server";
 import { reportServerError } from "@/lib/monitoring/errors";
 
 // one email takes ~0.6 s with the send gap; plenty at pilot size
@@ -13,6 +14,8 @@ export async function GET(req: Request) {
   if (!cronAuthorized(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
+    // no page render here calls getLocale(), so /admin edits to notify.* must be loaded before the emails are written
+    await loadRuntimeOverrides();
     return NextResponse.json(await runNotifications(siteUrl(req)));
   } catch (err) {
     console.error("notifications", err);

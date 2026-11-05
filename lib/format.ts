@@ -2,6 +2,13 @@ import type { Locale } from "./locale";
 
 /* Date and number formatting for every language. No dependencies: safe for client components and scripts. */
 
+/** Three capitals for calendar blocks: LV "JŪN", EN "JUN", RU "ИЮН". Intl's short forms vary in length ("febr.", "Sept"), hence the slice. */
+function monthsShort(locale: Locale): string[] {
+  const f = new Intl.DateTimeFormat(locale === "lv" ? "lv-LV" : locale === "ru" ? "ru-RU" : "en-GB", { month: "short", timeZone: "UTC" });
+  return Array.from({ length: 12 }, (_, i) => f.format(new Date(Date.UTC(2000, i, 1))).slice(0, 3).toUpperCase());
+}
+export const MONTHS_SHORT: Record<Locale, string[]> = { lv: monthsShort("lv"), en: monthsShort("en"), ru: monthsShort("ru") };
+
 const MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** YYYY-MM-DD (a time after it is ignored) -> LV "27.11.2026.", RU "27.11.2026", EN "27 Nov 2026"; "" for no date */

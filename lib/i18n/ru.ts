@@ -99,6 +99,7 @@ export const ru: Dict = {
     until: (date: string) => `до ${date}`,
     sampleProgress: "По специальности 118 из 150 · Неотложная помощь 8 из 8",
     sampleCourses: ["Конференция общества кардиологов", "Заседание общества неврологов"],
+    sampleCerts: ["Острый коронарный синдром", "Обучение BLS и AED", "Конгресс кардиологов", "Артроскопия"],
     sampleLecture: "Пневмококковые инфекции: риски и решения",
     anyTime: "можно смотреть в любое время",
     painTitle: "Знакомо?",
@@ -301,6 +302,7 @@ export const ru: Dict = {
     languageFileMissing: "Добавьте файл или снимите отметку.",
     languageFileTooBig: "Файл больше 10 МБ.",
     removeFile: "Удалить файл",
+    fileSizeUnit: "МБ",
     delivery: "Способ получения",
     deliveryPickup: "Лично",
     deliveryPost: "По почте",
@@ -1195,6 +1197,7 @@ export const ru: Dict = {
     approval: "Одобрение LĀB",
     annex: (n: number) => `прил. 4, п. ${n}`,
     hours: (h: string) => `${h} ч`,
+    minutesUnit: "мин",
     apply: {
       title: "Как записаться",
       online: "Записаться онлайн",

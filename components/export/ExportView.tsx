@@ -350,7 +350,7 @@ export default function ExportView({
               {langFile ? (
                 <div className={s.fileChip}>
                   <span className={s.fileName}>{langFile.name}</span>
-                  <span className="small muted">{(langFile.size / 1024 / 1024).toFixed(1)} MB</span>
+                  <span className="small muted">{(langFile.size / 1024 / 1024).toFixed(1)} {d.fileSizeUnit}</span>
                   <button type="button" className="btn" onClick={() => setLangFile(null)}>
                     {d.removeFile}
                   </button>

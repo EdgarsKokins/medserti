@@ -13,7 +13,8 @@ type Props = { entries: Entry[]; blocks: Block[]; saved: StoredOverrides; hasPre
 const LOCS: readonly Loc[] = LOCALES;
 const LOC_NAME: Record<Loc, string> = { lv: "Latviski", en: "Angliski", ru: "Krieviski" };
 const SHOWN_KEY = "medserti-admin-langs";
-const MAX_RESULTS = 150;
+/** A search can match every text; each row is three auto-sized textareas, so results come in pages. A block always shows all its rows. */
+const SEARCH_PAGE = 150;
 
 const id = (loc: Loc, key: string) => `${loc}|${key}`;
 const countKeys = (o: StoredOverrides) => LOCS.reduce((n, l) => n + Object.keys(o[l]).length, 0);
@@ -36,6 +37,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
   const [tab, setTab] = useState<"texts" | "backup">("texts");
   const [block, setBlock] = useState<BlockId>(blocks[0]?.id ?? "nav");
   const [query, setQuery] = useState("");
+  const [searchLimit, setSearchLimit] = useState(SEARCH_PAGE);
   const [onlyEdited, setOnlyEdited] = useState(false);
   // which language columns to show; all three by default, remembered per browser
   const [locs, setLocs] = useState<readonly Loc[]>(LOCS);
@@ -163,7 +165,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
     if (onlyEdited) list = list.filter((e) => isEdited(draft, e.key) || LOCS.some((l) => unsaved.has(id(l, e.key))));
     return list;
   }, [entries, q, block, onlyEdited, draft, unsaved]);
-  const shown = visible.slice(0, MAX_RESULTS);
+  const shown = q ? visible.slice(0, searchLimit) : visible;
   const current = blocks.find((b) => b.id === block);
   const blockName = (bid: BlockId) => blocks.find((b) => b.id === bid)?.name ?? "";
 
@@ -174,6 +176,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
       const first = Object.keys(errors)[0];
       const e = byKey.get(first.slice(3));
       if (e && !q) setBlock(e.block);
+      setSearchLimit(Infinity); // the row with the error may be past the first page of results
       requestAnimationFrame(() => document.getElementById(`t-${first}`)?.focus());
       return;
     }
@@ -197,7 +200,7 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
       setDraft(clone(body.overrides));
       setHasPrevious(!!body.hasPrevious);
       setServerProblems({});
-      setNotice({ kind: "ok", text: `Saglabāts ${timeNow()}. Lapās izmaiņas parādās uzreiz vai ne vēlāk kā pēc minūtes.` });
+      setNotice({ kind: "ok", text: `Saglabāts ${timeNow()}. Lapās izmaiņas parādās uzreiz vai ne vēlāk kā pēc 5 minūtēm.` });
     } catch {
       setNotice({ kind: "bad", text: "Nav savienojuma. Izmaiņas nav saglabātas, mēģiniet vēlreiz." });
     } finally {
@@ -321,7 +324,10 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
                 <input
                   type="search"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSearchLimit(SEARCH_PAGE);
+                  }}
                   placeholder="Meklēt visos tekstos (LV, EN, RU)"
                   autoComplete="off"
                 />
@@ -378,7 +384,14 @@ export default function TranslationsAdmin({ entries, blocks, saved: initialSaved
                 })}
               </ol>
             )}
-            {visible.length > MAX_RESULTS && <p className="muted">Rādīti pirmie {MAX_RESULTS}. Precizējiet meklēšanu.</p>}
+            {shown.length < visible.length && (
+              <p className="muted">
+                Rādīti {shown.length} no {visible.length}.{" "}
+                <button type="button" className="btn" onClick={() => setSearchLimit((n) => n + SEARCH_PAGE)}>
+                  Rādīt vēl
+                </button>
+              </p>
+            )}
           </div>
         </div>
       )}
