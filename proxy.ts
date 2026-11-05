@@ -17,11 +17,11 @@ export function proxy(req: NextRequest) {
   const headers = new Headers(req.headers);
 
   if (locale !== "lv") {
-    if (!isPublicPath(path)) return remember(NextResponse.redirect(new URL(path + req.nextUrl.search, req.url)), locale);
+    if (!isPublicPath(path)) return remember(req, NextResponse.redirect(new URL(path + req.nextUrl.search, req.url)), locale);
     headers.set(LOCALE_HEADER, locale);
     const url = req.nextUrl.clone();
     url.pathname = path;
-    return remember(NextResponse.rewrite(url, { request: { headers } }), locale);
+    return remember(req, NextResponse.rewrite(url, { request: { headers } }), locale);
   }
 
   const chosen = req.cookies.get(LOCALE_COOKIE)?.value;
@@ -30,11 +30,22 @@ export function proxy(req: NextRequest) {
   if (chosen) return NextResponse.next({ request: { headers } });
   // first visit: Latvian is what they see, so sign-up and the app continue in Latvian; a Russian browser gets the offer once
   if (localeFromAcceptLanguage(req.headers.get("accept-language")) === "ru") headers.set(SUGGEST_HEADER, path);
-  return remember(NextResponse.next({ request: { headers } }), "lv");
+  return remember(req, NextResponse.next({ request: { headers } }), "lv");
 }
 
-const remember = (res: NextResponse, locale: string) => {
-  res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
+/**
+ * Only a page load chooses a language. Next.js fetches the links in view ahead of a click, and the footer's /en/par-mums,
+ * fetched as the switch to Latvian re-rendered the page, set the cookie back to English (05 Nov 2026). Next.js hides its
+ * own prefetch headers from the proxy, so this asks the browser what the request is for. Browsers without Sec-Fetch-Dest
+ * are told apart by Accept.
+ */
+const isPageLoad = (req: NextRequest) => {
+  const dest = req.headers.get("sec-fetch-dest");
+  return dest ? dest === "document" : (req.headers.get("accept") ?? "").includes("text/html");
+};
+
+const remember = (req: NextRequest, res: NextResponse, locale: string) => {
+  if (isPageLoad(req)) res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
   return res;
 };
 
