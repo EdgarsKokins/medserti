@@ -8,10 +8,11 @@ import { useDict } from "@/components/i18n/DictProvider";
 import AbroadEstimator from "./AbroadEstimate";
 import type { Dict } from "@/lib/i18n/en";
 import styles from "./courses.module.css";
-import { IconCal, IconDoc, IconPlay } from "../PartIcons";
+import { IconCal, IconDoc, IconPin, IconPlay } from "../PartIcons";
 import { DateBlock } from "@/components/dashboard/DateBlock";
 import { specialtyLabel } from "@/lib/specialties";
-import { formatDate, formatNumber, round1 } from "@/lib/format";
+import { formatDate, formatNumber } from "@/lib/format";
+import { applyMode, cityLabel, courseLocation, hoursOf, missingLine, restFacts, whenLine, whereLine, type CardLine } from "@/lib/courses/card";
 
 type CourseStrings = Dict["courses"];
 
@@ -46,12 +47,8 @@ function addDays(days: number) {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** "Latvija" in the source data means the whole country, not a city */
-const WHOLE_LATVIA = "Latvija";
 const KIND_ICONS: Record<CourseKind, ReactNode> = { event: <IconCal />, recorded: <IconPlay />, ongoing: <IconDoc /> };
 const KIND_TONES: Record<CourseKind, string> = { event: styles.toneGreen, recorded: styles.toneBlue, ongoing: styles.toneGray };
-
-const cityLabel = (city: string, s: CourseStrings) => (city === WHOLE_LATVIA ? s.wholeLatvia : city);
 
 export default function CoursesView({
   locale,
@@ -286,10 +283,6 @@ export default function CoursesView({
   );
 }
 
-function hoursOf(minutes: number | null, locale: Locale) {
-  return minutes ? formatNumber(round1(minutes / 60), 1) : null;
-}
-
 /** Audience badge: yours, all specialties, the named specialties, or honestly "not stated" */
 function audienceBadge(r: CourseRow, s: CourseStrings, locale: Locale) {
   if (r.forMe && r.source === "lma") return <span className="tag tag-accent">{s.forNurses}</span>;
@@ -335,12 +328,8 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
     : r.availableUntil
       ? `${r.kind === "ongoing" ? s.approvedUntil : s.availableUntil} ${formatDate(r.availableUntil, locale)}`
       : null;
-  // an online course's format already says "Online", so it gets no separate place
-  const online = r.city === "Online" || r.format === "online_live" || r.format === "recorded";
-  const place = online || !r.city ? null : cityLabel(r.city, s);
-  const location = extra?.location ?? null;
-  const venue = location && location !== r.city ? location : null;
-  const hours = hoursOf(r.minutes, locale);
+  const { place } = courseLocation(r, extra, s);
+  const hours = hoursOf(r.minutes);
   const panelId = `course-${r.id.replace(/[^a-z0-9]/gi, "-")}`;
 
   return (
@@ -355,17 +344,20 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
       >
         <DateBlock iso={r.startDate} locale={locale} fallback={r.kind === "recorded" ? s.recordingShort : s.ongoingShort} />
         <span className={styles.main}>
-          <span className={styles.title}>{r.title}</span>
-          <span className={`small muted ${styles.org}`}>
-            {[
-              date && r.kind !== "event" ? date : null,
-              s.formats[r.format] + (place && r.format !== "recorded" ? ` · ${place}` : ""),
-              hours ? s.hours(hours) : null,
-              r.organizer,
-            ]
-              .filter(Boolean)
-              .join("  ·  ")}
-          </span>
+          <span className={`${styles.title} ${open ? styles.titleOpen : ""}`}>{r.title}</span>
+          {/* opened, the lines below say all of this */}
+          {!open && (
+            <span className={`small muted ${styles.org}`}>
+              {[
+                date && r.kind !== "event" ? date : null,
+                s.formats[r.format] + (place && r.format !== "recorded" ? ` · ${place}` : ""),
+                hours ? s.hours(hours) : null,
+                r.organizer,
+              ]
+                .filter(Boolean)
+                .join("  ·  ")}
+            </span>
+          )}
           <span className={styles.badges}>{audienceBadge(r, s, locale)}</span>
         </span>
         {/* TIP and price are what doctors compare first (Ralfs Gauja's test, November 2026) */}
@@ -379,85 +371,122 @@ function CourseCard({ r, locale, linked = false, preloaded = null }: { r: Course
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <CourseFacts r={r} extra={extra} date={date} place={place} venue={venue} online={online} hours={hours} />
-          <ApplyBox r={r} extra={extra} locale={locale} />
-          {extra?.detailRef && <Programme detailRef={extra.detailRef} locale={locale} />}
+          <CardAnswer icon={<IconCal />} tone={styles.toneBlue} line={whenLine(r, extra, s, locale)} empty={s.details.dateMissing} />
+          <CardAnswer icon={<IconPin />} tone={styles.toneGreen} line={whereLine(r, extra, s)} empty={s.details.placeMissing} />
+          <ApplyAction r={r} extra={extra} locale={locale} />
+          <MoreAbout r={r} extra={extra} locale={locale} />
         </div>
       )}
     </li>
   );
 }
 
-/** The one thing a doctor needs from an opened course: how to sign up */
-function ApplyBox({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | null | undefined; locale: Locale }) {
+/** One fixed line of an opened course: an icon and the answer, so the eye learns where to look */
+function CardAnswer({ icon, tone, line, empty }: { icon: ReactNode; tone: string; line: CardLine; empty: string }) {
+  return (
+    <div className={styles.answer}>
+      <span className={`${styles.answerIcon} ${line.main ? tone : styles.toneGray}`}>{icon}</span>
+      <span className={styles.answerText}>
+        {line.main ? <span className={styles.answerMain}>{line.main}</span> : <span className="muted">{empty}</span>}
+        {line.sub.length > 0 && (
+          <span className={styles.answerSub}>
+            {line.sub.map((part, i) => (
+              <span key={part}>
+                {i > 0 && " · "}
+                <span className={styles.answerPart}>{part}</span>
+              </span>
+            ))}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/** The one thing a doctor needs from an opened course: how to sign up. Always in this place, always a button. */
+function ApplyAction({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | null | undefined; locale: Locale }) {
   const cs = useDict().courses;
   const a = cs.apply;
   if (extra === undefined)
     return (
-      <section className={styles.apply} aria-label={a.title} aria-busy="true">
-        <h3 className={styles.applyTitle}>{a.title}</h3>
+      <section aria-label={a.title} aria-busy="true">
         <p className="small muted" style={{ margin: 0 }}>…</p>
       </section>
     );
-  // details failed to load: the source's own list is still a way to sign up
-  const url = extra?.url ?? SOURCE_URLS[r.source];
+  const mode = applyMode(r, extra);
   // the email goes to a Latvian organiser, so subject, body and date are always Latvian
   const lvDate = r.startDate
     ? `${formatDate(r.startDate, "lv")}${r.endDate ? ` - ${formatDate(r.endDate, "lv")}` : ""}`
     : null;
-  const direct = !!extra && (r.source === "lab_courses" || r.source === "kursiarstiem" || r.source === "medicinaskursi" || r.source === "evisit" || r.source === "lfa" || r.source === "lupsk" || r.source === "lza" || r.source === "kosmetologs" || (r.source === "lumpii" && !url.endsWith("/kursi")) || (r.source === "lma" && url !== SOURCE_URLS.lma));
-  const c = extra?.contact;
   return (
-    <section className={styles.apply} aria-label={a.title}>
-      <h3 className={styles.applyTitle}>{a.title}</h3>
-      {direct ? (
-        <div className="row">
-          <a className="btn btn-primary" href={url} target="_blank" rel="noreferrer">
-            {r.kind === "recorded" ? a.watch : a.online} ↗
-          </a>
-        </div>
-      ) : c && (c.email || c.phone) ? (
-        <>
-          {c.email ? (
-            <EmailApply email={c.email} subject={applyEmail.subject(r.title, lvDate)} body={applyEmail.body(r.title, lvDate)} phone={c.phone} />
-          ) : (
-            <div className="row">
-              <a className="btn btn-primary" href={`tel:${c.phone!.replace(/[^\d+]/g, "")}`}>
-                {a.call} {c.phone}
-              </a>
-            </div>
+    <section aria-label={a.title}>
+      {mode.kind === "email" ? (
+        <EmailApply email={mode.email} subject={applyEmail.subject(r.title, lvDate)} body={applyEmail.body(r.title, lvDate)} phone={mode.phone} />
+      ) : (
+        <div className={styles.applyRow}>
+          {mode.kind === "direct" && (
+            <a className="btn btn-primary" href={mode.url} target="_blank" rel="noreferrer">
+              {r.kind === "recorded" ? a.watch : a.online} ↗
+            </a>
           )}
-          <p className="small muted" style={{ margin: 0 }}>
-            {[r.organizer, c.name, c.email].filter(Boolean).join(" · ")}
-            <br />
-            {a.contactNote}
-          </p>
-        </>
-      ) : (
-        <p className="small muted" style={{ margin: 0 }}>
-          {a.noContact}{" "}
-          <a href={url} target="_blank" rel="noreferrer">{r.source === "lab_tip" ? a.listLink : cs.open} ↗</a>
-        </p>
+          {mode.kind === "phone" && (
+            <a className="btn btn-primary" href={`tel:${mode.phone.replace(/[^\d+]/g, "")}`}>
+              {a.call} {mode.phone}
+            </a>
+          )}
+          {mode.kind === "none" && (
+            <a className="btn" href={mode.url} target="_blank" rel="noreferrer">
+              {r.source === "lab_tip" ? a.listLink : cs.open} ↗
+            </a>
+          )}
+        </div>
       )}
-      {/* LĀB publishes no organiser website: a search is the quickest way to the organiser's own page */}
-      {!direct && r.organizer && (
-        <p className="small" style={{ margin: 0 }}>
-          <a href={`https://www.google.com/search?q=${encodeURIComponent(`${r.organizer} ${r.title}`)}`} target="_blank" rel="noreferrer">
-            {a.findSite} ↗
-          </a>
-        </p>
-      )}
-      {/* testers asked whether lectures play on Medserti and who gets paid (Ineta Ūdra's test, November 2026) */}
-      {r.format === "recorded" || r.format === "online_live" ? (
-        <p className="small muted" style={{ margin: 0 }}>{a.onlineNote}</p>
-      ) : (
-        !r.free && <p className="small muted" style={{ margin: 0 }}>{a.paidNote}</p>
-      )}
-      {/* after the course: its certificate goes in from here, and the course fills what the certificate leaves out */}
-      <p className="small" style={{ margin: 0 }}>
-        <Link href={`/certificates?course=${encodeURIComponent(r.id)}`}>{a.addCertificate} →</Link>
-      </p>
     </section>
+  );
+}
+
+/** Everything else: open when wanted. The programme is only requested once this has been opened. */
+function MoreAbout({ r, extra, locale }: { r: CourseRow; extra: CourseExtra | null | undefined; locale: Locale }) {
+  const cs = useDict().courses;
+  const a = cs.apply;
+  const [seen, setSeen] = useState(false);
+  const mode = extra === undefined ? null : applyMode(r, extra);
+  const direct = mode?.kind === "direct";
+  const missing = missingLine(r, extra, cs, locale);
+  const hasContact = mode?.kind === "email" || mode?.kind === "phone";
+  const notes = [
+    hasContact ? a.contactNote : null,
+    // testers asked whether lectures play on Medserti and who gets paid (Ineta Ūdra's test, November 2026)
+    r.format === "recorded" || r.format === "online_live" ? a.onlineNote : !r.free ? a.paidNote : null,
+  ].filter(Boolean);
+  return (
+    <details className={styles.more} onToggle={(e) => e.currentTarget.open && setSeen(true)}>
+      <summary>{cs.details.moreAbout}</summary>
+      <div className={styles.moreBody}>
+        <dl className={styles.facts}>
+          {restFacts(r, extra, cs).map(([k, v]) => (
+            <div key={k} className={styles.fact}>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+        {missing && <p className="small muted" style={{ margin: 0 }}>{missing}</p>}
+        {mode?.kind === "none" && <p className="small muted" style={{ margin: 0 }}>{a.noContact}</p>}
+        {seen && extra?.detailRef && <Programme detailRef={extra.detailRef} />}
+        <p className={`small ${styles.moreLinks}`}>
+          {/* LĀB publishes no organiser website: a search is the quickest way to the organiser's own page */}
+          {mode && !direct && r.organizer && (
+            <a href={`https://www.google.com/search?q=${encodeURIComponent(`${r.organizer} ${r.title}`)}`} target="_blank" rel="noreferrer">
+              {a.findSite} ↗
+            </a>
+          )}
+          {/* after the course: its certificate goes in from here, and the course fills what the certificate leaves out */}
+          <Link href={`/certificates?course=${encodeURIComponent(r.id)}`}>{a.addCertificate} →</Link>
+        </p>
+        {notes.length > 0 && <p className={styles.moreNote}>{notes.join(" ")}</p>}
+      </div>
+    </details>
   );
 }
 
@@ -477,7 +506,7 @@ function EmailApply({ email, subject, body, phone }: { email: string; subject: s
   const q = (s: string) => encodeURIComponent(s);
   return (
     <div className="stack" style={{ gap: 10 }}>
-      <div className="row">
+      <div className={styles.applyRow}>
         <button type="button" className="btn btn-primary" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {a.apply}
         </button>
@@ -511,71 +540,9 @@ function EmailApply({ email, subject, body, phone }: { email: string; subject: s
   );
 }
 
-/**
- * The same facts on every course, in the same order. A fact the source does not give says so ("Nav norādīts")
- * instead of being left out: testers read a missing price or address as an error (Ineta Ūdra's test, November 2026).
- */
-function CourseFacts({
-  r,
-  extra,
-  date,
-  place,
-  venue,
-  online,
-  hours,
-}: {
-  r: CourseRow;
-  extra: CourseExtra | null | undefined;
-  date: string | null;
-  place: string | null;
-  venue: string | null;
-  online: boolean;
-  hours: string | null;
-}) {
-  const s = useDict().courses;
-  const d = s.details;
-  const none = d.notListed;
-  // venue, time and approval come with the opened course's details; "…" until they arrive
-  const later = (v: string | null | undefined) => (extra === undefined ? "…" : (v ?? none));
-  const event = r.kind === "event";
-  const facts: [string, string][] = [
-    event ? [d.date, date ?? none] : [d.available, date ?? d.anytime],
-    ...(event ? ([[d.time, later(extra?.time)]] as [string, string][]) : []),
-    [d.format, s.formats[r.format]],
-    ...((online
-      ? [[d.where, later(venue)]]
-      : [
-          [d.city, place ?? none],
-          [d.address, later(venue && (!place || venue !== place) ? venue : null)],
-        ]) as [string, string][]),
-    [d.duration, hours ? `${s.hours(hours)} (${r.minutes} min)` : none],
-    [d.tip, r.tip == null ? none : r.kind === "ongoing" ? d.tipWhole(formatNumber(r.tip, 1)) : formatNumber(r.tip, 1)],
-    [d.price, r.free ? s.free : (r.price ?? d.priceUnknown)],
-    [d.organizer, r.organizer ?? none],
-    [d.audience, r.audience || s.noAudience],
-  ];
-  return (
-    <dl className={styles.facts}>
-      {facts.map(([k, v]) => (
-        <Fact key={k} k={k} v={v} muted={v === none || v === d.priceUnknown || v === s.noAudience} />
-      ))}
-      {extra?.approvalId && <Fact k={r.source === "lma" ? d.approvalLma : d.approval} v={`${extra.approvalId}${extra.annexItem ? `, ${s.annex(extra.annexItem)}` : ""}`} />}
-    </dl>
-  );
-}
-
-function Fact({ k, v, muted = false }: { k: string; v: string; muted?: boolean }) {
-  return (
-    <div className={styles.fact}>
-      <dt>{k}</dt>
-      <dd className={muted ? "muted" : undefined}>{v}</dd>
-    </div>
-  );
-}
-
 const SHOW_LECTURES = 6;
 
-function Programme({ detailRef, locale }: { detailRef: string; locale: Locale }) {
+function Programme({ detailRef }: { detailRef: string }) {
   const cs = useDict().courses;
   const s = cs.details;
   const [state, setState] = useState<{ status: "loading" | "ok" | "error"; lectures: Lecture[] }>({ status: "loading", lectures: [] });
@@ -597,7 +564,7 @@ function Programme({ detailRef, locale }: { detailRef: string; locale: Locale })
   if (!state.lectures.length) return <p className="small muted">{s.noProgramme}</p>;
   const list = all ? state.lectures : state.lectures.slice(0, SHOW_LECTURES);
   // the lecture total can differ from the list's own length (TIP2025/8727: 1440 min listed, 14,400 min of lectures)
-  const total = hoursOf(state.lectures.reduce((n, l) => n + (l.minutes ?? 0), 0), locale);
+  const total = hoursOf(state.lectures.reduce((n, l) => n + (l.minutes ?? 0), 0));
   return (
     <div className="stack" style={{ gap: 6 }}>
       <h3 className={styles.progTitle}>{s.programme}{total && state.lectures.length > 1 ? ` · ${cs.hours(total)}` : ""}</h3>
