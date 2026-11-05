@@ -1073,7 +1073,7 @@ export const en = {
         {
           title: "Cookies",
           items: [
-            "We only use cookies the site needs to work: a sign-in cookie (30 days) and your language and theme choice (1 year). No consent banner is needed for these.",
+            "We only use cookies the site needs to work: a sign-in cookie (8 hours or, if you choose "Remember me", 30 days, renewed as you use the site) and your language and theme choice (1 year). No consent banner is needed for these.",
           ],
         },
         {

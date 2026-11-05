@@ -1080,7 +1080,7 @@ export const lv: Dict = {
         {
           title: "Sīkdatnes",
           items: [
-            "Izmantojam tikai vietnes darbībai nepieciešamās sīkdatnes: pieslēgšanās sīkdatni (30 dienas) un valodas un krāsu režīma izvēli (1 gads). Šīm sīkdatnēm piekrišana nav jāprasa.",
+            "Izmantojam tikai vietnes darbībai nepieciešamās sīkdatnes: pieslēgšanās sīkdatni (8 stundas vai, ja izvēlaties „Atcerēties mani”, 30 dienas, kas atjaunojas lietojot) un valodas un krāsu režīma izvēli (1 gads). Šīm sīkdatnēm piekrišana nav jāprasa.",
           ],
         },
         {
