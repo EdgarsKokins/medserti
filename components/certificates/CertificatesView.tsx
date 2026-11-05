@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { rowConfirmEligible } from "@/lib/parse/confidence";
 import { useRouter } from "next/navigation";
 import type { CmeCertificate } from "@/lib/types";
@@ -15,6 +15,7 @@ import ReviewPanel from "./ReviewPanel";
 import FileLink from "./FileLink";
 import Lectures from "./Lectures";
 import { mergeStored } from "./merge";
+import { FADE_MS, LEAVE_MS, nextFocusId, settle, stripHeight, type LeaveKind, type Section } from "./leave";
 import { forgetStored, getUploadSnapshot, subscribeUploads } from "./uploadStore";
 import { reportFailure } from "@/components/monitoring/report";
 import { trackEvent } from "@/components/monitoring/track";
@@ -22,6 +23,11 @@ import styles from "./certificates.module.css";
 
 /** how long "Apstiprināts · Atsaukt" stays after an in-row confirm */
 const UNDO_MS = 6000;
+
+/** a row on its way out (leave.ts): its height, the height it shrinks to first, and where the bin is */
+type Leaving = { kind: LeaveKind; h: number; s: number; bx: number; bb: number };
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 
 const sortCerts = (list: CmeCertificate[]) =>
   [...list].sort((a, b) => (b.date ?? b.uploadedAt).localeCompare(a.date ?? a.uploadedAt));
@@ -105,26 +111,108 @@ export default function CertificatesView({
 
   // bin icon in the row: asks once in place, then deletes (record and file, as the review panel's Dzēst does)
   const [askDelete, setAskDelete] = useState<string | null>(null);
+  // rows on their way out: they stay in the list (and the counts) until the delete is through and the animation has played
+  const [leaving, setLeaving] = useState<Record<string, Leaving>>({});
+  const [backId, setBackId] = useState<string | null>(null);
   useEffect(() => {
-    if (!askDelete) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setAskDelete(null);
+    // Escape cancels the question, not a delete already under way
+    if (!askDelete || leaving[askDelete]) return;
+    const id = askDelete;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancelAsk(id);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [askDelete]);
-
-  async function deleteRow(c: CmeCertificate) {
-    setBusyId(c.id);
-    const res = await fetch(`/api/certificates/${c.id}`, { method: "DELETE" }).catch(() => null);
-    setBusyId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askDelete, leaving]);
+  /** "Atcelt" or Escape: the question closes and focus goes back to the row's bin */
+  function cancelAsk(id: string) {
+    pendingFocus.current = id;
     setAskDelete(null);
+  }
+
+  const listRef = useRef<HTMLElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const rowEl = (id: string) => listRef.current?.querySelector<HTMLElement>(`[data-cert="${CSS.escape(id)}"]`) ?? null;
+  const binOf = (id: string) => rowEl(id)?.querySelector<HTMLElement>("[data-bin]") ?? null;
+  // where focus goes once a row leaves: a row id, null for the list heading, undefined for nothing pending
+  const pendingFocus = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const p = pendingFocus.current;
+    if (p === undefined) return;
+    const bin = p ? binOf(p) : null;
+    if (bin && (bin.checkVisibility?.() ?? bin.offsetParent !== null)) {
+      pendingFocus.current = undefined;
+      bin.focus({ preventScroll: true });
+      return;
+    }
+    // the leaving row is inert, so its focus is gone; the heading holds it until the next row shows (the confirmed group
+    // unfolds once the last waiting row is gone). Never taken from somewhere the user has moved to meanwhile.
+    const at = document.activeElement;
+    if (!at || at === document.body || at.closest("[inert]")) heading.current?.focus({ preventScroll: true });
+    if (!p || Object.keys(leaving).length === 0) pendingFocus.current = undefined;
+  });
+
+  /** starts the row's leave animation; resolves once it has played (at once with reduced motion) */
+  function leave(id: string, kind: LeaveKind, from?: HTMLElement | null): Promise<void> {
+    const staying = (c: CmeCertificate) => !leaving[c.id] || c.id === id;
+    pendingFocus.current = nextFocusId(sectionsOf(certs.filter(staying)), sectionsOf(certs.filter((c) => staying(c) && c.id !== id)), id);
+    const li = rowEl(id);
+    if (li) {
+      const r = li.getBoundingClientRect();
+      const s = from?.getBoundingClientRect();
+      const by = s ? s.top + s.height / 2 - r.top : r.height / 2;
+      setLeaving((m) => ({
+        ...m,
+        [id]: {
+          kind,
+          h: r.height,
+          s: kind === "bin" ? stripHeight(r.height, by) : r.height,
+          bx: s ? s.left + s.width / 2 - r.left : r.width - 24,
+          bb: r.height - by,
+        },
+      }));
+    }
+    return wait(reducedMotion() ? 0 : kind === "bin" ? LEAVE_MS : FADE_MS);
+  }
+
+  function stay(id: string) {
+    setLeaving((m) => {
+      if (!m[id]) return m;
+      const next = { ...m };
+      delete next[id];
+      return next;
+    });
+  }
+
+  // the request goes out at once; the row folds into the bin alongside it and comes back if the delete fails
+  async function deleteRow(c: CmeCertificate, yes: HTMLElement) {
+    setBusyId(c.id);
+    setBackId(null);
+    const request = fetch(`/api/certificates/${c.id}`, { method: "DELETE" })
+      .catch(() => null)
+      .then((res) => {
+        if (!res?.ok) reportFailure("certDeleteRow", res);
+        return !!res?.ok;
+      });
+    const outcome = await settle(request, leave(c.id, "bin", yes));
+    setBusyId(null);
+    setAskDelete((a) => (a === c.id ? null : a));
     const name = c.title || c.fileName;
-    if (!res?.ok) {
-      reportFailure("certDeleteRow", res);
+    if (outcome === "failed") {
+      stay(c.id);
+      setBackId(c.id);
+      pendingFocus.current = c.id;
       setLive(d.rowDeleteError);
       return;
     }
     setLive(d.rowDeleted(name));
     removed(c.id);
+  }
+
+  // the review panel has deleted it: the panel closes, the row fades out behind it
+  async function deletedInPanel(id: string) {
+    setOpenId(null);
+    await leave(id, "fade");
+    removed(id);
   }
 
   async function quickConfirm(c: CmeCertificate, method: "POST" | "DELETE") {
@@ -183,6 +271,20 @@ export default function CertificatesView({
   // the confirmed ones fold away while something waits for review, so the waiting ones are not lost in a long list
   const grouped = confirmedList.length > 0 && waitingList.length > 0;
   const [confirmedOpen, setConfirmedOpen] = useState(false);
+  const [pastOpen, setPastOpen] = useState(false);
+  /** the lists as they show for these certificates, in page order (leave.ts nextFocusId) */
+  const sectionsOf = (list: CmeCertificate[]): Section[] => {
+    const cur = list.filter((c) => !past(c));
+    const w = cur.filter((c) => c.status !== "confirmed");
+    const cf = cur.filter((c) => c.status === "confirmed");
+    const g = cf.length > 0 && w.length > 0;
+    const ids = (l: CmeCertificate[]) => l.map((c) => c.id);
+    return [
+      { ids: ids(g ? w : cur), open: true },
+      { ids: g ? ids(cf) : [], open: confirmedOpen },
+      { ids: ids(list.filter(past)), open: pastOpen },
+    ];
+  };
 
   function replace(c: CmeCertificate) {
     if (c.countsFor) setChosen((m) => ({ ...m, [c.id]: c.countsFor! }));
@@ -194,7 +296,8 @@ export default function CertificatesView({
   function removed(id: string) {
     forgetStored(id);
     setCerts((prev) => prev.filter((p) => p.id !== id));
-    setOpenId(null);
+    stay(id);
+    setOpenId((o) => (o === id ? null : o));
     router.refresh();
   }
 
@@ -211,10 +314,15 @@ export default function CertificatesView({
     // in the current list the reason is always shown: a red "Neieskaitīts" with the why behind a small button went unseen
     const inline = !!explain && !inPast;
     const infoOpen = inline || (infoId === c.id && !!explain);
+    const lv = leaving[c.id];
+    const vars = lv ? ({ "--row-h": `${lv.h}px`, "--row-s": `${lv.s}px`, "--bin-x": `${lv.bx}px`, "--bin-b": `${lv.bb}px` } as CSSProperties) : undefined;
     return (
       <li
         key={c.id}
-        className={`${styles.item} ${attention ? (c.status === "failed" ? styles.itemBad : styles.itemWarn) : ""} ${!readOnly && quick.has(c.id) ? styles.itemQuick : ""}`}
+        data-cert={c.id}
+        inert={!!lv}
+        style={vars}
+        className={`${styles.item} ${attention ? (c.status === "failed" ? styles.itemBad : styles.itemWarn) : ""} ${!readOnly && quick.has(c.id) ? styles.itemQuick : ""} ${lv ? (lv.kind === "bin" ? styles.leaving : styles.fading) : ""} ${backId === c.id ? styles.back : ""}`}
       >
         <span className={styles.date}>
           {c.date ? (
@@ -270,13 +378,20 @@ export default function CertificatesView({
           )}
         </span>
         <span className={styles.actions}>
-          {!readOnly && askDelete === c.id ? (
+          {!readOnly && (askDelete === c.id || lv?.kind === "bin") ? (
             <span className={styles.deleteAsk} role="group" aria-label={d.rowDeleteAsk}>
               <span className="small">{d.rowDeleteAsk}</span>
-              <button type="button" className={`btn btn-danger ${styles.smallBtn}`} disabled={busyId === c.id} onClick={() => deleteRow(c)} autoFocus>
-                {d.rowDeleteYes}
-              </button>
-              <button type="button" className={styles.linkBtn} onClick={() => setAskDelete(null)}>
+              <span className={styles.slot}>
+                <button type="button" className={`btn btn-danger ${styles.smallBtn}`} disabled={busyId === c.id} onClick={(e) => deleteRow(c, e.currentTarget)} autoFocus>
+                  {d.rowDeleteYes}
+                </button>
+                {lv?.kind === "bin" && (
+                  <span className={styles.binDrop} aria-hidden="true">
+                    <BinIcon size={18} />
+                  </span>
+                )}
+              </span>
+              <button type="button" className={styles.linkBtn} onClick={() => cancelAsk(c.id)}>
                 {d.rowDeleteNo}
               </button>
             </span>
@@ -304,13 +419,18 @@ export default function CertificatesView({
             </button>
           )}
           {!readOnly && (
-            <button type="button" className={styles.binBtn} aria-label={d.rowDelete(c.title || c.fileName)} title={d.rowDeleteYes} onClick={() => setAskDelete(c.id)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 6h18" />
-                <path d="M8 6V4h8v2" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-              </svg>
+            <button
+              type="button"
+              data-bin=""
+              className={styles.binBtn}
+              aria-label={d.rowDelete(c.title || c.fileName)}
+              title={d.rowDeleteYes}
+              onClick={() => {
+                setBackId(null);
+                setAskDelete(c.id);
+              }}
+            >
+              <BinIcon />
             </button>
           )}
           </>
@@ -321,6 +441,7 @@ export default function CertificatesView({
             {reasonText(explain, cycleOf(c))}
           </p>
         )}
+        {lv?.kind === "bin" && <span className={styles.dropCard} aria-hidden="true" />}
       </li>
     );
   };
@@ -347,9 +468,9 @@ export default function CertificatesView({
         </>
       )}
 
-      <section aria-labelledby="certs-title">
+      <section aria-labelledby="certs-title" ref={listRef}>
         <div className={styles.listHead}>
-          <h2 id="certs-title">{d.allTitle}</h2>
+          <h2 id="certs-title" ref={heading} tabIndex={-1}>{d.allTitle}</h2>
           <span className="small muted">{d.summary(certs.length, formatNumber(confirmedPoints))}</span>
         </div>
         {outsideCount > 0 && cycle.start && (
@@ -379,7 +500,7 @@ export default function CertificatesView({
               </details>
             )}
             {pastList.length > 0 && (
-              <details className={styles.group}>
+              <details className={styles.group} open={pastOpen} onToggle={(e) => setPastOpen(e.currentTarget.open)}>
                 <summary>{d.pastGroup(pastList.length, formatNumber(pastPoints))}</summary>
                 <p className="small muted">{d.pastNote}</p>
                 <ul className={styles.list}>{pastList.map((c) => row(c, true))}</ul>
@@ -397,7 +518,7 @@ export default function CertificatesView({
           locale={locale}
           onClose={close}
           onSaved={replace}
-          onDeleted={removed}
+          onDeleted={deletedInPanel}
           readOnly={readOnly}
           nurse={nurse}
           cycle={cycleOf(open)}
@@ -407,5 +528,16 @@ export default function CertificatesView({
         />
       )}
     </>
+  );
+}
+
+function BinIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
   );
 }
