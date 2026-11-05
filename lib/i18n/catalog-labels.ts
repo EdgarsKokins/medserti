@@ -307,6 +307,7 @@ export const LABELS: Record<string, string> = {
   "auth.valueParts.#.title": "#. daļa: nosaukums",
   "auth.valueParts.#.things.#": "#. daļa: #. darbība",
   "auth.forgotLink": "Saite: aizmirsāt paroli?",
+  "auth.rememberMe": "Pieslēgšanās: atcerēties mani šajā ierīcē",
   "auth.profession": "Lauks: profesija (reģistrācijā)",
   "auth.professionPick": "Profesijas lauks: norāde, ko rakstīt",
   "auth.professionNoMatch": "Profesijas lauks: nekas neatbilst ierakstītajam",

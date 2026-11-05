@@ -57,6 +57,7 @@ export const en = {
     specialty: "Specialty",
     specialtyHint: "Optional. We use it to pick courses for you.",
     forgotLink: "Forgot your password?",
+    rememberMe: "Remember me on this device",
     valueTitle: "How Medserti works",
     valueParts: [
       { title: "Certificates", things: ["Upload a PDF or photo", "Photograph with your phone", "See what is still missing", "Prepare documents to submit"] },
@@ -1072,7 +1073,7 @@ export const en = {
         {
           title: "Cookies",
           items: [
-            "We only use cookies the site needs to work: a sign-in cookie (30 days) and your language and theme choice (1 year). No consent banner is needed for these.",
+            "We only use cookies the site needs to work: a sign-in cookie (8 hours or, if you choose “Remember me”, 30 days, renewed as you use the site) and your language and theme choice (1 year). No consent banner is needed for these.",
           ],
         },
         {

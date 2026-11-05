@@ -2,60 +2,43 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { getUser } from "./db";
 import { isDemoUserId } from "./demo/id";
 import { t } from "./i18n";
 import { getLocale } from "./i18n/server";
+import { isCurrentSession, PLAIN_MAX_AGE, readSession, REMEMBERED_MAX_AGE, SESSION_COOKIE, sessionCookieOptions, signSession } from "./session-token";
 import type { UserRecord } from "./types";
-
-const COOKIE = "cme_session";
-const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 // in its own module so code that only signs (email links) does not load the session code; re-exported for lib/admin
 export { secret } from "./secret";
-import { secret } from "./secret";
 
 export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
 export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);
 
-/** Session version (`sv` claim) must match user.sessionVersion; bumping it signs out every existing session */
-export async function startSession(userId: string, sessionVersion = 0) {
-  const token = await new SignJWT({ sub: userId, sv: sessionVersion })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE}s`)
-    .sign(secret());
-  (await cookies()).set(COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: MAX_AGE,
-  });
+/**
+ * Session version (`sv` claim) must match user.sessionVersion; bumping it signs out every existing session.
+ * `remember` is the sign-in box: 30 days, renewed with use in proxy.ts. Everything else lasts 8 hours and does not renew.
+ */
+export async function startSession(userId: string, sessionVersion = 0, remember = false) {
+  const token = await signSession(userId, sessionVersion, remember);
+  (await cookies()).set(SESSION_COOKIE, token, sessionCookieOptions(remember ? REMEMBERED_MAX_AGE : PLAIN_MAX_AGE));
 }
 
 export async function endSession() {
-  (await cookies()).delete(COOKIE);
+  (await cookies()).delete(SESSION_COOKIE);
 }
 
 /** Signed-in user from the cookie, or null. Sessions issued before the last password change are rejected. */
 export const currentUser = cache(async (): Promise<UserRecord | null> => {
-  const token = (await cookies()).get(COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  let payload;
-  try {
-    ({ payload } = await jwtVerify(token, secret()));
-  } catch {
-    return null;
-  }
-  if (typeof payload.sub !== "string") return null;
-  const user = await getUser(payload.sub);
+  const session = await readSession(token);
+  if (!session) return null;
+  const user = await getUser(session.userId);
   if (!user) return null;
-  const sv = typeof payload.sv === "number" ? payload.sv : 0;
-  return sv === (user.sessionVersion ?? 0) ? user : null;
+  return isCurrentSession(session, user) ? user : null;
 });
 
 export async function currentUserId(): Promise<string | null> {

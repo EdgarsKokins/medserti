@@ -53,6 +53,7 @@ export const lv: Dict = {
     specialty: "Specialitāte",
     specialtyHint: "Nav obligāti. Pēc tās atlasām Jums kursus.",
     forgotLink: "Aizmirsāt paroli?",
+    rememberMe: "Atcerēties mani šajā ierīcē",
     valueTitle: "Kā darbojas Medserti",
     valueParts: [
       { title: "Sertifikāti", things: ["Augšupielādēt PDF vai foto", "Nofotografēt ar telefonu", "Redzēt, kas vēl trūkst", "Sagatavot dokumentus iesniegšanai"] },
@@ -1079,7 +1080,7 @@ export const lv: Dict = {
         {
           title: "Sīkdatnes",
           items: [
-            "Izmantojam tikai vietnes darbībai nepieciešamās sīkdatnes: pieslēgšanās sīkdatni (30 dienas) un valodas un krāsu režīma izvēli (1 gads). Šīm sīkdatnēm piekrišana nav jāprasa.",
+            "Izmantojam tikai vietnes darbībai nepieciešamās sīkdatnes: pieslēgšanās sīkdatni (8 stundas vai, ja izvēlaties „Atcerēties mani”, 30 dienas, kas atjaunojas lietojot) un valodas un krāsu režīma izvēli (1 gads). Šīm sīkdatnēm piekrišana nav jāprasa.",
           ],
         },
         {

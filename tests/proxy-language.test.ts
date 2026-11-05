@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
-import { proxy } from "../proxy";
+import { languageAddress } from "../proxy";
 
 const visit = (path: string, headers: Record<string, string>, cookie = "lang=lv") =>
-  proxy(new NextRequest(`https://medserti.lv${path}`, { headers: { cookie, ...headers } }));
+  languageAddress(new NextRequest(`https://medserti.lv${path}`, { headers: { cookie, ...headers } }));
 const PAGE_LOAD = { "sec-fetch-dest": "document", accept: "text/html,application/xhtml+xml" };
 const LINK_FETCH = { "sec-fetch-dest": "empty", accept: "*/*" };
 

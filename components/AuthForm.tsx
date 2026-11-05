@@ -200,6 +200,12 @@ export default function AuthForm({
             {mode === "register" && <span id="password-hint" className={s.hint}>{a.passwordHint}</span>}
             {mode === "login" && <Link href="/aizmirsu-paroli" className={s.forgot}>{a.forgotLink}</Link>}
           </div>
+          {mode === "login" && (
+            <label className={s.consentLabel}>
+              <input name="remember" type="checkbox" />
+              <span>{a.rememberMe}</span>
+            </label>
+          )}
           {mode === "register" && (
             <div className={s.consent}>
               <label className={s.consentLabel}>
