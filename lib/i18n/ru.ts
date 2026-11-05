@@ -1197,7 +1197,6 @@ export const ru: Dict = {
     approval: "Одобрение LĀB",
     annex: (n: number) => `прил. 4, п. ${n}`,
     hours: (h: string) => `${h} ч`,
-    minutesUnit: "мин",
     apply: {
       title: "Как записаться",
       online: "Записаться онлайн",

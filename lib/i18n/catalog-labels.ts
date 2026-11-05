@@ -1025,7 +1025,6 @@ export const LABELS: Record<string, string> = {
   "courses.apply.contactNote": "Piezīme par kontaktiem",
   "courses.apply.noContact": "Ja kontaktu nav",
   "courses.apply.listLink": "Saite: LĀB sarakstā",
-  "courses.minutesUnit": "Minūšu mērvienība (min)",
   "courses.details.date": "Datums",
   "courses.details.format": "Formāts",
   "courses.details.time": "Sākuma laiks",

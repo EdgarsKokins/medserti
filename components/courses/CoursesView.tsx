@@ -548,7 +548,7 @@ function CourseFacts({
           [d.city, place ?? none],
           [d.address, later(venue && (!place || venue !== place) ? venue : null)],
         ]) as [string, string][]),
-    [d.duration, hours ? `${s.hours(hours)} (${r.minutes} ${s.minutesUnit})` : none],
+    [d.duration, hours ? `${s.hours(hours)} (${r.minutes} min)` : none],
     [d.tip, r.tip == null ? none : r.kind === "ongoing" ? d.tipWhole(formatNumber(r.tip, 1)) : formatNumber(r.tip, 1)],
     [d.price, r.free ? s.free : (r.price ?? d.priceUnknown)],
     [d.organizer, r.organizer ?? none],
@@ -606,7 +606,7 @@ function Programme({ detailRef, locale }: { detailRef: string; locale: Locale })
           <li key={i}>
             <span className={styles.lectureTitle}>{l.title}</span>
             <span className="small muted">
-              {[l.lecturer, l.minutes ? `${l.minutes} ${cs.minutesUnit}` : null].filter(Boolean).join(" · ")}
+              {[l.lecturer, l.minutes ? `${l.minutes} min` : null].filter(Boolean).join(" · ")}
             </span>
           </li>
         ))}

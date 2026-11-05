@@ -1204,7 +1204,6 @@ export const lv: Dict = {
     approval: "LĀB apstiprinājums",
     annex: (n: number) => `4. pielikuma ${n}. p.`,
     hours: (h: string) => `${h} st.`,
-    minutesUnit: "min",
     apply: {
       title: "Kā pieteikties",
       online: "Pieteikties tiešsaistē",

@@ -1197,7 +1197,6 @@ export const en = {
     approval: "LĀB approval",
     annex: (n: number) => `Annex 4 item ${n}`,
     hours: (h: string) => `${h} h`,
-    minutesUnit: "min",
     apply: {
       title: "How to apply",
       online: "Apply online",

@@ -28,7 +28,7 @@ test("catalog", () => {
 
 test("catalog: the pane lists what is on screen, in a named block", () => {
   const { byKey, entries } = catalog();
-  for (const k of ["landing.freeNote", "landing.footerRulesNurse", "landingB.sampleCerts.0", "courses.minutesUnit", "exportDocs.fileSizeUnit"])
+  for (const k of ["landing.freeNote", "landing.footerRulesNurse", "landingB.sampleCerts.0", "exportDocs.fileSizeUnit"])
     eq(`${k} is listed`, byKey.has(k), true);
   eq("the old landing texts stay hidden", byKey.has("landing.eyebrow"), false);
   eq("no text falls through to the catch-all block", entries.filter((e) => e.block === "other").map((e) => e.key), []);
@@ -39,9 +39,9 @@ test("catalog: the pane lists what is on screen, in a named block", () => {
 });
 
 test("sample certificates and units come from the dictionaries, one per language", () => {
-  eq("LV", [baseDict("lv").landingB.sampleCerts[0], baseDict("lv").courses.minutesUnit, baseDict("lv").exportDocs.fileSizeUnit], ["Akūts koronārais sindroms", "min", "MB"]);
-  eq("EN", [baseDict("en").landingB.sampleCerts[0], baseDict("en").courses.minutesUnit, baseDict("en").exportDocs.fileSizeUnit], ["Acute coronary syndrome", "min", "MB"]);
-  eq("RU", [baseDict("ru").landingB.sampleCerts[0], baseDict("ru").courses.minutesUnit, baseDict("ru").exportDocs.fileSizeUnit], ["Острый коронарный синдром", "мин", "МБ"]);
+  eq("LV", [baseDict("lv").landingB.sampleCerts[0], baseDict("lv").exportDocs.fileSizeUnit], ["Akūts koronārais sindroms", "MB"]);
+  eq("EN", [baseDict("en").landingB.sampleCerts[0], baseDict("en").exportDocs.fileSizeUnit], ["Acute coronary syndrome", "MB"]);
+  eq("RU", [baseDict("ru").landingB.sampleCerts[0], baseDict("ru").exportDocs.fileSizeUnit], ["Острый коронарный синдром", "МБ"]);
   for (const l of ["lv", "en", "ru"] as const) eq(`${l}: one title per sample row`, baseDict(l).landingB.sampleCerts.length, 4);
 });
 
