@@ -96,6 +96,33 @@ test("daily run: a due reminder goes once, and not when turned off", async () =>
   assert.equal((await runNotifications("http://localhost", new Date("2027-08-20T07:00:00Z"))).reminders, 0, "turned off");
 });
 
+test("cron route: /admin edits to notify.* reach the reminder email", async (t) => {
+  const { createUser } = await import("../lib/db");
+  const { addYears } = await import("../lib/rules");
+  const { saveStoredOverrides } = await import("../lib/i18n/overrides-server");
+  const { emptyOverrides } = await import("../lib/i18n/catalog");
+  const { setI18nOverrides } = await import("../lib/i18n/overrides");
+  const { GET } = await import("../app/api/cron/notifications/route");
+  // the route runs on today's date: 100 days left, so the 4-month reminder is due
+  const end = new Date(Date.now() + 100 * 86_400_000).toISOString().slice(0, 10);
+  await createUser({
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", email: "notify-override@example.test", passwordHash: "x", createdAt: "2026-01-01T00:00:00Z", locale: "lv",
+    profile: { fullName: "Anna Test", profession: "doctor", specialty: "Neirologs", specialtyCode: null, certificationKind: "specialty",
+      certificateNumber: "", certificateIssued: addYears(end, -5), certificateExpires: null },
+  });
+  await saveStoredOverrides({ ...emptyOverrides(), lv: { "notify.periodEnds": "Labots teksts: beigas {date}.", "notify.stopReminders": "Labots teksts: izslēgšana." } });
+  t.after(() => setI18nOverrides({}));
+  // no RESEND_API_KEY: lib/email.ts prints the email instead of sending it
+  const log = t.mock.method(console, "log", () => {});
+  process.env.CRON_SECRET = "test-cron-secret";
+  const res = await GET(new Request("http://localhost/api/cron/notifications", { headers: { authorization: "Bearer test-cron-secret" } }));
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).reminders, 1);
+  const printed = log.mock.calls.map((c) => String(c.arguments[0])).join("\n");
+  assert.match(printed, /Labots teksts: beigas \d\d\.\d\d\.\d{4}\.\./);
+  assert.match(printed, /Labots teksts: izslēgšana\./);
+});
+
 test("reminder email: points, what is missing, the point 46 date and the unsubscribe link", () => {
   const user = { id: "77777777-7777-4777-8777-777777777777", email: "a@b.lv", locale: "lv", profile: { fullName: "Anna Ozola", profession: "doctor" } } as never;
   const p = { windowEnd: "2028-01-15", total: 180, required: 250, remaining: 70, checks: [{ id: "specialty", have: 100, need: 150, met: false }] } as never;

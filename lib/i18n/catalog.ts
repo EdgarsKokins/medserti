@@ -52,25 +52,25 @@ export const BLOCKS: { id: BlockId; name: string; href?: string }[] = [
 /** top-level dictionary key -> block */
 const BLOCK_OF: Record<string, BlockId> = {
   brand: "nav", lang: "nav", theme: "nav", nav: "nav", common: "nav",
-  landingA: "landing", landing: "landing",
-  dashboard: "dashboard", chart: "dashboard", checks: "dashboard",
+  landingA: "landing", landingB: "landing", landing: "landing",
+  dashboard: "dashboard", chart: "dashboard", checks: "dashboard", checkHints: "dashboard",
   certs: "certs", review: "certs", status: "certs", categories: "certs", parseNotes: "certs",
   upload: "upload",
   courses: "courses",
   profile: "profile", professions: "profile", rules: "profile",
   auth: "auth", reset: "auth", demo: "auth",
-  api: "errors", notFound: "errors", error: "errors", feedback: "errors",
+  api: "errors", notFound: "errors", error: "errors", feedback: "errors", notify: "errors",
   exportDocs: "export",
-  about: "about",
+  about: "about", contact: "about",
   legal: "legal",
 };
 
 /** Texts not shown to users, or not words (locale codes). Editing them would do nothing or break something. */
 const HIDDEN = (key: string) =>
   key === "landing.ogLocale" ||
-  // the old landing page: only these "landing" texts are still on screen (meta, FAQ heading, footer)
+  // the old landing page: only these "landing" texts are still on screen (meta, FAQ heading, pilot note, footer)
   (key.startsWith("landing.") &&
-    !["metaTitle", "metaDescription", "faqTitle", "footerContact", "footerNav", "footerRules", "online"].includes(key.slice(8)));
+    !["metaTitle", "metaDescription", "faqTitle", "freeNote", "footerContact", "footerNav", "footerRules", "footerRulesNurse", "online"].includes(key.slice(8)));
 
 const MAX_LEN = 4000;
 const NAMED = /\{([A-Za-z_]\w*)\}/g;

@@ -7,7 +7,7 @@ import { setI18nOverrides, type RuntimeOverrides } from "./overrides";
 /** Overrides edited at /admin, in the record store (lib/records.ts). The previous version is kept for undo. */
 const CURRENT = "i18n/overrides.json";
 const PREVIOUS = "i18n/overrides.prev.json";
-// a save on this instance applies at once; other instances pick it up within TTL_MS
+// a save on this instance applies at once; other instances pick it up within TTL_MS (the /admin save message quotes this)
 const TTL_MS = 5 * 60_000;
 
 const empty = emptyOverrides;

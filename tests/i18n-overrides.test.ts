@@ -8,6 +8,7 @@ import { randomBytes } from "crypto";
 import { baseDict, t } from "@/lib/i18n";
 import { catalog, compileOverrides, validateOverrides } from "@/lib/i18n/catalog";
 import { fillTemplate, setI18nOverrides } from "@/lib/i18n/overrides";
+import { MONTHS_SHORT } from "@/lib/format";
 
 const check = (name: string, ok: boolean, detail?: unknown) => assert.ok(ok, `${name} ${detail === undefined ? "" : JSON.stringify(detail)}`);
 const eq = (name: string, got: unknown, want: unknown) => assert.deepEqual(got, want, name);
@@ -23,6 +24,31 @@ test("catalog", () => {
   eq("object-argument template fields", byKey.get("parseNotes.multiplePoints")?.en.params, ["list"]);
   eq("locale codes are hidden", byKey.has("landing.ogLocale"), false);
   eq("array items are separate texts", byKey.has("landingA.steps.0.title") && byKey.has("about.story.1"), true);
+});
+
+test("catalog: the pane lists what is on screen, in a named block", () => {
+  const { byKey, entries } = catalog();
+  for (const k of ["landing.freeNote", "landing.footerRulesNurse", "landingB.sampleCerts.0", "exportDocs.fileSizeUnit"])
+    eq(`${k} is listed`, byKey.has(k), true);
+  eq("the old landing texts stay hidden", byKey.has("landing.eyebrow"), false);
+  eq("no text falls through to the catch-all block", entries.filter((e) => e.block === "other").map((e) => e.key), []);
+  eq("emails and their settings", byKey.get("notify.periodEnds")?.block, "errors");
+  eq("contact page", byKey.get("contact.title")?.block, "about");
+  eq("requirement hints", byKey.get("checkHints.specialty")?.block, "dashboard");
+  eq("new landing page", byKey.get("landingB.heroTitle")?.block, "landing");
+});
+
+test("sample certificates and units come from the dictionaries, one per language", () => {
+  eq("LV", [baseDict("lv").landingB.sampleCerts[0], baseDict("lv").exportDocs.fileSizeUnit], ["Akūts koronārais sindroms", "MB"]);
+  eq("EN", [baseDict("en").landingB.sampleCerts[0], baseDict("en").exportDocs.fileSizeUnit], ["Acute coronary syndrome", "MB"]);
+  eq("RU", [baseDict("ru").landingB.sampleCerts[0], baseDict("ru").exportDocs.fileSizeUnit], ["Острый коронарный синдром", "МБ"]);
+  for (const l of ["lv", "en", "ru"] as const) eq(`${l}: one title per sample row`, baseDict(l).landingB.sampleCerts.length, 4);
+});
+
+test("calendar months from Intl: the same three capitals the hand-written table had", () => {
+  eq("LV", MONTHS_SHORT.lv, ["JAN", "FEB", "MAR", "APR", "MAI", "JŪN", "JŪL", "AUG", "SEP", "OKT", "NOV", "DEC"]);
+  eq("EN", MONTHS_SHORT.en, ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]);
+  eq("RU", MONTHS_SHORT.ru, ["ЯНВ", "ФЕВ", "МАР", "АПР", "МАЙ", "ИЮН", "ИЮЛ", "АВГ", "СЕН", "ОКТ", "НОЯ", "ДЕК"]);
 });
 
 test("validation", () => {

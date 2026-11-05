@@ -12,7 +12,6 @@ import { isDemoUserId } from "@/lib/demo/id";
 import EndDemo from "@/components/EndDemo";
 import { readCourseIndex } from "@/lib/courses/store";
 import type { Course } from "@/lib/courses/types";
-import { MONTHS_SHORT } from "@/components/dashboard/DateBlock";
 import { t, type Dict, type Locale } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { languageAlternates, localePath } from "@/lib/locale";
@@ -20,7 +19,7 @@ import { matchesSpecialty } from "@/lib/parse";
 import { specialtiesFor, specialtyByCode } from "@/lib/specialties";
 import SampleSpecialty from "@/components/landing/SampleSpecialty";
 import s from "./landing.module.css";
-import { formatDate, formatNumber, todayLv } from "@/lib/format";
+import { formatDate, formatNumber, MONTHS_SHORT, todayLv } from "@/lib/format";
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
@@ -90,12 +89,12 @@ async function courseSample(code: string | null) {
   }
 }
 
-/** Example rows for the "your report" visual (not real data) */
+/** Example rows for the "your report" visual (not real data); titles are landingB.sampleCerts, in this order */
 const LEDGER = [
-  { date: "2024-03-12", lv: "Akūts koronārais sindroms", en: "Acute coronary syndrome", ru: "Острый коронарный синдром", tip: 12 },
-  { date: "2024-09-05", lv: "BLS un AED apmācība", en: "BLS and AED training", ru: "Обучение BLS и AED", tip: 8 },
-  { date: "2025-02-14", lv: "Kardiologu kongress", en: "Cardiology congress", ru: "Конгресс кардиологов", tip: 16 },
-  { date: "2025-09-25", lv: "Artroskopija", en: "Arthroscopy", ru: "Артроскопия", tip: 16 },
+  { date: "2024-03-12", tip: 12 },
+  { date: "2024-09-05", tip: 8 },
+  { date: "2025-02-14", tip: 16 },
+  { date: "2025-09-25", tip: 16 },
 ];
 /** Example certificate period end for the same sample doctor (issued Jan 2024) */
 const DEADLINE = "2029-01-15";
@@ -348,6 +347,7 @@ function Frame({ url, children }: { url: string; children: ReactNode }) {
 function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
   const a = d.landingA;
   const total = LEDGER.reduce((n, r) => n + r.tip, 0);
+  const ledger = LEDGER.map((r, i) => ({ date: shortDate(r.date, locale), title: d.landingB.sampleCerts[i], tip: r.tip }));
   // only plain strings may cross into the client component (the functions stay here)
   const { remaining, docsCopies, ...howText } = a;
   return (
@@ -370,7 +370,7 @@ function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
           deadline={a.deadline}
           deadlineValue={formatDate(DEADLINE, locale)}
           recentTitle={a.frameRecent}
-          recent={LEDGER.slice().reverse().slice(0, 3).map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip }))}
+          recent={ledger.slice().reverse().slice(0, 3)}
         />
       </div>
       {/* doctors already see LĀB-approved events in LĀB's system: what Medserti adds (Kārlis' test, October 2026) */}
@@ -389,7 +389,7 @@ function PanelCertificates({ d, locale }: { d: Dict; locale: Locale }) {
             readDateValue: formatDate("2025-09-25", locale),
             remainingValue: remaining(250 - total),
             deadlineValue: formatDate(DEADLINE, locale),
-            ledgerRows: LEDGER.map((r) => ({ date: shortDate(r.date, locale), title: r[locale], tip: r.tip })),
+            ledgerRows: ledger,
             docsCopies: docsCopies(LEDGER.length),
           }}
         />
