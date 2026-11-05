@@ -17,11 +17,11 @@ export function proxy(req: NextRequest) {
   const headers = new Headers(req.headers);
 
   if (locale !== "lv") {
-    if (!isPublicPath(path)) return remember(NextResponse.redirect(new URL(path + req.nextUrl.search, req.url)), locale);
+    if (!isPublicPath(path)) return remember(req, NextResponse.redirect(new URL(path + req.nextUrl.search, req.url)), locale);
     headers.set(LOCALE_HEADER, locale);
     const url = req.nextUrl.clone();
     url.pathname = path;
-    return remember(NextResponse.rewrite(url, { request: { headers } }), locale);
+    return remember(req, NextResponse.rewrite(url, { request: { headers } }), locale);
   }
 
   const chosen = req.cookies.get(LOCALE_COOKIE)?.value;
@@ -30,11 +30,18 @@ export function proxy(req: NextRequest) {
   if (chosen) return NextResponse.next({ request: { headers } });
   // first visit: Latvian is what they see, so sign-up and the app continue in Latvian; a Russian browser gets the offer once
   if (localeFromAcceptLanguage(req.headers.get("accept-language")) === "ru") headers.set(SUGGEST_HEADER, path);
-  return remember(NextResponse.next({ request: { headers } }), "lv");
+  return remember(req, NextResponse.next({ request: { headers } }), "lv");
 }
 
-const remember = (res: NextResponse, locale: string) => {
-  res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
+/**
+ * Next.js fetches the links in view ahead of a click. That is not a visit, so it must not change the language: the
+ * footer's /en/par-mums, fetched as the switch to Latvian re-rendered the page, set the cookie back to English (05 Nov 2026).
+ */
+const isPrefetch = (req: NextRequest) =>
+  req.headers.has("next-router-prefetch") || req.headers.get("purpose") === "prefetch" || req.headers.get("sec-purpose")?.includes("prefetch");
+
+const remember = (req: NextRequest, res: NextResponse, locale: string) => {
+  if (!isPrefetch(req)) res.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: YEAR, sameSite: "lax" });
   return res;
 };
 
