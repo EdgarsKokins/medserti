@@ -237,10 +237,12 @@ const TIP_VALUE = /(\d{1,2}[.,;]\d{1,2}|\d{1,2})\s*tip(?![\p{L}])/u;
 const ORG_LINE = /universit|slimnic|klinik|centrs|biedrib|asociacij/u;
 const AFFILIATION_START = /^\p{Ll}/u;
 
-/** Bullets, borders and what a stamp leaves ("Parauga lekcija 60 |", "Parauga lekcija fo") around a line; a quote mark stays, it opens a lecture */
+/** Bullets, borders and what a stamp leaves ("Parauga lekcija 60 |", "Parauga lekcija £0", "Parauga lekcija fo", "Parauga lekcija A") around a line; a quote mark stays, it opens a lecture */
 function stripLine(l: string): string {
-  const s = l.replace(/^[^\p{L}\p{N}("“„«'’]+/u, "").replace(/[\s|=»~_]+$/gu, "").replace(/(?<=\p{L})\s+\d{1,2}$/u, "");
-  return s.replace(/\s+(\p{Ll}{1,2})$/u, (m, w: string) => (SHORT_WORDS.has(w) ? m : "")).trim();
+  const s = l.replace(/^[^\p{L}\p{N}("“„«'’]+/u, "").replace(/[\s|=»~_]+$/gu, "").replace(/(?<=\p{L})\s+\S*[°=<>@#{}[\]\\^£$%&]\S*$/u, "").replace(/(?<=\p{L})\s+\d{1,2}$/u, "");
+  // a lone capital is a stamp's too, unless it names something ("vitamīna D", "hepatīts B")
+  const noStamp = s.replace(/(\p{L}+)\s+\p{Lu}$/u, (m, before: string) => (/vitamin|hepatit|grup|tip/u.test(fold(before)) ? m : before));
+  return noStamp.replace(/\s+(\p{Ll}{1,2})$/u, (m, w: string) => (SHORT_WORDS.has(w) ? m : "")).trim();
 }
 
 /** A speaker glued onto the end of a lecture ("...lekcija''Asoc. Prof.", "lekcija.Doc. Parauga") is read on its own line */

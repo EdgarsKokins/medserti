@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseCertificateText } from "../lib/parse";
-import { applyRegister, checkRows, dateInRow, lectureNameOfRow, nameDistance } from "../lib/parse/register";
+import { applyRegister, checkRows, dateInRow, lectureNameOfRow, nameDistance, readCleanly } from "../lib/parse/register";
 import { lookupNumbers, parseRegistryRows, resetRegisterState } from "../lib/tipRegistry";
 import { autoConfirmBlocks } from "../lib/parse/confidence";
 import { decideSpecialty } from "../lib/specialtyDecision";
@@ -170,6 +170,77 @@ test("a course stays the course: the register spells it and names the lectures, 
   assert.deepEqual(r.fields.approvalIds, ["TIP2025/1401", "TIP2025/1402"]);
   assert.equal(r.fields.points, 2.6);
   assert.match(r.notes ?? "", /registerChecked/);
+});
+
+// ----- the printed name stands when it was read cleanly -----
+
+test("readCleanly: dictionary words, abbreviations, numbers, names, long terms the dictionary lacks", () => {
+  for (const name of [
+    "Vai kafija ietekmē miegu?",
+    "AH riski un SGLT2 inhibitori 2025",
+    "Trauksme - 21. gadsimta problēma",
+    "Lekcija pēc Paraudža metodes",
+    "Plaušu mikrotrombektomijas loma",
+    "Dr. Paraudža padomi pacientu aprūpē",
+  ]) assert.equal(readCleanly(name, name), true, name);
+});
+
+test("readCleanly: scraps, a capital inside a word, doubled letters, words glued together", () => {
+  for (const name of ["Dzīve pēc slimības ogo ee 9", "Mazo s iedru slimība", "Veselības interakUvā nodarbība", "Pacientu apriipe praksē", "Pacienti ar bezmieguun sāpēm"])
+    assert.equal(readCleanly(name, name), false, name);
+});
+
+test("readCleanly: a short word the dictionary lacks is clean when the text layer and OCR both read it", () => {
+  assert.equal(readCleanly("Plaušu kvazo lietošana", "kvazo"), false);
+  assert.equal(readCleanly("Plaušu kvazo lietošana", "kvazo\n\nkvazo"), true);
+});
+
+/** A certificate of one school with one lecture, as OCR read it */
+const lectureCert = (lecture: string) => `Ar šo sertifikātu apliecinām, ka ārsts/-e
+12.01.2025. piedalījās
+Paraugfarm organizētajā Veselības skolas
+1. interaktīvajā nodarbībā un noklausījās lekcijas
+"${lecture}"
+Dr. Anna Paraudze
+1,3 TIP TIP2025/1401`;
+const lectureAfter = (lecture: string, rowTitle: string) => applyRegister(parseCertificateText(lectureCert(lecture), profile, { ocr: true }), rows(row({ approvalId: "TIP2025/1401", title: rowTitle }))).fields.lectures?.[0];
+
+test("a cleanly read lecture stays as printed when the register words it differently", () => {
+  assert.equal(lectureAfter("Vai kafija ietekmē miegu?", "Veselības skolas lekcija: Vai diēta ietekmē miegu?")?.name, "Vai kafija ietekmē miegu?");
+  assert.equal(lectureAfter("Vitamīni: labums un kaitējums", "Vitamīni: labums un iespējamais kaitējums")?.name, "Vitamīni: labums un kaitējums");
+});
+
+test("a register's typo never replaces a clean printed word", () => {
+  assert.equal(lectureAfter("Terapeitiskie aspekti un profilakse", "Terapeotiskie aspekti un profilakse")?.name, "Terapeitiskie aspekti un profilakse");
+});
+
+test("points and number stay the accepted row's when the printed name stands", () => {
+  const l = lectureAfter("Vai kafija ietekmē miegu?", "Vai diēta ietekmē miegu?");
+  assert.equal(l?.approvalId, "TIP2025/1401");
+  assert.equal(l?.tip, 1.3);
+});
+
+test("a garbled lecture takes the register's name", () => {
+  assert.equal(lectureAfter("Dzīve pēc slimības ogo ee 9 no profilakses līdz terapijai", "Veselības skolas lekcija: Dzīve pēc slimības - no profilakses līdz terapijai")?.name, "Dzīve pēc slimības - no profilakses līdz terapijai");
+  assert.equal(lectureAfter("Mazo s iedru slimība", "Mazo šķiedru slimība")?.name, "Mazo šķiedru slimība");
+  assert.equal(lectureAfter("Veselības interakUvā nodarbība", "Veselības interaktīvā nodarbība")?.name, "Veselības interaktīvā nodarbība");
+});
+
+test("a garbled lecture keeps its read when the register's name is only the course's", () => {
+  assert.equal(lectureAfter("Mazo s iedru slimība", "Seminārs Parauga centrā")?.name, "Mazo s iedru slimība");
+});
+
+test("lost letters come back from the row, word by word, and the printed words stay", () => {
+  assert.equal(lectureAfter("Ka varam palidzet pacientiem ar kafiju?", "Kā varam palīdzēt pacientiem ar diētu?")?.name, "Kā varam palīdzēt pacientiem ar kafiju?");
+  // a misread letter that makes no word, next to a real word within a slip of it
+  assert.equal(lectureAfter("Plaušu slimības skaitjos", "Plaušu slimības skaitļos")?.name, "Plaušu slimības skaitļos");
+});
+
+test("a title: as printed when read cleanly, the register's when garbled", () => {
+  const taking = (title: string) => `par piedalīšanos seminārā\n${title}\nLĀB Sertifikācijas padome ar dokumentu Nr. TIP2025/1538 apliecina 1.3 kredītpunktu\n2025. gada 25. martā`;
+  const after = (title: string, rowTitle: string) => applyRegister(parseCertificateText(taking(title), profile), rows(row({ approvalId: "TIP2025/1538", title: rowTitle }))).fields.title;
+  assert.equal(after("Kā praksē samazināt riskus?", "Kā praksē samazināt iespējamos riskus?"), "Kā praksē samazināt riskus?");
+  assert.equal(after("Veselības interakUvā nodarbība praksē", "Veselības interaktīvā nodarbība praksē"), "Veselības interaktīvā nodarbība praksē");
 });
 
 test("a vague register name never replaces the certificate's own", () => {

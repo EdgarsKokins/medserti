@@ -304,6 +304,13 @@ test("a programme page is no lecture list", () => {
   assert.equal(parseCertificateText(text, profile, { ocr: true }).fields.lectures, null);
 });
 
+test("a stamp's lone capital after a lecture goes, a vitamin's stays", () => {
+  const list = (line: string) => names(parseCertificateText(`2025. gada 21. martā piedalījās seminārā un noklausījās lekcijas:\n${line}\nDr. Anna Paraudze\nRīgā, 2025. gada 21. martā`, profile, { ocr: true }));
+  assert.deepEqual(list("Aspekti un profilakse A"), ["Aspekti un profilakse"]);
+  assert.deepEqual(list("Aspekti par vitamīnu D"), ["Aspekti par vitamīnu D"]);
+  assert.deepEqual(list("Aspekti un profilakse £0"), ["Aspekti un profilakse"]);
+});
+
 test("printed points read with OCR's semicolon", () => {
   assert.equal(findPoints(makeText("LĀB 2;6 TIP\nSertifikācijas padomes lēmumi:")).value, 2.6);
 });

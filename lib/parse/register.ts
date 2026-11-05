@@ -1,6 +1,7 @@
 import type { Lecture, ParseNote, RegistryEvent } from "../types";
 import { fold } from "./text";
-import { skeletons } from "./lvDictionary";
+import { skeleton, skeletons } from "./lvDictionary";
+import { readsAsWord } from "./spelling";
 import { REGISTRY_CONFIDENCE } from "./tipMatch";
 import { displayCase } from "./title";
 import type { ApprovalRead } from "./approvals";
@@ -11,6 +12,8 @@ import type { ParseResult } from "./index";
  * A row is used only when it agrees with the certificate: the certificate's date falls in the row's dates, and its TIP agrees
  * with what is printed, for one number or added up for several. A number that fails the check may be a misread one, and its
  * row says nothing about this certificate. People still confirm: nothing here raises a value past the auto-confirm line.
+ * Names: what is printed stands when it was read cleanly (readCleanly below). The register has its own typos and wordings;
+ * it fills in Latvian letters a scan lost, and its name is used only when the printed one is garbled or missing.
  */
 
 export type RegisterRows = Map<string, RegistryEvent[]> | null;
@@ -124,22 +127,101 @@ function bestOrganizer(read: string, row: string | null): string {
   return row;
 }
 
-/** Letters of the rows' words for the words of a text read: "Paraugholina" is the register's "Paraugholīna" */
+/** How often each word's skeleton occurs in the text read: a scan's text layer and OCR that read a word alike vouch for it */
+function wordCounts(doc: string): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const w of doc.match(/\p{L}+/gu) ?? []) out.set(skeleton(w), (out.get(skeleton(w)) ?? 0) + 1);
+  return out;
+}
+
+const bare = (raw: string) => raw.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+/** A word the dictionary lacks is taken for a real term from this long ("polineiropātija"), when nothing else is wrong with it */
+const TERM_LETTERS = 8;
+const ABBREVIATION = /^(?:dr|prof|med|doc|asoc)$/iu;
+/** A word and "un", "ar" ... read as one ("bezmieguun") */
+const GLUED = /^(\p{L}{3,}?)(un|ar|no|par|uz)$/iu;
+
+/**
+ * Was this word read cleanly? Yes when the dictionary or our course titles know it, misread letters or not; when it is an
+ * abbreviation, a number, or a capitalised name inside the sentence; when the text layer and OCR both read it this way;
+ * or when it is long and shaped like a term the dictionary lacks. Scraps ("ee", "apt", "s"), a capital inside a word
+ * ("interakUvaja"), letters no Latvian word doubles ("apriipe") and a word glued to the next are not.
+ */
+function cleanWord(raw: string, first: boolean, counts: Map<string, number>): boolean {
+  const w = bare(raw);
+  if (!w) return true;
+  if (/^\d+$/.test(w)) return w.length === 4 || /\d\.$/.test(raw);
+  if (/\d/.test(w)) return /^\p{Lu}[\p{Lu}\d-]*$/u.test(w);
+  if (/^\p{Lu}$/u.test(w) || /^\p{Lu}{2,6}$/u.test(w) || ABBREVIATION.test(w)) return true;
+  if (/^\p{Lu}?\p{Ll}*-\p{L}+/u.test(w)) return w.split("-").every((part) => cleanWord(part, first, counts));
+  const glued = GLUED.exec(w);
+  if (readsAsWord(w)) return true;
+  if (glued && readsAsWord(glued[1])) return false;
+  if ((w.match(/\p{L}/gu) ?? []).length <= 3 || /\p{Ll}\p{Lu}/u.test(w) || /[^\p{L}'’()-]/u.test(w)) return false;
+  if ((counts.get(skeleton(w)) ?? 0) >= 2) return true;
+  if (/ii|uu|aa/iu.test(fold(w))) return false;
+  if (!first && /^\p{Lu}\p{Ll}{3,}$/u.test(w)) return true;
+  return w.length >= TERM_LETTERS;
+}
+
+/** Every word of a printed name read cleanly: then it is shown as printed, whatever the register calls it */
+export function readCleanly(name: string, doc: string): boolean {
+  const counts = wordCounts(doc);
+  return name.trim().split(/\s+/).every((w, i) => cleanWord(w, i === 0, counts));
+}
+
+/** A word in the case of the printed one */
+const inCaseOf = (printed: string, word: string) => {
+  if (printed === printed.toLocaleUpperCase("lv") && printed.length > 1) return word.toLocaleUpperCase("lv");
+  const low = word.toLocaleLowerCase("lv");
+  return printed[0] !== printed[0].toLocaleLowerCase("lv") ? low[0].toLocaleUpperCase("lv") + low.slice(1) : low;
+};
+const latvianLetters = (w: string) => w.match(/[āčēģīķļņšūž]/giu)?.length ?? 0;
+
+function distance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/**
+ * A printed name with the letters a scan lost, from the rows, word by word; it stays the printed name. A word takes the row's letters
+ * when it is that word misread ("Paraugholina", "skaitjos"), never when it is another word, and a row's word the dictionary does not
+ * know never replaces one ("Vai kafija" stays when the row says "Vai diēta", a row's typo stays out).
+ */
 function spelledFromRows(text: string, rows: RegistryEvent[]): string {
+  const lists = rows.map((r) => r.title.match(/\p{L}+/gu) ?? []);
   const known = new Map<string, string>();
-  for (const r of rows) for (const w of r.title.match(/\p{L}{4,}/gu) ?? []) for (const k of skeletons(w)) known.set(k, w);
-  return text.replace(/\p{L}{4,}/gu, (w) => {
+  for (const list of lists) for (const w of list) for (const k of skeletons(w)) known.set(k, w);
+  const words = [...text.matchAll(/\p{L}+/gu)].map((m) => m[0]);
+  let i = -1;
+  return text.replace(/\p{L}+/gu, (w) => {
+    i++;
     const hit = skeletons(w).map((k) => known.get(k)).find(Boolean);
-    if (!hit || hit.length !== w.length) return w;
-    const caps = w === w.toLocaleUpperCase("lv");
-    return [...hit].map((c, i) => (caps || w[i] !== w[i].toLocaleLowerCase("lv") ? c.toLocaleUpperCase("lv") : c.toLocaleLowerCase("lv"))).join("");
+    if (hit && hit.length === w.length) {
+      if (latvianLetters(hit) < latvianLetters(w)) return w;
+      // "ka" is a word and "kā" another: a short word only where a neighbour is the row's neighbour too
+      if (w.length <= 3 && !lists.some((list) => list.some((x, n) => skeleton(x) === skeleton(w) && ((!!words[i + 1] && skeleton(list[n + 1] ?? "") === skeleton(words[i + 1])) || (!!words[i - 1] && skeleton(list[n - 1] ?? "") === skeleton(words[i - 1])))))) return w;
+      const caps = w === w.toLocaleUpperCase("lv");
+      return [...hit].map((c, n) => (caps || w[n] !== w[n].toLocaleLowerCase("lv") ? c.toLocaleUpperCase("lv") : c.toLocaleLowerCase("lv"))).join("");
+    }
+    // not a word as read, and a row has a real word within a slip of it; a capitalised word inside the name may be a surname
+    if (w.length < 4 || readsAsWord(w) || (i > 0 && /^\p{Lu}\p{Ll}/u.test(w))) return w;
+    const near = [...known.values()].find((x) => Math.abs(x.length - w.length) <= 1 && distance(skeleton(x), skeleton(w)) <= 2 && readsAsWord(x));
+    return near ? inCaseOf(w, near) : w;
   });
 }
 
-/** The lectures: what the certificate lists, in the register's words when they say the same; a number each when its row says so */
-function lecturesFrom(read: Lecture[] | null | undefined, accepted: RegistryEvent[], title: string): Lecture[] | null {
+/** The lectures: as the certificate prints them when read cleanly, else the register's name for them; points and numbers from the rows */
+function lecturesFrom(read: Lecture[] | null | undefined, accepted: RegistryEvent[], title: string, doc: string): Lecture[] | null {
   const unused = new Set(accepted);
   const names = accepted.map((r) => lectureNameOfRow(r.title));
+  // a name the register gives several numbers, or the course's own, says nothing about one lecture
+  const vague = (name: string) => nameDistance(name, title) <= SAME_TITLE || names.filter((n) => n === name).length > 1 || /seminār|akadēmij/iu.test(name);
   const list = (read ?? []).map((l) => {
     const own = accepted.find((r) => r.approvalId === l.approvalId);
     // the row printed with this lecture, or a row that says the same whichever number the certificate printed it by
@@ -147,8 +229,10 @@ function lecturesFrom(read: Lecture[] | null | undefined, accepted: RegistryEven
     if (!pick) pick = accepted.find((r, i) => unused.has(r) && nameDistance(l.name, names[i]) <= SAME_LECTURE);
     const row = pick ?? (own && unused.has(own) ? own : undefined);
     if (row) unused.delete(row);
+    const garbled = !readCleanly(l.name, doc);
+    const fromRow = garbled && (pick ?? (own && !vague(lectureNameOfRow(own.title)) ? own : undefined));
     return {
-      name: pick ? lectureNameOfRow(pick.title) : spelledFromRows(l.name, accepted),
+      name: fromRow ? lectureNameOfRow(fromRow.title) : spelledFromRows(l.name, accepted),
       tip: row?.tip ?? l.tip,
       approvalId: row?.approvalId ?? l.approvalId,
     };
@@ -156,7 +240,6 @@ function lecturesFrom(read: Lecture[] | null | undefined, accepted: RegistryEven
   // one number for the whole list: the number belongs to the course
   if (accepted.length === 1 && list.length > 1) return list.map((l) => ({ ...l, tip: null, approvalId: null }));
   // lectures the list did not show, when the register names them apart from each other and from the course
-  const vague = (name: string) => nameDistance(name, title) <= SAME_TITLE || accepted.filter((r) => lectureNameOfRow(r.title) === name).length > 1 || /seminār|akadēmij/iu.test(name);
   const missing = [...unused].filter((r) => !vague(lectureNameOfRow(r.title)));
   if (!list.length && missing.length < 2) return read?.length ? list : null;
   return [...list, ...missing.map((r) => ({ name: lectureNameOfRow(r.title), tip: r.tip, approvalId: r.approvalId }))];
@@ -204,11 +287,11 @@ export function applyRegister(r: ParseResult, rows: RegisterRows): ParseResult &
     notes.push({ code: "registerChecked", p: { id: accepted.map((e) => e.approvalId).join(", ") } });
   }
 
-  // the title: the register's words when they are what the certificate says or when nothing was read; never a vaguer name in its place
+  // the title as printed when read cleanly; the register's words when they say the same as a garbled read, or nothing was read; never a vaguer name in its place
   const read = r.titleRead ?? { value: f.title, confidence: f.fieldConfidence.title ?? 0 };
   const same = accepted.map((e) => lectureNameOfRow(e.title)).find((name) => nameDistance(read.value, name) <= SAME_TITLE);
   if (same) {
-    f.title = same.slice(0, 300);
+    f.title = (readCleanly(read.value, r.text ?? "") ? spelledFromRows(read.value, accepted) : same).slice(0, 300);
     f.fieldConfidence.title = Math.max(FROM_REGISTER, Math.min(read.confidence, f.fieldConfidence.title ?? 0));
   } else if (!read.value || read.confidence < WEAK_TITLE) {
     f.title = lectureNameOfRow(accepted[0].title).slice(0, 300);
@@ -233,6 +316,6 @@ export function applyRegister(r: ParseResult, rows: RegisterRows): ParseResult &
 
   f.approvalId = accepted[0].approvalId;
   f.approvalIds = accepted.length > 1 ? accepted.map((e) => e.approvalId) : null;
-  f.lectures = lecturesFrom(f.lectures, accepted, f.title);
+  f.lectures = lecturesFrom(f.lectures, accepted, f.title, r.text ?? "");
   return { ...r, fields: f, pointsKind, notes: notes.length ? JSON.stringify(notes) : null, check, registered: accepted };
 }
