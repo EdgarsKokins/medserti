@@ -160,7 +160,7 @@ export function findTitle(t: Text): { value: string; confidence: number; own?: s
     const f = fold(value);
     // above the sentence sit the logos: a body's name in quote marks there is the letterhead, not the event
     const letterhead = index < firstAnchor && ORG_WORDS.test(f) && !EVENT_WORDS.test(f);
-    // "Seminārs organizēts ar "F SERVIER atbalstu": OCR read the logo as a quote mark, on a sponsor's line
+    // "Seminārs organizēts ar "F PARAUGS atbalstu": OCR read the logo as a quote mark, on a sponsor's line
     const sponsor = SPONSOR.test(f) || /organizets\s+ar\s*$/u.test(fold(before));
     // wordy: OCR of photos and logos leaves quote marks around debris ("4 ļ A ģ wo")
     if (value.length >= 6 && wordy(value) && !letterhead && !sponsor && !ORG_PREFIX.test(before) && !NOT_TITLE.test(f) && !quoted.some((q) => q.index === index))
