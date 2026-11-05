@@ -9,6 +9,7 @@ import { matchesSpecialty } from "./specialty";
 import { latvianSpeller, makeText } from "./text";
 import { classifyCertificate, type CertificateKind } from "./isCertificate";
 import { findApprovalId, findOrganizer, findTitle } from "./title";
+import { latvianChecker } from "./spelling";
 import { suggestNurseTopic } from "../nurse";
 import { foldKey } from "../text";
 
@@ -79,6 +80,9 @@ export const EMPTY_FIELDS: ParsedFields = {
   confidence: null,
   fieldConfidence: null,
 };
+
+/** A field the spell check changed is sure enough not to be flagged, but a person confirms it (AUTO_CONFIRM_CONFIDENCE) */
+const SPELLED_CONFIDENCE = 0.85;
 
 /** Fewer non-space characters than this in a PDF text layer = treat as a scan */
 const MIN_TEXT_CHARS = 40;
@@ -176,7 +180,7 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   const ocrFactor = opts.ocr ? 0.9 : 1;
 
   const titleHit = findTitle(t);
-  const title = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
+  const titleRead = titleHit.value.replace(/^["'«»„“”‹›]+|["'«»„“”‹›]+$/g, "").trim();
   const organizerHit = findOrganizer(t);
   // a line of the title read as an organizer ("... Eiropas Sirds Ritma asociācijas (EHRA)"): not the organizer
   // (the header above the heading is its own line, even when the event is named after it: "Baltic Demo Cardiology Forum 2025")
@@ -186,7 +190,9 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
     organizerHit.value = "";
     organizerHit.confidence = 0;
   }
-  const organizer = organizerHit.value;
+  const spell = latvianChecker(t.raw);
+  const title = spell(titleRead, "title", titleHit.own);
+  const organizer = spell(organizerHit.value, "organizer");
   const dates = findDates(t);
   const { date, endDate } = dates;
   const pts = findPoints(t);
@@ -237,9 +243,10 @@ export function parseCertificateText(raw: string, profile: Pick<Profile, "specia
   if (!country) notes.push({ code: "noCountry" });
   if (needsTranslation(language)) notes.push({ code: "foreignLanguage", p: { lang: language! } });
 
+  const spelled = (field: string, read: string, confidence: number) => (field === read ? confidence : Math.min(confidence, SPELLED_CONFIDENCE));
   const fieldConfidence: FieldConfidence = {
-    title: r2(titleHit.confidence * ocrFactor),
-    organizer: r2(organizerHit.confidence * ocrFactor),
+    title: r2(spelled(title, titleRead, titleHit.confidence) * ocrFactor),
+    organizer: r2(spelled(organizer, organizerHit.value, organizerHit.confidence) * ocrFactor),
     date: r2(dates.confidence * ocrFactor),
     points: r2(points == null ? 0 : pointsConfidence * ocrFactor),
     country: r2(countryHit.confidence * ocrFactor),

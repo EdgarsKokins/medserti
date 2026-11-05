@@ -11,8 +11,8 @@ const QUOTES = [
   /(?:''|’’|‘‘)([^'\n]{4,200}(?:\n[^'\n]{1,200}){0,2})(?:''|’’|“|”)/gu,
 ];
 const ORG_PREFIX = /(?<![\p{L}])(?:SIA|AS|VSIA|NRC|biedrība|nodibinājums|Ltd|LLC|GmbH|Inc|institution|iestāde|ООО|ОАО|ЗАО|АО|клиник\p{L}*|больниц\p{L}*|центр\p{L}*|университет\p{L}*|институт\p{L}*)\.?\s*$/iu;
-/** quoted text that is not a title: regulation names, people, approval lines (OCR mispairs quotes across lines) */
-const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|izsniegt|apliecin|ministr|(?<![\p{L}])(?:dr|prof|asoc)\.|(?<![\p{L}])lab(?![\p{L}])|(?<![\p{L}])tip|\d{4}\//u;
+/** quoted text that is not a title: regulation names, people, approval lines, the certificate's own sentence (OCR mispairs quotes across lines) */
+const NOT_TITLE = /nolikum|noteikum|kartib|kortib|sertifik|izsniegt|apliecin|ministr|piedal[i1l]j|(?<![\p{L}])(?:dr|prof|asoc)\.|(?<![\p{L}])lab(?![\p{L}])|(?<![\p{L}])tip|\d{4}\//u;
 
 const EVENT_NOUN = "(?:kursa|konference|seminara|apmaciba|programma|kongresa|darbnica|meistarklase|lekcij\\p{L}*|vebinara|sede|paneldiskusija|forum\\p{L}*|akademij\\p{L}*)";
 const TITLE_ANCHORS = [
@@ -81,11 +81,14 @@ const UNNAMED_EVENTS: Record<string, { noun: string; adjective: string }> = {
 const UNNAMED_EVENT = rx(`(?:piedal[i1l]j|apmeklej)\\p{L}*\\s[^.:;]{0,220}?(?<![\\p{L}])((?:\\p{L}{3,}aja\\s+){1,3})(${Object.keys(UNNAMED_EVENTS).join("|")})(?=\\s*,?\\s*(?:atzimejot|un\\s+noklausij)\\p{L}*\\s)`, "u");
 const EVENT_OCCASION = /^\s*,?\s*(atzimejot\s+[^.:;]{3,120}?)(?=\s+un\s+noklausij|\s*[.:;])/u;
 
+/** "piedalījās <body> sēdē": no date, number or sentence end in between, the body in the genitive right after the verb */
+const MEETING_TITLE = /(?:piedal[i1l]j\p{L}*)\s+((?:\p{L}+\s+){1,10}?\p{L}+)\s+(sed[ei]|sapulce)(?![\p{L}])/u;
+
 /**
  * "piedalījās <bodies> apvienotajā zinātniskajā konferencē, atzīmējot <occasion> un noklausījās ...": the sentence gives the event
  * no name of its own, so it is the title: "Apvienotā zinātniskā konference, atzīmējot <occasion>".
  */
-function unnamedEvent(t: Text): string | null {
+function unnamedEvent(t: Text): { value: string; own: string } | null {
   const m = UNNAMED_EVENT.exec(t.flat);
   if (!m) return null;
   const event = UNNAMED_EVENTS[m[2]];
@@ -98,11 +101,39 @@ function unnamedEvent(t: Text): string | null {
   const occasion = EVENT_OCCASION.exec(t.flat.slice(end));
   const from = occasion ? end + occasion[0].length - occasion[1].length : 0;
   const value = occasion ? `${name}, ${collapse(t.raw.slice(from, from + occasion[1].length))}` : name;
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return { value: value.charAt(0).toUpperCase() + value.slice(1), own: event.noun };
+}
+
+/**
+ * "Piedalījās <body> sēdē": a meeting has no name of its own, so the sentence is the title, "<body> sēde". Scanner text
+ * layers break it over lines, one or two words each ("Latvijas Lauku" / "ģimenes" / "ārstu" / "asociācijas sēde"),
+ * which line by line is cut off after two.
+ */
+function meetingOf(t: Text): { value: string; own: string } | null {
+  const m = meetingSentence(t, MEETING_TITLE);
+  if (!m) return null;
+  const noun = m.rest[0] === "sapulce" ? "sapulce" : "sēde";
+  return { value: `${m.body} ${/\p{Ll}/u.test(m.body) ? noun : noun.toLocaleUpperCase("lv")}`, own: noun };
+}
+
+/** The sentence naming a meeting; a scan with a text layer and OCR has it twice, and the read with more Latvian letters kept the body's name */
+function meetingSentence(t: Text, re: RegExp): { body: string; rest: string[] } | null {
+  let best: { body: string; rest: string[] } | null = null;
+  let most = -1;
+  for (const m of t.flat.matchAll(rx(re.source, "gu"))) {
+    const from = m.index + m[0].indexOf(m[1]);
+    const body = collapse(t.raw.slice(from, from + m[1].length));
+    const letters = body.match(/[āčēģīķļņšūž]/giu)?.length ?? 0;
+    if (letters > most) {
+      most = letters;
+      best = { body, rest: m.slice(2) };
+    }
+  }
+  return best;
 }
 
 /** Title and how sure we are (0-1) */
-export function findTitle(t: Text): { value: string; confidence: number } {
+export function findTitle(t: Text): { value: string; confidence: number; own?: string } {
   const { raw } = t;
   // OCR leaves table borders and bullets at line starts ("| ADVANCED KNEE COURSE")
   const lines = t.lines.map((l) => l.replace(/^[|\s:;~_•·*]+/u, ""));
@@ -142,7 +173,9 @@ export function findTitle(t: Text): { value: string; confidence: number } {
   const afterAnchor = quoted.find((q) => firstAnchor >= 0 && q.index > firstAnchor);
   if (afterAnchor) return { value: afterAnchor.value, confidence: 0.9 };
   const unnamed = unnamedEvent(t);
-  if (unnamed) return { value: unnamed, confidence: 0.8 };
+  if (unnamed) return { ...unnamed, confidence: 0.8 };
+  const meeting = meetingOf(t);
+  if (meeting) return { ...meeting, confidence: 0.8 };
   if (quoted.length) return { value: quoted[0].value, confidence: firstAnchor >= 0 ? 0.9 : 0.7 };
 
   // 2. rest of the anchor line, or the next line(s)
@@ -333,8 +366,7 @@ export function findOrganizer(t: Text): { value: string; confidence: number; sta
     }
     const m = MEETING_OF.exec(t.flat);
     if (m && !SPONSOR.test(m[0])) {
-      const from = m.index + m[0].indexOf(m[1]);
-      const r = stated(out(t.raw.slice(from, from + m[1].length), 0.8));
+      const r = stated(out(jointBodies(meetingSentence(t, MEETING_OF)!.body), 0.8));
       if (r) return r;
     }
   }
